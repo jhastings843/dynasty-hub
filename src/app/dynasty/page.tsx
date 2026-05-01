@@ -13,11 +13,9 @@ import type {
   SleeperUser,
 } from "@/lib/sleeper/types";
 import {
-  applyTePremium,
-  fcFormatFromLeague,
-  getDynastyValues,
-  tePremiumFromLeague,
-} from "@/lib/fantasycalc/client";
+  formatKeyFromLeague,
+  getValues,
+} from "@/lib/rosteraudit/client";
 
 export const dynamic = "force-dynamic";
 
@@ -124,17 +122,15 @@ export default async function DynastyPage() {
   }
 
   const league = await getLeague(leagueId);
-  const fcFormat = fcFormatFromLeague(league);
+  const raFormat = formatKeyFromLeague(league);
 
-  const [me, rosters, users, players, fcValuesRaw] = await Promise.all([
+  const [me, rosters, users, players, fcValues] = await Promise.all([
     getUser(username),
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
-    getDynastyValues(fcFormat),
+    getValues(raFormat),
   ]);
-
-  const fcValues = applyTePremium(fcValuesRaw, tePremiumFromLeague(league));
 
   const usersById = new Map(users.map((u) => [u.user_id, u]));
   const myRoster = rosters.find((r) => r.owner_id === me.user_id) ?? null;
@@ -322,6 +318,19 @@ export default async function DynastyPage() {
           </ol>
         </section>
         </div>
+
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Player values via{" "}
+          <a
+            href="https://rosteraudit.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-amber-700 hover:underline dark:text-amber-400"
+          >
+            RosterAudit
+          </a>
+          .
+        </p>
       </div>
     </main>
   );

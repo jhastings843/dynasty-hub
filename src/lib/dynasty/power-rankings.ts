@@ -1,11 +1,20 @@
 import "server-only";
-import type { FCValuesBySleeperId } from "@/lib/fantasycalc/types";
 import type {
   SleeperPlayer,
   SleeperPlayersById,
   SleeperRoster,
   SleeperUser,
 } from "@/lib/sleeper/types";
+
+// Structural value shape that any value source can satisfy
+// (RosterAudit, FantasyCalc, etc.).
+export interface PlayerValueLike {
+  value: number;
+  overallRank: number;
+  positionRank: number;
+  position: string;
+}
+export type PlayerValuesBySleeperId = Record<string, PlayerValueLike>;
 
 export const POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF"] as const;
 export type Position = (typeof POSITIONS)[number];
@@ -51,7 +60,7 @@ export function computeTeamSummaries(
   rosters: SleeperRoster[],
   users: SleeperUser[],
   players: SleeperPlayersById,
-  fcValues: FCValuesBySleeperId,
+  fcValues: PlayerValuesBySleeperId,
 ): TeamSummary[] {
   const usersById = new Map(users.map((u) => [u.user_id, u]));
 
