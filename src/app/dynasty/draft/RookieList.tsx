@@ -26,13 +26,20 @@ const FILTERS = [
   { key: "TE", label: "TE" },
 ] as const;
 
+export interface NextPickRef {
+  label: string; // e.g. "1.06"
+  value: number;
+}
+
 export function RookieList({
   rookies,
   weakestPositions,
+  nextPick,
   limit = 30,
 }: {
   rookies: RookieRow[];
   weakestPositions: string[];
+  nextPick?: NextPickRef | null;
   limit?: number;
 }) {
   const [filter, setFilter] = useState<string>("all");
@@ -118,10 +125,28 @@ export function RookieList({
                     .join(" · ")}
                 </span>
               </div>
-              <div className="flex shrink-0 flex-col items-end">
+              <div className="flex shrink-0 flex-col items-end gap-0.5">
                 <span className="text-sm font-semibold tabular-nums">
                   {p.value.toLocaleString()}
                 </span>
+                {nextPick && (() => {
+                  const surplus = p.value - nextPick.value;
+                  if (surplus >= 200) {
+                    return (
+                      <span className="text-[10px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                        +{surplus.toLocaleString()} vs {nextPick.label}
+                      </span>
+                    );
+                  }
+                  if (surplus <= -200) {
+                    return (
+                      <span className="text-[10px] tabular-nums text-zinc-400 dark:text-zinc-600">
+                        {surplus.toLocaleString()} vs {nextPick.label}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
                 {targetMatch && (
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
                     Fit

@@ -65,11 +65,14 @@ function RookieRowItem({
   r,
   isFit,
   rank,
+  pickValue,
 }: {
   r: RookieRow;
   isFit: boolean;
   rank: number;
+  pickValue: number | null;
 }) {
+  const surplus = pickValue != null ? r.value - pickValue : null;
   return (
     <li
       className={`flex items-center gap-2.5 px-3 py-2 ${
@@ -105,9 +108,23 @@ function RookieRowItem({
             .join(" · ")}
         </span>
       </div>
-      <span className="shrink-0 text-sm font-semibold tabular-nums">
-        {r.value.toLocaleString()}
-      </span>
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        <span className="text-sm font-semibold tabular-nums">
+          {r.value.toLocaleString()}
+        </span>
+        {surplus != null && Math.abs(surplus) >= 100 && (
+          <span
+            className={`text-[10px] font-bold tabular-nums ${
+              surplus > 0
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-zinc-400 dark:text-zinc-600"
+            }`}
+          >
+            {surplus > 0 ? "+" : ""}
+            {surplus.toLocaleString()}
+          </span>
+        )}
+      </div>
     </li>
   );
 }
@@ -175,6 +192,7 @@ function PickCard({
                     r={r}
                     isFit
                     rank={r.rank}
+                    pickValue={pick.value}
                   />
                 ))}
               </ul>
@@ -192,6 +210,7 @@ function PickCard({
                     r={r}
                     isFit={false}
                     rank={r.rank}
+                    pickValue={pick.value}
                   />
                 ))}
               </ul>

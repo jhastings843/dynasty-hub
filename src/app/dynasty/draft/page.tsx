@@ -17,7 +17,7 @@ import {
 import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { RookieList, type RookieRow } from "./RookieList";
+import { RookieList, type NextPickRef, type RookieRow } from "./RookieList";
 import { RoundTargets } from "./RoundTargets";
 
 export const dynamic = "force-dynamic";
@@ -358,6 +358,21 @@ export default async function DraftPage() {
           <RookieList
             rookies={rookieRows}
             weakestPositions={weakestPositions as string[]}
+            nextPick={(() => {
+              const myDraftedPickNos = new Set(
+                picks
+                  .filter((pk) => pk.picked_by === me.user_id)
+                  .map((pk) => pk.pick_no),
+              );
+              const next = userPicks.find(
+                (p) => !myDraftedPickNos.has(p.pickNo) && p.value != null,
+              );
+              if (!next) return null;
+              return {
+                label: `${next.round}.${next.slot.toString().padStart(2, "0")}`,
+                value: next.value!,
+              } as NextPickRef;
+            })()}
           />
         </section>
 
