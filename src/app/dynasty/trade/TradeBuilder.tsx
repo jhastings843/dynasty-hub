@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Check } from "lucide-react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
 import { suggestTradeFits } from "@/lib/dynasty/trade-fits";
 import {
@@ -12,6 +13,23 @@ import {
 } from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+
+const POSITION_TINT: Record<string, string> = {
+  QB: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+  RB: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+  WR: "bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300",
+  TE: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+  K: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+  DEF: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
+  PK: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-300",
+};
+
+interface RecapItem {
+  key: string;
+  position: string;
+  label: string;
+  value: number;
+}
 
 const POSITIONS_DISPLAY = ["QB", "RB", "WR", "TE"] as const;
 
@@ -85,6 +103,71 @@ function PlayerRowItem({
 
 function pickValue(p: RAPick, isSuperflex: boolean): number {
   return isSuperflex ? p.valueSf : p.value1qb;
+}
+
+function RecapColumn({
+  name,
+  items,
+  total,
+  outcome,
+}: {
+  name: string;
+  items: RecapItem[];
+  total: number;
+  outcome: "win" | "lose" | "even";
+}) {
+  const headColor =
+    outcome === "win"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : outcome === "lose"
+        ? "text-rose-600 dark:text-rose-400"
+        : "text-zinc-700 dark:text-zinc-300";
+  const totalColor =
+    outcome === "win"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : outcome === "lose"
+        ? "text-rose-600 dark:text-rose-400"
+        : "text-zinc-700 dark:text-zinc-300";
+  return (
+    <div className="flex flex-col gap-2">
+      <div className={`flex items-center gap-1.5 text-sm font-bold ${headColor}`}>
+        <span className="truncate">{name} receives</span>
+        {outcome === "win" && (
+          <Check size={14} aria-hidden className="shrink-0" />
+        )}
+      </div>
+      {items.length === 0 ? (
+        <p className="py-1 text-xs text-zinc-400 dark:text-zinc-600">
+          Nothing selected.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {items.map((it) => (
+            <li key={it.key} className="flex items-center gap-2">
+              <span
+                className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  POSITION_TINT[it.position] ?? POSITION_TINT.PK
+                }`}
+              >
+                {it.position}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm">
+                {it.label}
+              </span>
+              <span className="shrink-0 text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                {it.value.toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="border-t border-zinc-200 pt-2 dark:border-zinc-800">
+        <span className={`text-2xl font-bold tabular-nums ${totalColor}`}>
+          {total.toLocaleString()}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 function verdictBadgeClass(v: TradeVerdict): string {
@@ -488,49 +571,122 @@ export default function TradeBuilder({
         </div>
       )}
 
-      <div className="sticky top-14 z-10 -mx-4 border-y border-zinc-200 bg-zinc-50/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:border-zinc-800 dark:bg-zinc-950/95">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-3 text-sm tabular-nums">
-              <span>{myGiveValue.toLocaleString()}</span>
-              <span className="text-zinc-400">→</span>
-              <span>{theirGiveValue.toLocaleString()}</span>
+      {(() => {
+        // What I receive = what they give. What they receive = what I give.
+        const myReceiveItems: RecapItem[] = [];
+        const theirReceiveItems: RecapItem[] = [];
+
+        if (partnerTeam) {
+          for (const p of partnerTeam.players.filter((p) => theirSel.has(p.id))) {
+            myReceiveItems.push({
+              key: `p-${p.id}`,
+              position: p.position,
+              label: p.name,
+              value: p.value,
+            });
+          }
+        }
+        for (const id of theirPickIds) {
+          const pk = picksById.get(id);
+          if (!pk) continue;
+          myReceiveItems.push({
+            key: `pk-${pk.id}`,
+            position: "PK",
+            label: pk.label,
+            value: isSuperflex ? pk.valueSf : pk.value1qb,
+          });
+        }
+        if (myTeam) {
+          for (const p of myTeam.players.filter((p) => mySel.has(p.id))) {
+            theirReceiveItems.push({
+              key: `p-${p.id}`,
+              position: p.position,
+              label: p.name,
+              value: p.value,
+            });
+          }
+        }
+        for (const id of myPickIds) {
+          const pk = picksById.get(id);
+          if (!pk) continue;
+          theirReceiveItems.push({
+            key: `pk-${pk.id}`,
+            position: "PK",
+            label: pk.label,
+            value: isSuperflex ? pk.valueSf : pk.value1qb,
+          });
+        }
+
+        const myReceiveTotal = theirGiveValue;
+        const theirReceiveTotal = myGiveValue;
+        const meWins = myReceiveTotal > theirReceiveTotal;
+        const theyWin = theirReceiveTotal > myReceiveTotal;
+        const myOutcome: "win" | "lose" | "even" = meWins
+          ? "win"
+          : theyWin
+            ? "lose"
+            : "even";
+        const theirOutcome: "win" | "lose" | "even" = theyWin
+          ? "win"
+          : meWins
+            ? "lose"
+            : "even";
+
+        return (
+          <div className="sticky top-14 z-10 -mx-4 border-y border-zinc-200 bg-zinc-50/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:border-zinc-800 dark:bg-zinc-950/95">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Trade summary
+                </h3>
+                <div className="flex items-center gap-2">
+                  {assessment && (
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${verdictBadgeClass(assessment.verdict)}`}
+                    >
+                      {verdictLabel(assessment.verdict)}
+                    </span>
+                  )}
+                  {(mySel.size > 0 ||
+                    theirSel.size > 0 ||
+                    myPickIds.size > 0 ||
+                    theirPickIds.size > 0) && (
+                    <button
+                      type="button"
+                      onClick={reset}
+                      className="shrink-0 rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                <RecapColumn
+                  name={myTeam?.ownerName ?? "You"}
+                  items={myReceiveItems}
+                  total={myReceiveTotal}
+                  outcome={myOutcome}
+                />
+                <RecapColumn
+                  name={partnerTeam?.ownerName ?? "Partner"}
+                  items={theirReceiveItems}
+                  total={theirReceiveTotal}
+                  outcome={theirOutcome}
+                />
+              </div>
+              {baseline > 0 && (
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {verdict}
+                  {delta !== 0
+                    ? ` · ${delta > 0 ? "+" : ""}${delta.toLocaleString()} (${pct > 0 ? "+" : ""}${pct}%)`
+                    : ""}
+                </div>
+              )}
             </div>
-            <span
-              className={`text-xs font-medium ${
-                verdict === "You win"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : verdict === "They win"
-                    ? "text-rose-600 dark:text-rose-400"
-                    : "text-zinc-500 dark:text-zinc-400"
-              }`}
-            >
-              {verdict}
-              {baseline > 0 && delta !== 0
-                ? ` · ${delta > 0 ? "+" : ""}${delta.toLocaleString()} (${
-                    pct > 0 ? "+" : ""
-                  }${pct}%)`
-                : ""}
-            </span>
           </div>
-          {assessment && (
-            <span
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${verdictBadgeClass(assessment.verdict)}`}
-            >
-              {verdictLabel(assessment.verdict)}
-            </span>
-          )}
-          {(mySel.size > 0 || theirSel.size > 0) && (
-            <button
-              type="button"
-              onClick={reset}
-              className="shrink-0 rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 active:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:active:bg-zinc-800"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
+        );
+      })()}
 
       {assessment && (
         <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
