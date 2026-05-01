@@ -13,6 +13,9 @@ export interface RookieRow {
   rank: number;
   positionRank: number;
   photoUrl: string | null;
+  buyLow?: boolean;
+  sellHigh?: boolean;
+  breakout?: boolean;
 }
 
 const FILTERS = [

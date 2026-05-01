@@ -18,6 +18,7 @@ import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { RookieList, type RookieRow } from "./RookieList";
+import { RoundTargets } from "./RoundTargets";
 
 export const dynamic = "force-dynamic";
 
@@ -163,19 +164,23 @@ export default async function DraftPage() {
     .sort((a, b) => b.value - a.value);
 
   const available = rookies.filter((p) => !drafted.has(p.player_id));
-  // Convert to plain rows for the client component (avoid passing the
-  // entire SleeperPlayer object).
-  const rookieRows: RookieRow[] = available.map((p) => ({
-    id: p.player_id,
-    name: nameOf(p),
-    position: p.position ?? null,
-    team: p.team ?? null,
-    age: typeof p.age === "number" ? p.age : null,
-    value: p.value,
-    rank: p.rank,
-    positionRank: p.positionRank,
-    photoUrl: p.photoUrl,
-  }));
+  const rookieRows: RookieRow[] = available.map((p) => {
+    const v = fcValues[p.player_id];
+    return {
+      id: p.player_id,
+      name: nameOf(p),
+      position: p.position ?? null,
+      team: p.team ?? null,
+      age: typeof p.age === "number" ? p.age : null,
+      value: p.value,
+      rank: p.rank,
+      positionRank: p.positionRank,
+      photoUrl: p.photoUrl,
+      buyLow: v?.buyLow ?? false,
+      sellHigh: v?.sellHigh ?? false,
+      breakout: v?.breakout ?? false,
+    };
+  });
 
   // Compute weakest positions from the FULL roster (not just RA-ranked
   // players) so deep bench gets counted.
@@ -355,6 +360,15 @@ export default async function DraftPage() {
             weakestPositions={weakestPositions as string[]}
           />
         </section>
+
+        <RoundTargets
+          userPicks={userPicks}
+          rookies={rookieRows}
+          weakestPositions={weakestPositions as string[]}
+          draftedPickNos={picks
+            .filter((pk) => pk.picked_by === me.user_id)
+            .map((pk) => pk.pick_no)}
+        />
 
         {picks.length > 0 && (
           <section className="flex flex-col gap-3">
