@@ -3,6 +3,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
+  ListOrdered,
   Repeat,
   ShieldCheck,
   TrendingUp,
@@ -18,6 +19,13 @@ const PRIMARY = {
 };
 
 const SECONDARY = [
+  {
+    href: "/dynasty/draft",
+    title: "Draft helper",
+    blurb:
+      "Live rookie board, your draft slot and picks, and weakest-position fits.",
+    icon: ListOrdered,
+  },
   {
     href: "/dynasty/trade",
     title: "Trade analyzer",

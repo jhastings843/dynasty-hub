@@ -1,6 +1,8 @@
 import "server-only";
 import { cached, invalidate } from "@/lib/redis/cached";
 import type {
+  SleeperDraft,
+  SleeperDraftPick,
   SleeperLeague,
   SleeperPlayer,
   SleeperPlayersById,
@@ -16,6 +18,9 @@ const KEY = {
   users: (id: string) => `sleeper:v1:league:${id}:users`,
   user: (u: string) => `sleeper:v1:user:${u}`,
   playersSlim: () => `sleeper:v1:players:nfl:slim`,
+  drafts: (id: string) => `sleeper:v1:league:${id}:drafts`,
+  draft: (id: string) => `sleeper:v1:draft:${id}`,
+  draftPicks: (id: string) => `sleeper:v1:draft:${id}:picks`,
 };
 
 const TTL = {
@@ -24,6 +29,10 @@ const TTL = {
   users: 24 * 60 * 60,
   user: 24 * 60 * 60,
   playersSlim: 24 * 60 * 60,
+  drafts: 60 * 60,
+  draft: 60 * 60,
+  // Draft picks change in real-time during the draft itself; short TTL.
+  draftPicks: 60,
 };
 
 async function sleeperFetch<T>(path: string): Promise<T> {
@@ -73,6 +82,8 @@ function slimPlayer(raw: RawPlayer): SleeperPlayer {
     fantasy_positions: Array.isArray(raw.fantasy_positions)
       ? (raw.fantasy_positions as string[])
       : null,
+    years_exp:
+      typeof raw.years_exp === "number" ? raw.years_exp : null,
   };
 }
 
@@ -103,4 +114,28 @@ export async function revalidateLeague(leagueId: string): Promise<void> {
 
 export async function revalidateAllPlayers(): Promise<void> {
   await invalidate(KEY.playersSlim());
+}
+
+// --- Drafts ---
+
+export function getLeagueDrafts(leagueId: string): Promise<SleeperDraft[]> {
+  return cached(KEY.drafts(leagueId), TTL.drafts, () =>
+    sleeperFetch<SleeperDraft[]>(`/league/${leagueId}/drafts`),
+  );
+}
+
+export function getDraft(draftId: string): Promise<SleeperDraft> {
+  return cached(KEY.draft(draftId), TTL.draft, () =>
+    sleeperFetch<SleeperDraft>(`/draft/${draftId}`),
+  );
+}
+
+export function getDraftPicks(draftId: string): Promise<SleeperDraftPick[]> {
+  return cached(KEY.draftPicks(draftId), TTL.draftPicks, () =>
+    sleeperFetch<SleeperDraftPick[]>(`/draft/${draftId}/picks`),
+  );
+}
+
+export async function revalidateDraft(draftId: string): Promise<void> {
+  await invalidate(KEY.draft(draftId), KEY.draftPicks(draftId));
 }

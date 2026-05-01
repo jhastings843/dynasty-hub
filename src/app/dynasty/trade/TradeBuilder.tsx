@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
+import { suggestTradeFits } from "@/lib/dynasty/trade-fits";
 import type { RAPick } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 
@@ -113,6 +114,11 @@ export default function TradeBuilder({
   );
 
   const partnerTeam = teams.find((t) => t.rosterId === partnerId);
+
+  const fits = useMemo(() => {
+    if (!myTeam || !partnerTeam) return [];
+    return suggestTradeFits(myTeam, partnerTeam, teams.length);
+  }, [myTeam, partnerTeam, teams.length]);
 
   const myGiveValue = useMemo(() => {
     if (!myTeam) return 0;
@@ -263,6 +269,68 @@ export default function TradeBuilder({
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             1 = strongest of {teams.length}. Green = top 3, red = bottom 3.
           </p>
+        </div>
+      )}
+
+      {fits.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Trade fits
+          </h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            {fits.map((fit) => (
+              <div
+                key={`${fit.position}-${fit.side}`}
+                className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 dark:border-amber-900/60 dark:bg-amber-950/20"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm font-semibold">
+                    {fit.side === "send"
+                      ? `Send a ${fit.position}`
+                      : `Target their ${fit.position}`}
+                  </span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    you #{fit.yourRank} · them #{fit.theirRank}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  {fit.side === "send"
+                    ? `You have surplus ${fit.position}; they're weak there. Consider offering one of these:`
+                    : `They have surplus ${fit.position}; you're weak there. Consider asking for one of these:`}
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  {fit.suggested.map((p) => (
+                    <li
+                      key={p.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <span className="truncate flex-1">{p.name}</span>
+                      <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                        {p.value > 0 ? p.value.toLocaleString() : "—"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (fit.side === "send") {
+                            const next = new Set(mySel);
+                            next.add(p.id);
+                            setMySel(next);
+                          } else {
+                            const next = new Set(theirSel);
+                            next.add(p.id);
+                            setTheirSel(next);
+                          }
+                        }}
+                        className="shrink-0 rounded-md border border-amber-300 bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-amber-600 dark:border-amber-700"
+                      >
+                        Add
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

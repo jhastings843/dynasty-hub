@@ -4,9 +4,11 @@ import type { SleeperLeague } from "@/lib/sleeper/types";
 import type {
   PickSlot,
   RAFormatKey,
+  RAGradesByRosterId,
   RAMover,
   RAMovers,
   RAPick,
+  RATeamGrade,
   RAValue,
   RAValuesBySleeperId,
 } from "./types";
@@ -265,6 +267,82 @@ export function getMovers(limit = 30): Promise<RAMovers> {
   });
 }
 
+// --- Roster grades ---
+
+const GRADES_KEY = (leagueId: string, userId: string) =>
+  `rosteraudit:v1:grades:${leagueId}:${userId}`;
+const GRADES_TTL = 60 * 60;
+
+type RawPositional = {
+  value?: number;
+  count?: number;
+  avg_age?: number;
+};
+
+type RawGradeTeam = {
+  roster_id?: number;
+  owner_id?: string | null;
+  power_rank?: number;
+  dynasty_rank?: number;
+  contender_grade?: string;
+  dynasty_grade?: string;
+  total_value?: number;
+  starter_value?: number;
+  projected_ppg?: number;
+  trajectory_pct?: number;
+  year_totals?: Record<string, number>;
+  positional?: Record<string, RawPositional>;
+  avg_starter_age?: number;
+  weakness?: string | null;
+};
+
+type GradesResponse = { teams?: RawGradeTeam[] };
+
+function slimGradeTeam(t: RawGradeTeam): RATeamGrade | null {
+  if (typeof t.roster_id !== "number") return null;
+  const positional: Record<string, { value: number; count: number; avgAge: number }> = {};
+  for (const [pos, raw] of Object.entries(t.positional ?? {})) {
+    positional[pos] = {
+      value: num(raw?.value),
+      count: num(raw?.count),
+      avgAge: num(raw?.avg_age),
+    };
+  }
+  return {
+    rosterId: t.roster_id,
+    ownerId: typeof t.owner_id === "string" ? t.owner_id : null,
+    powerRank: num(t.power_rank),
+    dynastyRank: num(t.dynasty_rank),
+    contenderGrade: t.contender_grade ?? "",
+    dynastyGrade: t.dynasty_grade ?? "",
+    totalValue: num(t.total_value),
+    starterValue: num(t.starter_value),
+    projectedPpg: num(t.projected_ppg),
+    trajectoryPct: num(t.trajectory_pct),
+    yearTotals: t.year_totals ?? {},
+    positional,
+    avgStarterAge: num(t.avg_starter_age),
+    weakness: typeof t.weakness === "string" ? t.weakness : null,
+  };
+}
+
+export function getRosterGrades(
+  leagueId: string,
+  userId: string,
+): Promise<RAGradesByRosterId> {
+  return cached(GRADES_KEY(leagueId, userId), GRADES_TTL, async () => {
+    const res = await raFetch<GradesResponse>(
+      `/projections/roster-grades?league_id=${leagueId}&user_id=${userId}`,
+    );
+    const out: RAGradesByRosterId = {};
+    for (const raw of res.teams ?? []) {
+      const slim = slimGradeTeam(raw);
+      if (slim) out[slim.rosterId] = slim;
+    }
+    return out;
+  });
+}
+
 export type {
   RAValue,
   RAValuesBySleeperId,
@@ -272,5 +350,7 @@ export type {
   RAPick,
   RAMover,
   RAMovers,
+  RATeamGrade,
+  RAGradesByRosterId,
   PickSlot,
 };

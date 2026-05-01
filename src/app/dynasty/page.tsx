@@ -14,8 +14,10 @@ import type {
 } from "@/lib/sleeper/types";
 import {
   formatKeyFromLeague,
+  getRosterGrades,
   getValues,
 } from "@/lib/rosteraudit/client";
+import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
@@ -125,12 +127,15 @@ export default async function DynastyPage() {
   const league = await getLeague(leagueId);
   const raFormat = formatKeyFromLeague(league);
 
-  const [me, rosters, users, players, fcValues] = await Promise.all([
-    getUser(username),
+  const me = await getUser(username);
+  const [rosters, users, players, fcValues, grades] = await Promise.all([
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
     getValues(raFormat),
+    getRosterGrades(leagueId, me.user_id).catch(
+      (): RAGradesByRosterId => ({}),
+    ),
   ]);
 
   const usersById = new Map(users.map((u) => [u.user_id, u]));
@@ -167,12 +172,18 @@ export default async function DynastyPage() {
               {league.season} season · {rosters.length} teams
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href="/dynasty/movers"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               Movers
+            </Link>
+            <Link
+              href="/dynasty/draft"
+              className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+            >
+              Draft
             </Link>
             <Link
               href="/dynasty/trade"
@@ -199,6 +210,72 @@ export default async function DynastyPage() {
               </p>
             )}
           </header>
+
+          {myRoster && grades[myRoster.roster_id] && (() => {
+            const g = grades[myRoster.roster_id];
+            return (
+              <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-xl font-bold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                      {g.dynastyGrade || "—"}
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        Dynasty grade · #{g.dynastyRank} of {rosters.length}
+                      </span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Contender {g.contenderGrade || "—"} · power #
+                        {g.powerRank} · {g.projectedPpg.toFixed(1)} ppg
+                      </span>
+                    </div>
+                  </div>
+                  {g.weakness && (
+                    <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                      {g.weakness}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {(["QB", "RB", "WR", "TE"] as const).map((pos) => {
+                    const room = g.positional[pos];
+                    if (!room || room.count === 0) {
+                      return (
+                        <div
+                          key={pos}
+                          className="flex flex-col gap-0.5 rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-800"
+                        >
+                          <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                            {pos}
+                          </span>
+                          <span className="text-sm text-zinc-400 dark:text-zinc-600">
+                            —
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div
+                        key={pos}
+                        className="flex flex-col gap-0.5 rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-800"
+                      >
+                        <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                          {pos}
+                        </span>
+                        <span className="text-sm font-semibold tabular-nums">
+                          {room.value.toLocaleString()}
+                        </span>
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          {room.count} player{room.count === 1 ? "" : "s"} · age{" "}
+                          {room.avgAge.toFixed(1)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {!myRoster && (
             <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-300">

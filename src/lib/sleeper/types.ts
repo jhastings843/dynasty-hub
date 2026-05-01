@@ -60,6 +60,32 @@ export interface SleeperPlayer {
   age?: number | null;
   status?: string | null;
   fantasy_positions?: string[] | null;
+  years_exp?: number | null;
+}
+
+export interface SleeperDraft {
+  draft_id: string;
+  league_id?: string;
+  status: string;
+  type?: string;
+  season?: string;
+  start_time?: number | null;
+  draft_order?: Record<string, number> | null;
+  settings?: {
+    rounds?: number;
+    teams?: number;
+    [k: string]: unknown;
+  };
+}
+
+export interface SleeperDraftPick {
+  pick_no: number;
+  round: number;
+  draft_slot: number;
+  roster_id?: number | null;
+  picked_by?: string | null;
+  player_id: string;
+  metadata?: Record<string, string> | null;
 }
 
 export type SleeperPlayersById = Record<string, SleeperPlayer>;

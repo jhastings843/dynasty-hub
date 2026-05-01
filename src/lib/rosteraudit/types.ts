@@ -63,3 +63,28 @@ export interface RAMovers {
   risers: RAMover[];
   fallers: RAMover[];
 }
+
+export interface RAPositionalRoom {
+  value: number;
+  count: number;
+  avgAge: number;
+}
+
+export interface RATeamGrade {
+  rosterId: number;
+  ownerId: string | null;
+  powerRank: number;
+  dynastyRank: number;
+  contenderGrade: string;
+  dynastyGrade: string;
+  totalValue: number;
+  starterValue: number;
+  projectedPpg: number;
+  trajectoryPct: number;
+  yearTotals: Record<string, number>;
+  positional: Record<string, RAPositionalRoom>;
+  avgStarterAge: number;
+  weakness: string | null;
+}
+
+export type RAGradesByRosterId = Record<number, RATeamGrade>;
