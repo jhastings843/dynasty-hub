@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
 import type { RAPick } from "@/lib/rosteraudit/types";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 const POSITIONS_DISPLAY = ["QB", "RB", "WR", "TE"] as const;
 
@@ -22,15 +23,44 @@ function PlayerRowItem({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800/50">
+    <label
+      className={`flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors ${
+        checked
+          ? "bg-amber-50 dark:bg-amber-950/30"
+          : "hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
+      }`}
+    >
       <input
         type="checkbox"
-        className="size-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800"
+        className="size-4 shrink-0 rounded border-zinc-300 text-amber-600 focus:ring-amber-500 dark:border-zinc-700 dark:bg-zinc-800"
         checked={checked}
         onChange={onChange}
       />
+      <PlayerAvatar
+        name={p.name}
+        position={p.position}
+        photoUrl={p.photoUrl}
+        size="sm"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium">{p.name}</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="truncate text-sm font-medium">{p.name}</span>
+          {p.buyLow && (
+            <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              Buy
+            </span>
+          )}
+          {p.sellHigh && (
+            <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+              Sell
+            </span>
+          )}
+          {p.breakout && (
+            <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+              Break
+            </span>
+          )}
+        </div>
         <span className="text-xs text-zinc-500 dark:text-zinc-400">
           {[p.team ?? "FA", p.position].filter(Boolean).join(" · ")}
           {p.overallRank > 0
@@ -38,7 +68,7 @@ function PlayerRowItem({
             : ""}
         </span>
       </div>
-      <span className="shrink-0 text-sm font-medium tabular-nums">
+      <span className="shrink-0 text-sm font-semibold tabular-nums">
         {p.value > 0 ? p.value.toLocaleString() : "—"}
       </span>
     </label>

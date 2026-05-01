@@ -16,6 +16,7 @@ import {
   formatKeyFromLeague,
   getValues,
 } from "@/lib/rosteraudit/client";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -224,10 +225,16 @@ export default async function DynastyPage() {
                   return (
                     <li
                       key={p.player_id}
-                      className="flex items-center justify-between gap-3 px-4 py-3"
+                      className="flex items-center gap-3 px-4 py-3"
                     >
-                      <div className="flex min-w-0 flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
+                      <PlayerAvatar
+                        name={playerName(p)}
+                        position={p.position ?? null}
+                        photoUrl={v?.photoUrl ?? null}
+                        size="md"
+                      />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <span className="truncate text-base font-medium">
                             {playerName(p)}
                           </span>
@@ -236,6 +243,21 @@ export default async function DynastyPage() {
                               className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${badge.className}`}
                             >
                               {badge.label}
+                            </span>
+                          )}
+                          {v?.buyLow && (
+                            <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                              Buy
+                            </span>
+                          )}
+                          {v?.sellHigh && (
+                            <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                              Sell
+                            </span>
+                          )}
+                          {v?.breakout && (
+                            <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+                              Break
                             </span>
                           )}
                         </div>
@@ -252,7 +274,7 @@ export default async function DynastyPage() {
                       <div className="flex shrink-0 flex-col items-end gap-0.5">
                         {v ? (
                           <>
-                            <span className="text-sm font-medium tabular-nums">
+                            <span className="text-sm font-semibold tabular-nums">
                               {v.value.toLocaleString()}
                             </span>
                             <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">

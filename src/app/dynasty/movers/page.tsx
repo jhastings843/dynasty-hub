@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMovers } from "@/lib/rosteraudit/client";
 import type { RAMover } from "@/lib/rosteraudit/types";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -45,10 +46,13 @@ function MoverCard({ m, direction }: { m: RAMover; direction: "up" | "down" }) {
   const trend7 = m.trend7Day;
   return (
     <li className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <PositionChip position={m.position} />
-          <span className="truncate text-sm font-medium">{m.name}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <PlayerAvatar name={m.name} position={m.position} size="sm" />
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-sm font-medium">{m.name}</span>
+            <PositionChip position={m.position} />
+          </div>
         </div>
         <span className="shrink-0 text-sm font-semibold tabular-nums">
           {m.valueSf.toLocaleString()}

@@ -13,6 +13,11 @@ export interface PlayerValueLike {
   overallRank: number;
   positionRank: number;
   position: string;
+  // Optional richer fields some sources provide (RosterAudit only today).
+  photoUrl?: string | null;
+  buyLow?: boolean;
+  sellHigh?: boolean;
+  breakout?: boolean;
 }
 export type PlayerValuesBySleeperId = Record<string, PlayerValueLike>;
 
@@ -27,6 +32,10 @@ export type PlayerRow = {
   value: number;
   overallRank: number;
   positionRank: number;
+  photoUrl?: string | null;
+  buyLow?: boolean;
+  sellHigh?: boolean;
+  breakout?: boolean;
 };
 
 export type TeamSummary = {
@@ -78,6 +87,10 @@ export function computeTeamSummaries(
           value: v?.value ?? 0,
           overallRank: v?.overallRank ?? 0,
           positionRank: v?.positionRank ?? 0,
+          photoUrl: v?.photoUrl ?? null,
+          buyLow: v?.buyLow ?? false,
+          sellHigh: v?.sellHigh ?? false,
+          breakout: v?.breakout ?? false,
         };
       })
       .filter((x): x is PlayerRow => x !== null)
