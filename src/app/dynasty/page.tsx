@@ -160,6 +160,24 @@ export default async function DynastyPage() {
 
   const myGroups = myRoster ? groupRoster(myRoster.players ?? [], players) : [];
 
+  // Compute per-position roster summary locally so deep-bench players
+  // not in RA's ranked set still get counted.
+  type LocalRoom = { count: number; value: number; ages: number[] };
+  const localRooms: Record<string, LocalRoom> = {
+    QB: { count: 0, value: 0, ages: [] },
+    RB: { count: 0, value: 0, ages: [] },
+    WR: { count: 0, value: 0, ages: [] },
+    TE: { count: 0, value: 0, ages: [] },
+  };
+  for (const id of myRoster?.players ?? []) {
+    const p = players[id];
+    if (!p?.position || !(p.position in localRooms)) continue;
+    const room = localRooms[p.position];
+    room.count += 1;
+    room.value += fcValues[id]?.value ?? 0;
+    if (typeof p.age === "number") room.ages.push(p.age);
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8">
@@ -238,7 +256,7 @@ export default async function DynastyPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {(["QB", "RB", "WR", "TE"] as const).map((pos) => {
-                    const room = g.positional[pos];
+                    const room = localRooms[pos];
                     if (!room || room.count === 0) {
                       return (
                         <div
@@ -254,6 +272,10 @@ export default async function DynastyPage() {
                         </div>
                       );
                     }
+                    const avgAge =
+                      room.ages.length > 0
+                        ? room.ages.reduce((a, b) => a + b, 0) / room.ages.length
+                        : 0;
                     return (
                       <div
                         key={pos}
@@ -266,8 +288,8 @@ export default async function DynastyPage() {
                           {room.value.toLocaleString()}
                         </span>
                         <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          {room.count} player{room.count === 1 ? "" : "s"} · age{" "}
-                          {room.avgAge.toFixed(1)}
+                          {room.count} player{room.count === 1 ? "" : "s"}
+                          {avgAge > 0 ? ` · age ${avgAge.toFixed(1)}` : ""}
                         </span>
                       </div>
                     );

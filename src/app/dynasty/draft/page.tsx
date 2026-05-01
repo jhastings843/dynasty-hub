@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { Clock, Trophy } from "lucide-react";
-import {
-  formatKeyFromLeague,
-  getRosterGrades,
-  getValues,
-} from "@/lib/rosteraudit/client";
-import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
+import { formatKeyFromLeague, getValues } from "@/lib/rosteraudit/client";
 import {
   getAllPlayers,
   getDraftPicks,
@@ -15,6 +10,7 @@ import {
   getUser,
 } from "@/lib/sleeper/client";
 import type { SleeperPlayer } from "@/lib/sleeper/types";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 export const dynamic = "force-dynamic";
@@ -72,14 +68,11 @@ export default async function DraftPage() {
   const league = await getLeague(leagueId);
   const raFormat = formatKeyFromLeague(league);
 
-  const [drafts, rosters, players, fcValues, grades] = await Promise.all([
+  const [drafts, rosters, players, fcValues] = await Promise.all([
     getLeagueDrafts(leagueId),
     getLeagueRosters(leagueId),
     getAllPlayers(),
     getValues(raFormat),
-    getRosterGrades(leagueId, me.user_id).catch(
-      (): RAGradesByRosterId => ({}),
-    ),
   ]);
 
   if (drafts.length === 0) {
@@ -118,17 +111,17 @@ export default async function DraftPage() {
   const available = rookies.filter((p) => !drafted.has(p.player_id));
   const top30 = available.slice(0, 30);
 
-  const myGrade = myRoster ? grades[myRoster.roster_id] : null;
-  const weakestPositions = myGrade
-    ? [...TRADE_POSITIONS]
-        .map((pos) => ({
-          pos,
-          value: myGrade.positional[pos]?.value ?? 0,
-        }))
-        .sort((a, b) => a.value - b.value)
-        .slice(0, 2)
-        .map((x) => x.pos)
-    : [];
+  // Compute weakest positions from the FULL roster (not just RA-ranked
+  // players) so deep bench gets counted.
+  const localPosValues: Record<string, number> = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  for (const pid of myRoster?.players ?? []) {
+    const p = players[pid];
+    if (!p?.position || !(p.position in localPosValues)) continue;
+    localPosValues[p.position] += fcValues[pid]?.value ?? 0;
+  }
+  const weakestPositions = [...TRADE_POSITIONS]
+    .sort((a, b) => localPosValues[a] - localPosValues[b])
+    .slice(0, 2);
 
   const myPicksByRound: number[] = [];
   if (mySlot && draft.type === "linear") {
@@ -182,6 +175,16 @@ export default async function DraftPage() {
             draft
             {startTime && ` · starts ${startTime}`}
           </p>
+          <AutoRefresh
+            intervalMs={
+              draft.status === "drafting" ? 60_000 : 5 * 60_000
+            }
+            label={
+              draft.status === "drafting"
+                ? "Live updates"
+                : "Refreshes"
+            }
+          />
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
