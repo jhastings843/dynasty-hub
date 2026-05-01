@@ -30,3 +30,36 @@ export interface RAValue {
 }
 
 export type RAValuesBySleeperId = Record<string, RAValue>;
+
+export type PickSlot = "early" | "mid" | "late";
+
+export interface RAPick {
+  id: number;
+  season: number;
+  round: number;
+  slot: PickSlot;
+  valueSf: number;
+  value1qb: number;
+  label: string;
+  sortOrder: number;
+}
+
+export interface RAMover {
+  sleeperId: string;
+  name: string;
+  position: string;
+  team: string | null;
+  age: number | null;
+  tier: number | null;
+  valueSf: number;
+  trend7Day: number;
+  trend30Day: number;
+  buyLow: boolean;
+  sellHigh: boolean;
+  breakout: boolean;
+}
+
+export interface RAMovers {
+  risers: RAMover[];
+  fallers: RAMover[];
+}

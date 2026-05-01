@@ -1,7 +1,15 @@
 import "server-only";
 import { cached, invalidate } from "@/lib/redis/cached";
 import type { SleeperLeague } from "@/lib/sleeper/types";
-import type { RAFormatKey, RAValue, RAValuesBySleeperId } from "./types";
+import type {
+  PickSlot,
+  RAFormatKey,
+  RAMover,
+  RAMovers,
+  RAPick,
+  RAValue,
+  RAValuesBySleeperId,
+} from "./types";
 
 const RA_BASE = "https://rosteraudit.com/wp-json/ra/v1";
 const TTL = 6 * 60 * 60;
@@ -150,4 +158,119 @@ export function formatKeyFromLeague(league: SleeperLeague): RAFormatKey {
   return halfPpr ? "1qb_half" : "1qb_ppr";
 }
 
-export type { RAValue, RAValuesBySleeperId, RAFormatKey };
+// --- Picks ---
+
+const PICKS_KEY = "rosteraudit:v1:picks";
+const PICKS_TTL = 24 * 60 * 60;
+
+type RawPick = {
+  id?: number;
+  pick_season?: number;
+  pick_round?: number;
+  pick_slot?: string;
+  val_sf?: number;
+  val_1qb?: number;
+  label?: string;
+  sort_order?: number;
+};
+
+type PicksResponse = { picks?: RawPick[] };
+
+function slimPicks(rows: RawPick[]): RAPick[] {
+  const out: RAPick[] = [];
+  for (const r of rows) {
+    if (
+      typeof r.id !== "number" ||
+      typeof r.pick_season !== "number" ||
+      typeof r.pick_round !== "number" ||
+      !r.pick_slot ||
+      !r.label
+    ) {
+      continue;
+    }
+    out.push({
+      id: r.id,
+      season: r.pick_season,
+      round: r.pick_round,
+      slot: r.pick_slot as PickSlot,
+      valueSf: num(r.val_sf),
+      value1qb: num(r.val_1qb),
+      label: r.label,
+      sortOrder: num(r.sort_order),
+    });
+  }
+  out.sort((a, b) => a.sortOrder - b.sortOrder);
+  return out;
+}
+
+export function getPicks(): Promise<RAPick[]> {
+  return cached(PICKS_KEY, PICKS_TTL, async () => {
+    const res = await raFetch<PicksResponse>("/picks");
+    return slimPicks(res.picks ?? []);
+  });
+}
+
+// --- Movers ---
+
+const MOVERS_KEY = (limit: number) => `rosteraudit:v1:movers:${limit}`;
+const MOVERS_TTL = 60 * 60;
+
+type RawMover = {
+  sleeper_id?: string;
+  name?: string;
+  position?: string;
+  team?: string | null;
+  age?: string | number | null;
+  tier?: string | number | null;
+  val_sf?: string | number | null;
+  trend_7d?: string | number | null;
+  trend_30d?: string | number | null;
+  buy_low?: string | number | null;
+  sell_high?: string | number | null;
+  breakout?: string | number | null;
+};
+
+type MoversResponse = { risers?: RawMover[]; fallers?: RawMover[] };
+
+function slimMover(r: RawMover): RAMover | null {
+  if (!r.sleeper_id || !r.name || !r.position) return null;
+  return {
+    sleeperId: r.sleeper_id,
+    name: r.name,
+    position: r.position,
+    team: typeof r.team === "string" ? r.team : null,
+    age: r.age != null ? num(r.age) : null,
+    tier: r.tier != null ? num(r.tier) : null,
+    valueSf: num(r.val_sf),
+    trend7Day: trendNum(r.trend_7d),
+    trend30Day: trendNum(r.trend_30d),
+    buyLow: flag(r.buy_low),
+    sellHigh: flag(r.sell_high),
+    breakout: flag(r.breakout),
+  };
+}
+
+export function getMovers(limit = 30): Promise<RAMovers> {
+  return cached(MOVERS_KEY(limit), MOVERS_TTL, async () => {
+    const res = await raFetch<MoversResponse>(
+      `/movers?position=all&limit=${limit}`,
+    );
+    const risers = (res.risers ?? [])
+      .map(slimMover)
+      .filter((x): x is RAMover => x !== null);
+    const fallers = (res.fallers ?? [])
+      .map(slimMover)
+      .filter((x): x is RAMover => x !== null);
+    return { risers, fallers };
+  });
+}
+
+export type {
+  RAValue,
+  RAValuesBySleeperId,
+  RAFormatKey,
+  RAPick,
+  RAMover,
+  RAMovers,
+  PickSlot,
+};

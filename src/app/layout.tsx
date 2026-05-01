@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 const NAV_LINKS = [
   { href: "/dynasty", label: "Dynasty" },
   { href: "/dynasty/trade", label: "Trade" },
+  { href: "/dynasty/movers", label: "Movers" },
   { href: "/survivor", label: "Survivor" },
   { href: "/resources", label: "Resources" },
 ];

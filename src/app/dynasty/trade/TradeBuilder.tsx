@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
+import type { RAPick } from "@/lib/rosteraudit/types";
 
 const POSITIONS_DISPLAY = ["QB", "RB", "WR", "TE"] as const;
 
@@ -44,12 +45,20 @@ function PlayerRowItem({
   );
 }
 
+function pickValue(p: RAPick, isSuperflex: boolean): number {
+  return isSuperflex ? p.valueSf : p.value1qb;
+}
+
 export default function TradeBuilder({
   teams,
   myRosterId,
+  picks,
+  isSuperflex,
 }: {
   teams: TeamSummary[];
   myRosterId: number;
+  picks: RAPick[];
+  isSuperflex: boolean;
 }) {
   const myTeam = teams.find((t) => t.rosterId === myRosterId);
   const otherTeams = useMemo(
@@ -65,22 +74,39 @@ export default function TradeBuilder({
   );
   const [mySel, setMySel] = useState<Set<string>>(new Set());
   const [theirSel, setTheirSel] = useState<Set<string>>(new Set());
+  const [myPickIds, setMyPickIds] = useState<Set<number>>(new Set());
+  const [theirPickIds, setTheirPickIds] = useState<Set<number>>(new Set());
+
+  const picksById = useMemo(
+    () => new Map(picks.map((p) => [p.id, p])),
+    [picks],
+  );
 
   const partnerTeam = teams.find((t) => t.rosterId === partnerId);
 
   const myGiveValue = useMemo(() => {
     if (!myTeam) return 0;
-    return myTeam.players
+    const playerSum = myTeam.players
       .filter((p) => mySel.has(p.id))
       .reduce((s, p) => s + p.value, 0);
-  }, [myTeam, mySel]);
+    const pickSum = [...myPickIds].reduce((s, id) => {
+      const pk = picksById.get(id);
+      return s + (pk ? pickValue(pk, isSuperflex) : 0);
+    }, 0);
+    return playerSum + pickSum;
+  }, [myTeam, mySel, myPickIds, picksById, isSuperflex]);
 
   const theirGiveValue = useMemo(() => {
     if (!partnerTeam) return 0;
-    return partnerTeam.players
+    const playerSum = partnerTeam.players
       .filter((p) => theirSel.has(p.id))
       .reduce((s, p) => s + p.value, 0);
-  }, [partnerTeam, theirSel]);
+    const pickSum = [...theirPickIds].reduce((s, id) => {
+      const pk = picksById.get(id);
+      return s + (pk ? pickValue(pk, isSuperflex) : 0);
+    }, 0);
+    return playerSum + pickSum;
+  }, [partnerTeam, theirSel, theirPickIds, picksById, isSuperflex]);
 
   if (!myTeam) {
     return (
@@ -112,11 +138,25 @@ export default function TradeBuilder({
   function reset() {
     setMySel(new Set());
     setTheirSel(new Set());
+    setMyPickIds(new Set());
+    setTheirPickIds(new Set());
   }
 
   function changePartner(id: number) {
     setPartnerId(id);
     setTheirSel(new Set());
+    setTheirPickIds(new Set());
+  }
+
+  function togglePick(
+    set: Set<number>,
+    setSet: (s: Set<number>) => void,
+    id: number,
+  ) {
+    const next = new Set(set);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSet(next);
   }
 
   return (
@@ -234,10 +274,17 @@ export default function TradeBuilder({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
           <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            You give ({mySel.size})
+            You give ({mySel.size + myPickIds.size})
           </h2>
+          <PicksPanel
+            picks={picks}
+            picksById={picksById}
+            selected={myPickIds}
+            onToggle={(id) => togglePick(myPickIds, setMyPickIds, id)}
+            isSuperflex={isSuperflex}
+          />
           <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
             {myTeam.players.map((p) => (
               <li key={p.id}>
@@ -252,10 +299,17 @@ export default function TradeBuilder({
         </section>
 
         {partnerTeam && (
-          <section className="flex flex-col gap-2">
+          <section className="flex flex-col gap-3">
             <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              You get ({theirSel.size})
+              You get ({theirSel.size + theirPickIds.size})
             </h2>
+            <PicksPanel
+              picks={picks}
+              picksById={picksById}
+              selected={theirPickIds}
+              onToggle={(id) => togglePick(theirPickIds, setTheirPickIds, id)}
+              isSuperflex={isSuperflex}
+            />
             <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
               {partnerTeam.players.map((p) => (
                 <li key={p.id}>
@@ -270,6 +324,78 @@ export default function TradeBuilder({
           </section>
         )}
       </div>
+    </div>
+  );
+}
+
+function PicksPanel({
+  picks,
+  picksById,
+  selected,
+  onToggle,
+  isSuperflex,
+}: {
+  picks: RAPick[];
+  picksById: Map<number, RAPick>;
+  selected: Set<number>;
+  onToggle: (id: number) => void;
+  isSuperflex: boolean;
+}) {
+  const selectedPicks = [...selected]
+    .map((id) => picksById.get(id))
+    .filter((p): p is RAPick => p !== undefined)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          Picks
+        </span>
+        <select
+          className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-medium dark:border-zinc-800 dark:bg-zinc-950"
+          value=""
+          onChange={(e) => {
+            const id = Number(e.target.value);
+            if (id) onToggle(id);
+            e.target.value = "";
+          }}
+        >
+          <option value="">+ Add pick</option>
+          {picks
+            .filter((p) => !selected.has(p.id))
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label} (
+                {(isSuperflex ? p.valueSf : p.value1qb).toLocaleString()})
+              </option>
+            ))}
+        </select>
+      </div>
+      {selectedPicks.length === 0 ? (
+        <p className="text-xs text-zinc-400 dark:text-zinc-600">
+          No picks selected.
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedPicks.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onToggle(p.id)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950"
+            >
+              <span>{p.label}</span>
+              <span className="tabular-nums opacity-70">
+                {(isSuperflex ? p.valueSf : p.value1qb).toLocaleString()}
+              </span>
+              <span aria-hidden className="opacity-60">
+                ×
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

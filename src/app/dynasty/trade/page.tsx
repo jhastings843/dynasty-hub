@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   formatKeyFromLeague,
+  getPicks,
   getValues,
 } from "@/lib/rosteraudit/client";
 import { computeTeamSummaries } from "@/lib/dynasty/power-rankings";
@@ -48,13 +49,15 @@ export default async function TradePage() {
 
   const league = await getLeague(leagueId);
   const raFormat = formatKeyFromLeague(league);
+  const isSuperflex = raFormat.startsWith("sf");
 
-  const [me, rosters, users, players, fcValues] = await Promise.all([
+  const [me, rosters, users, players, fcValues, picks] = await Promise.all([
     getUser(username),
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
     getValues(raFormat),
+    getPicks(),
   ]);
 
   const myRoster = rosters.find((r) => r.owner_id === me.user_id);
@@ -85,7 +88,12 @@ export default async function TradePage() {
             {league.name} · {league.season}
           </p>
         </div>
-        <TradeBuilder teams={teams} myRosterId={myRoster.roster_id} />
+        <TradeBuilder
+          teams={teams}
+          myRosterId={myRoster.roster_id}
+          picks={picks}
+          isSuperflex={isSuperflex}
+        />
 
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Player values via{" "}
