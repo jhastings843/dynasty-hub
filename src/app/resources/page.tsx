@@ -81,6 +81,7 @@ function ResourceCard({ r }: { r: Resource }) {
 }
 
 export default function ResourcesPage() {
+  const featured = RESOURCES.filter((r) => r.featured);
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8">
@@ -94,6 +95,49 @@ export default function ResourcesPage() {
             to add, remove, or update entries.
           </p>
         </div>
+
+        {featured.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              Use these first
+            </h2>
+            <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {featured.map((r) => (
+                <li
+                  key={r.url}
+                  className="flex flex-col gap-2 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-0 flex-1 text-base font-bold text-amber-900 hover:underline dark:text-amber-100"
+                    >
+                      {r.name}
+                      <span className="ml-1.5 text-xs opacity-60">↗</span>
+                    </a>
+                    {r.status && r.status.length > 0 && (
+                      <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                        {r.status.map((s) => (
+                          <StatusBadge key={s} status={s} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-amber-700 dark:text-amber-300">
+                    {hostOf(r.url)}
+                  </span>
+                  {r.note && (
+                    <p className="text-xs leading-relaxed text-amber-900/80 dark:text-amber-100/80">
+                      {r.note}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <nav className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
           {CATEGORIES.map((c) => (
@@ -114,7 +158,9 @@ export default function ResourcesPage() {
         </nav>
 
         {CATEGORIES.map((cat) => {
-          const items = RESOURCES.filter((r) => r.category === cat.key);
+          const items = RESOURCES.filter(
+            (r) => r.category === cat.key && !r.featured,
+          );
           if (items.length === 0) return null;
           return (
             <section

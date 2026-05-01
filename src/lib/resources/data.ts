@@ -11,6 +11,7 @@
 //   "outdated"        = link or content known stale; verify before relying
 //
 // To add a category, add it to CATEGORIES and reference its key in entries.
+// To pin a resource at the top of the page, set `featured: true`.
 
 export type ResourceStatus =
   | "integrated"
@@ -28,11 +29,12 @@ export type ResourceCategoryKey =
   | "rankings"
   | "league_power_rankings"
   | "rookie_draft_prep"
-  | "auction_draft"
   | "adp"
   | "mock_draft"
+  | "survivor_tools"
   | "devy"
-  | "apps";
+  | "apps"
+  | "channels";
 
 export interface Resource {
   name: string;
@@ -40,6 +42,7 @@ export interface Resource {
   category: ResourceCategoryKey;
   status?: ResourceStatus[];
   note?: string;
+  featured?: boolean;
 }
 
 export interface ResourceCategory {
@@ -68,28 +71,39 @@ export const CATEGORIES: ResourceCategory[] = [
       "Useful for spotting trade fits. Dynasty-hub computes this locally on the trade analyzer.",
   },
   { key: "rookie_draft_prep", title: "Rookie draft prep" },
-  { key: "auction_draft", title: "Auction draft" },
   { key: "adp", title: "ADP" },
   { key: "mock_draft", title: "Mock draft" },
+  { key: "survivor_tools", title: "Survivor pool tools" },
   { key: "devy", title: "Devy" },
   { key: "apps", title: "Apps" },
+  { key: "channels", title: "YouTube + podcasts" },
 ];
 
 export const RESOURCES: Resource[] = [
+  // --- FEATURED (renders at the top of the page) ---
+  {
+    name: "RosterAudit",
+    url: "https://rosteraudit.com",
+    category: "trade_calculators",
+    status: ["integrated", "free"],
+    featured: true,
+    note: "Primary data source for dynasty-hub. Trade calculator, rankings, league hub, and free public API. Values include native TE-premium support matching this league's scoring.",
+  },
+
   // --- Trade calculators ---
   {
     name: "FantasyCalc",
     url: "https://fantasycalc.com/trade-calculator",
     category: "trade_calculators",
-    status: ["integrated", "free"],
-    note: "Powers the dynasty-hub trade analyzer (api.fantasycalc.com).",
+    status: ["free"],
+    note: "Secondary value source kept in dynasty-hub for cross-reference on close trades.",
   },
   {
     name: "KeepTradeCut",
     url: "https://keeptradecut.com/trade-calculator",
     category: "trade_calculators",
     status: ["scrape_required"],
-    note: "Community-sourced values, de-facto standard. Has TE-premium variants (tep/tepp/teppp). Could be added as a v2 secondary source.",
+    note: "Community-sourced values, de-facto standard. Has TE-premium variants (tep/tepp/teppp). Could be added later as a v3 secondary source.",
   },
   {
     name: "Dynasty-Daddy",
@@ -109,20 +123,6 @@ export const RESOURCES: Resource[] = [
     url: "https://www.dynastydealer.com/trade-calculator",
     category: "trade_calculators",
     status: ["free"],
-  },
-  {
-    name: "DynastyTradeCalculator",
-    url: "https://dynastytradecalculator.com/",
-    category: "trade_calculators",
-    status: ["paid"],
-    note: "$3/mo or $30/yr.",
-  },
-  {
-    name: "TheDevyRoyale",
-    url: "https://www.patreon.com/c/thedevyroyale/",
-    category: "trade_calculators",
-    status: ["paid"],
-    note: "$5/mo Patreon. Devy players included.",
   },
 
   // --- Trade value charts ---
@@ -173,7 +173,7 @@ export const RESOURCES: Resource[] = [
     status: ["free"],
   },
 
-  // --- Trade tracker ---
+  // --- Trade trackers ---
   {
     name: "u/Repulsive_Repeat_681 trade tracker",
     url: "https://www.fantasyamp.com/streamlit/",
@@ -199,7 +199,7 @@ export const RESOURCES: Resource[] = [
     name: "FantasyCalc dynasty rankings",
     url: "https://fantasycalc.com/dynasty-rankings",
     category: "rankings",
-    status: ["integrated", "free"],
+    status: ["free"],
   },
 
   // --- League power rankings ---
@@ -237,39 +237,31 @@ export const RESOURCES: Resource[] = [
     note: "Advanced college stats spreadsheet.",
   },
   {
-    name: "Reception Perception (Matt Harmon WR profiles)",
-    url: "https://receptionperception.com/matt-harmons-nfl-draft-prospect-wr-rankings-2021-2023-stacked/",
-    category: "rookie_draft_prep",
-    status: ["paid"],
-    note: "$30/yr.",
-  },
-  {
-    name: "Late Round Guide (rookie scores)",
-    url: "https://lateround.com/#guides",
-    category: "rookie_draft_prep",
-    status: ["paid"],
-    note: "$20.",
-  },
-  {
-    name: "The Rookie Scouting Portfolio",
-    url: "https://mattwaldman.com/",
-    category: "rookie_draft_prep",
-    status: ["paid"],
-    note: "$22. Detailed profiles of 150+ skill prospects.",
-  },
-  {
     name: "CFBNumbers QB Comparison Tool",
     url: "https://cfbnumbers.shinyapps.io/spiderapp/",
     category: "rookie_draft_prep",
     status: ["free"],
   },
-
-  // --- Auction draft ---
   {
-    name: "DynastyProcess Startup Auction Helper",
-    url: "https://docs.google.com/spreadsheets/d/1IJVXGFDVX4VDdc23Hlv6kRYzy9x0727hbZOERRoVY9U/edit?gid=1345253678#gid=1345253678",
-    category: "auction_draft",
+    name: "FantasyCalc rookie rankings",
+    url: "https://fantasycalc.com/rookies",
+    category: "rookie_draft_prep",
     status: ["free"],
+    note: "Verify URL — FantasyCalc rookie page may live elsewhere.",
+  },
+  {
+    name: "Dynasty Data Lab",
+    url: "https://dynastydatalab.com/",
+    category: "rookie_draft_prep",
+    status: ["free"],
+    note: "ADP, rookie ADP, draft strategy, and trade tools.",
+  },
+  {
+    name: "2026 Dynasty Rookie Big Board",
+    url: "",
+    category: "rookie_draft_prep",
+    status: ["outdated"],
+    note: "Source unclear from notes — fill in URL when confirmed.",
   },
 
   // --- ADP ---
@@ -280,6 +272,13 @@ export const RESOURCES: Resource[] = [
     status: ["free"],
     note: "Public website only; no clean public API endpoint for ADP.",
   },
+  {
+    name: "Dynasty Data Lab rookie ADP",
+    url: "https://dynastydatalab.com/adp/rookie/",
+    category: "adp",
+    status: ["free"],
+    note: "Live rookie ADP across formats with heatmap.",
+  },
 
   // --- Mock draft ---
   {
@@ -287,6 +286,29 @@ export const RESOURCES: Resource[] = [
     url: "https://fantasymocks.com/",
     category: "mock_draft",
     status: ["free"],
+  },
+  {
+    name: "FirstDownStudio (2027 early mock)",
+    url: "",
+    category: "mock_draft",
+    status: ["outdated"],
+    note: "Couldn't find a canonical URL — fill in when confirmed.",
+  },
+
+  // --- Survivor pool tools ---
+  {
+    name: "Survivor Grid",
+    url: "https://www.survivorgrid.com/",
+    category: "survivor_tools",
+    status: ["free"],
+    note: "Shows EV, Pick %, and Win % per team per week.",
+  },
+  {
+    name: "Survivor Pick Planner",
+    url: "https://footballsurvivor.pro/",
+    category: "survivor_tools",
+    status: ["free"],
+    note: "Plan picks across the entire NFL season.",
   },
 
   // --- Devy ---
@@ -309,7 +331,16 @@ export const RESOURCES: Resource[] = [
     url: "https://apps.apple.com/us/app/dynasty-scout/id1567748321",
     category: "apps",
     status: ["free_tier"],
-    note: "League integration, trade calc, player profiler. iOS only. Verify App Store link is current.",
+    note: "League integration, trade calc, player profiler. iOS only.",
+  },
+
+  // --- YouTube + podcasts ---
+  {
+    name: "Fantasy Stock Exchange",
+    url: "https://www.youtube.com/@FantasyStockExchange",
+    category: "channels",
+    status: ["free"],
+    note: "Mock drafts, start/sit, rankings. Hosts also publish at FlockFantasy.com.",
   },
 ];
 
@@ -339,11 +370,6 @@ export const REDDITORS: Redditor[] = [
     url: "https://www.reddit.com/user/broadly",
     posts: "Prospect grades going back to 2018.",
     status: ["outdated"],
-  },
-  {
-    handle: "u/mangelito",
-    url: "https://www.reddit.com/user/mangelito",
-    posts: "Yearly rookie sheet, well-formatted single-view rookie reference.",
   },
   {
     handle: "u/cjfreel",
