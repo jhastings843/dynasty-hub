@@ -3,6 +3,13 @@
 import { useMemo, useState } from "react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
 import { suggestTradeFits } from "@/lib/dynasty/trade-fits";
+import {
+  evaluateTrade,
+  findBestTrades,
+  verdictLabel,
+  type BestTradeIdea,
+  type TradeVerdict,
+} from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 
@@ -80,6 +87,21 @@ function pickValue(p: RAPick, isSuperflex: boolean): number {
   return isSuperflex ? p.valueSf : p.value1qb;
 }
 
+function verdictBadgeClass(v: TradeVerdict): string {
+  switch (v) {
+    case "accept":
+      return "bg-emerald-500 text-white";
+    case "lean_accept":
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
+    case "even":
+      return "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+    case "lean_decline":
+      return "bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300";
+    case "decline":
+      return "bg-rose-500 text-white";
+  }
+}
+
 export default function TradeBuilder({
   teams,
   myRosterId,
@@ -119,6 +141,45 @@ export default function TradeBuilder({
     if (!myTeam || !partnerTeam) return [];
     return suggestTradeFits(myTeam, partnerTeam, teams.length);
   }, [myTeam, partnerTeam, teams.length]);
+
+  const bestTrades = useMemo(() => {
+    if (!myTeam) return [];
+    return findBestTrades(myTeam, teams, teams.length, 6);
+  }, [myTeam, teams]);
+
+  const assessment = useMemo(() => {
+    if (!myTeam) return null;
+    const proposal = {
+      myPlayers: myTeam.players.filter((p) => mySel.has(p.id)),
+      myPicks: [...myPickIds]
+        .map((id) => picksById.get(id))
+        .filter((p): p is RAPick => p !== undefined),
+      theirPlayers:
+        partnerTeam?.players.filter((p) => theirSel.has(p.id)) ?? [],
+      theirPicks: [...theirPickIds]
+        .map((id) => picksById.get(id))
+        .filter((p): p is RAPick => p !== undefined),
+    };
+    return evaluateTrade(
+      proposal,
+      myTeam,
+      partnerTeam ?? null,
+      teams,
+      teams.length,
+      isSuperflex,
+      picksById,
+    );
+  }, [
+    myTeam,
+    partnerTeam,
+    teams,
+    mySel,
+    theirSel,
+    myPickIds,
+    theirPickIds,
+    picksById,
+    isSuperflex,
+  ]);
 
   const myGiveValue = useMemo(() => {
     if (!myTeam) return 0;
@@ -184,6 +245,14 @@ export default function TradeBuilder({
     setTheirPickIds(new Set());
   }
 
+  function applyBestTrade(idea: BestTradeIdea) {
+    setPartnerId(idea.partnerRosterId);
+    setMySel(new Set(idea.send.map((p) => p.id)));
+    setTheirSel(new Set(idea.receive.map((p) => p.id)));
+    setMyPickIds(new Set());
+    setTheirPickIds(new Set());
+  }
+
   function togglePick(
     set: Set<number>,
     setSet: (s: Set<number>) => void,
@@ -197,6 +266,91 @@ export default function TradeBuilder({
 
   return (
     <div className="flex flex-col gap-6">
+      {bestTrades.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-semibold tracking-tight">
+              Best trades across the league
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Player-for-player swaps that fill your weakest positions from
+              each opponent&apos;s surplus, scored by positional gain and
+              value parity. Tap Apply to load into the builder.
+            </p>
+          </div>
+          <ul className="grid gap-3 md:grid-cols-2">
+            {bestTrades.map((idea, i) => (
+              <li
+                key={`${idea.partnerRosterId}-${i}`}
+                className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm font-semibold">
+                    vs. {idea.partnerName}
+                  </span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {idea.positionalGain.position} #
+                    {idea.positionalGain.from} → #{idea.positionalGain.to}
+                  </span>
+                </div>
+                <div className="flex items-stretch gap-2 text-sm">
+                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Send
+                    </span>
+                    {idea.send.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between gap-1"
+                      >
+                        <span className="truncate text-xs">{p.name}</span>
+                        <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                          {p.value.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="self-center text-zinc-400">↔</span>
+                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/20">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      Receive
+                    </span>
+                    {idea.receive.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between gap-1"
+                      >
+                        <span className="truncate text-xs">{p.name}</span>
+                        <span className="text-xs tabular-nums">
+                          {p.value.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <ul className="flex flex-col gap-0.5">
+                  {idea.reasoning.map((r) => (
+                    <li
+                      key={r}
+                      className="text-xs text-zinc-600 dark:text-zinc-400"
+                    >
+                      • {r}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => applyBestTrade(idea)}
+                  className="self-start rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                >
+                  Apply
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="flex flex-col gap-2">
         <label
           htmlFor="partner"
@@ -359,6 +513,13 @@ export default function TradeBuilder({
                 : ""}
             </span>
           </div>
+          {assessment && (
+            <span
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${verdictBadgeClass(assessment.verdict)}`}
+            >
+              {verdictLabel(assessment.verdict)}
+            </span>
+          )}
           {(mySel.size > 0 || theirSel.size > 0) && (
             <button
               type="button"
@@ -370,6 +531,85 @@ export default function TradeBuilder({
           )}
         </div>
       </div>
+
+      {assessment && (
+        <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-semibold tracking-tight">
+              Verdict: {verdictLabel(assessment.verdict)}
+            </h3>
+            <ul className="flex flex-col gap-0.5">
+              {assessment.reasoning.map((r, i) => (
+                <li
+                  key={i}
+                  className="text-xs text-zinc-600 dark:text-zinc-400"
+                >
+                  • {r}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {assessment.counters.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Suggested counters
+              </span>
+              <ul className="flex flex-col gap-2">
+                {assessment.counters.map((c, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/40 px-3 py-2 dark:border-amber-900/60 dark:bg-amber-950/20"
+                  >
+                    <span className="flex-1 text-xs text-zinc-700 dark:text-zinc-300">
+                      {c.description}
+                    </span>
+                    {c.pickIdToAdd && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = new Set(theirPickIds);
+                          next.add(c.pickIdToAdd!);
+                          setTheirPickIds(next);
+                        }}
+                        className="shrink-0 rounded-md border border-amber-300 bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-amber-600 dark:border-amber-700"
+                      >
+                        Add
+                      </button>
+                    )}
+                    {c.playerToAdd && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = new Set(theirSel);
+                          next.add(c.playerToAdd!.id);
+                          setTheirSel(next);
+                        }}
+                        className="shrink-0 rounded-md border border-amber-300 bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-amber-600 dark:border-amber-700"
+                      >
+                        Add
+                      </button>
+                    )}
+                    {c.playerToRemove && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = new Set(mySel);
+                          next.delete(c.playerToRemove!.id);
+                          setMySel(next);
+                        }}
+                        className="shrink-0 rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-3">
