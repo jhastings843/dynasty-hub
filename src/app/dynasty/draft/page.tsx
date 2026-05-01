@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Clock, Trophy } from "lucide-react";
-import { formatKeyFromLeague, getValues } from "@/lib/rosteraudit/client";
+import {
+  formatKeyFromLeague,
+  getPicks,
+  getValues,
+} from "@/lib/rosteraudit/client";
+import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
 import {
   getAllPlayers,
   getDraftPicks,
@@ -54,6 +59,53 @@ function formatStartTime(ms: number | null | undefined): string | null {
   });
 }
 
+function slotZone(slot: number, teams: number): PickSlot {
+  const third = teams / 3;
+  if (slot <= Math.ceil(third)) return "early";
+  if (slot > Math.ceil(third * 2)) return "late";
+  return "mid";
+}
+
+function ordinal(n: number): string {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1: return `${n}st`;
+    case 2: return `${n}nd`;
+    case 3: return `${n}rd`;
+    default: return `${n}th`;
+  }
+}
+
+interface UserPick {
+  pickNo: number;
+  round: number;
+  slot: number;
+  zone: PickSlot;
+  label: string;
+  value: number | null;
+}
+
+function buildUserPicks(
+  pickNos: number[],
+  totalTeams: number,
+  season: number,
+  raPicks: RAPick[],
+  isSuperflex: boolean,
+): UserPick[] {
+  return pickNos.map((pickNo) => {
+    const round = Math.ceil(pickNo / totalTeams);
+    const slot = ((pickNo - 1) % totalTeams) + 1;
+    const zone = slotZone(slot, totalTeams);
+    const label = `${round}.${slot.toString().padStart(2, "0")} ${zone.charAt(0).toUpperCase() + zone.slice(1)} ${ordinal(round)}`;
+    const ra = raPicks.find(
+      (p) => p.season === season && p.round === round && p.slot === zone,
+    );
+    const value = ra ? (isSuperflex ? ra.valueSf : ra.value1qb) : null;
+    return { pickNo, round, slot, zone, label, value };
+  });
+}
+
 export default async function DraftPage() {
   const username = process.env.SLEEPER_USERNAME;
   const leagueId = process.env.SLEEPER_LEAGUE_ID;
@@ -68,11 +120,12 @@ export default async function DraftPage() {
   const league = await getLeague(leagueId);
   const raFormat = formatKeyFromLeague(league);
 
-  const [drafts, rosters, players, fcValues] = await Promise.all([
+  const [drafts, rosters, players, fcValues, raPicks] = await Promise.all([
     getLeagueDrafts(leagueId),
     getLeagueRosters(leagueId),
     getAllPlayers(),
     getValues(raFormat),
+    getPicks(),
   ]);
 
   if (drafts.length === 0) {
@@ -123,17 +176,31 @@ export default async function DraftPage() {
     .sort((a, b) => localPosValues[a] - localPosValues[b])
     .slice(0, 2);
 
-  const myPicksByRound: number[] = [];
+  const myPickNumbers: number[] = [];
   if (mySlot && draft.type === "linear") {
     for (let r = 1; r <= totalRounds; r++) {
-      myPicksByRound.push((r - 1) * totalTeams + mySlot);
+      myPickNumbers.push((r - 1) * totalTeams + mySlot);
     }
   } else if (mySlot) {
     for (let r = 1; r <= totalRounds; r++) {
       const slotInRound = r % 2 === 1 ? mySlot : totalTeams - mySlot + 1;
-      myPicksByRound.push((r - 1) * totalTeams + slotInRound);
+      myPickNumbers.push((r - 1) * totalTeams + slotInRound);
     }
   }
+
+  const isSuperflex = raFormat.startsWith("sf");
+  const seasonNum = Number(draft.season ?? new Date().getFullYear());
+  const userPicks = buildUserPicks(
+    myPickNumbers,
+    totalTeams,
+    seasonNum,
+    raPicks,
+    isSuperflex,
+  );
+  const totalPickValue = userPicks.reduce(
+    (s, p) => s + (p.value ?? 0),
+    0,
+  );
 
   const startTime = formatStartTime(draft.start_time ?? null);
 
@@ -199,19 +266,43 @@ export default async function DraftPage() {
               of {totalTeams} teams
             </span>
           </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Your picks
-            </span>
-            <span className="text-3xl font-semibold tabular-nums">
-              {myPicksByRound.length > 0
-                ? myPicksByRound.join(", ")
-                : "—"}
-            </span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              {myPicksByRound.length} pick{myPicksByRound.length === 1 ? "" : "s"}{" "}
-              total
-            </span>
+          <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Your picks
+              </span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                total value{" "}
+                <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                  {totalPickValue.toLocaleString()}
+                </span>
+              </span>
+            </div>
+            {userPicks.length === 0 ? (
+              <span className="text-sm text-zinc-400 dark:text-zinc-600">—</span>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {userPicks.map((p) => (
+                  <li
+                    key={p.pickNo}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="tabular-nums">
+                      <span className="font-semibold">
+                        {p.round}.{p.slot.toString().padStart(2, "0")}
+                      </span>
+                      <span className="ml-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                        {p.zone.charAt(0).toUpperCase() + p.zone.slice(1)}{" "}
+                        {ordinal(p.round)}
+                      </span>
+                    </span>
+                    <span className="text-xs font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                      {p.value != null ? p.value.toLocaleString() : "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
