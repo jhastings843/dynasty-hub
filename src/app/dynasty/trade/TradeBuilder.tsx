@@ -684,6 +684,11 @@ function PicksPanel({
     .filter((p): p is RAPick => p !== undefined)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  const total = selectedPicks.reduce(
+    (s, p) => s + (isSuperflex ? p.valueSf : p.value1qb),
+    0,
+  );
+
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between gap-2">
@@ -715,23 +720,41 @@ function PicksPanel({
           No picks selected.
         </p>
       ) : (
-        <div className="flex flex-wrap gap-1.5">
+        <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
           {selectedPicks.map((p) => (
-            <button
+            <li
               key={p.id}
-              type="button"
-              onClick={() => onToggle(p.id)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950"
+              className="flex items-center gap-2 py-1.5"
             >
-              <span>{p.label}</span>
-              <span className="tabular-nums opacity-70">
+              <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                PK
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                {p.label}
+              </span>
+              <span className="shrink-0 text-sm font-semibold tabular-nums">
                 {(isSuperflex ? p.valueSf : p.value1qb).toLocaleString()}
               </span>
-              <span aria-hidden className="opacity-60">
+              <button
+                type="button"
+                onClick={() => onToggle(p.id)}
+                className="shrink-0 rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-rose-600 dark:hover:bg-zinc-800 dark:hover:text-rose-400"
+                aria-label="Remove pick"
+              >
                 ×
-              </span>
-            </button>
+              </button>
+            </li>
           ))}
+        </ul>
+      )}
+      {selectedPicks.length > 0 && (
+        <div className="flex items-center justify-between border-t border-zinc-200 pt-2 text-xs dark:border-zinc-800">
+          <span className="font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Total picks value
+          </span>
+          <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+            {total.toLocaleString()}
+          </span>
         </div>
       )}
     </div>
