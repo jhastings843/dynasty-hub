@@ -19,15 +19,15 @@ export const dynamic = "force-dynamic";
 
 function ConfigError({ message }: { message: string }) {
   return (
-    <main className="min-h-dvh bg-zinc-50 px-4 py-10 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex max-w-2xl flex-col gap-3">
         <Link
           href="/dynasty"
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
           ‹ Dynasty
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight">
           Trade analyzer
         </h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
@@ -73,8 +73,8 @@ export default async function TradePage() {
   const teams = computeTeamSummaries(rosters, users, players, fcValues);
 
   return (
-    <main className="min-h-dvh bg-zinc-50 px-4 py-8 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1">
           <Link
             href="/dynasty"
@@ -82,7 +82,7 @@ export default async function TradePage() {
           >
             ‹ Dynasty
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight">
             Trade analyzer
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">

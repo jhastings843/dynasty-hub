@@ -196,7 +196,7 @@ export default function TradeBuilder({
         </div>
       )}
 
-      <div className="sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-zinc-50/95 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
+      <div className="sticky top-14 z-10 -mx-4 border-y border-zinc-200 bg-zinc-50/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:border-zinc-800 dark:bg-zinc-950/95">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-3 text-sm tabular-nums">
@@ -233,41 +233,43 @@ export default function TradeBuilder({
         </div>
       </div>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          You give ({mySel.size})
-        </h2>
-        <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-          {myTeam.players.map((p) => (
-            <li key={p.id}>
-              <PlayerRowItem
-                p={p}
-                checked={mySel.has(p.id)}
-                onChange={() => toggle(mySel, setMySel, p.id)}
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {partnerTeam && (
+      <div className="grid gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-2">
           <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            You get ({theirSel.size})
+            You give ({mySel.size})
           </h2>
           <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-            {partnerTeam.players.map((p) => (
+            {myTeam.players.map((p) => (
               <li key={p.id}>
                 <PlayerRowItem
                   p={p}
-                  checked={theirSel.has(p.id)}
-                  onChange={() => toggle(theirSel, setTheirSel, p.id)}
+                  checked={mySel.has(p.id)}
+                  onChange={() => toggle(mySel, setMySel, p.id)}
                 />
               </li>
             ))}
           </ul>
         </section>
-      )}
+
+        {partnerTeam && (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              You get ({theirSel.size})
+            </h2>
+            <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+              {partnerTeam.players.map((p) => (
+                <li key={p.id}>
+                  <PlayerRowItem
+                    p={p}
+                    checked={theirSel.has(p.id)}
+                    onChange={() => toggle(theirSel, setTheirSel, p.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -102,12 +102,9 @@ function groupRoster(playerIds: string[], players: SleeperPlayersById) {
 
 function ConfigError({ message }: { message: string }) {
   return (
-    <main className="min-h-dvh bg-zinc-50 px-4 py-10 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-        <Link href="/" className="text-sm text-zinc-500 dark:text-zinc-400">
-          ‹ Home
-        </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Dynasty</h1>
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex max-w-2xl flex-col gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">Dynasty</h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
           {message}
         </p>
@@ -162,27 +159,26 @@ export default async function DynastyPage() {
   const myGroups = myRoster ? groupRoster(myRoster.players ?? [], players) : [];
 
   return (
-    <main className="min-h-dvh bg-zinc-50 px-4 py-8 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-8">
-        <div className="flex flex-col gap-1">
-          <Link href="/" className="text-sm text-zinc-500 dark:text-zinc-400">
-            ‹ Home
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">{league.name}</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {league.season} season · {rosters.length} teams
-          </p>
-        </div>
-
-        <nav className="flex gap-2">
+    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {league.name}
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {league.season} season · {rosters.length} teams
+            </p>
+          </div>
           <Link
             href="/dynasty/trade"
-            className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-center text-sm font-medium active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:active:bg-zinc-800"
+            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
           >
-            Trade analyzer
+            Trade analyzer →
           </Link>
-        </nav>
+        </div>
 
+        <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
         <section className="flex flex-col gap-4">
           <header className="flex flex-col gap-0.5">
             <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -325,6 +321,7 @@ export default async function DynastyPage() {
             })}
           </ol>
         </section>
+        </div>
       </div>
     </main>
   );

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   CATEGORIES,
   REDDITORS,
@@ -46,15 +45,15 @@ function hostOf(url: string): string {
   }
 }
 
-function ResourceItem({ r }: { r: Resource }) {
+function ResourceCard({ r }: { r: Resource }) {
   return (
-    <li className="flex flex-col gap-1.5 px-4 py-3">
+    <li className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
       <div className="flex items-start justify-between gap-3">
         <a
           href={r.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="min-w-0 flex-1 text-sm font-medium text-blue-700 dark:text-blue-400"
+          className="min-w-0 flex-1 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-400"
         >
           {r.name}
           <span className="ml-1.5 text-xs text-zinc-400 dark:text-zinc-500">
@@ -83,35 +82,32 @@ function ResourceItem({ r }: { r: Resource }) {
 
 export default function ResourcesPage() {
   return (
-    <main className="min-h-dvh bg-zinc-50 px-4 py-8 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
-        <div className="flex flex-col gap-1">
-          <Link href="/" className="text-sm text-zinc-500 dark:text-zinc-400">
-            ‹ Home
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">Resources</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Resources</h1>
+          <p className="max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
             Curated dynasty FF tools and references. Edit{" "}
             <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs dark:bg-zinc-800">
               src/lib/resources/data.ts
             </code>{" "}
-            to update.
+            to add, remove, or update entries.
           </p>
         </div>
 
-        <nav className="grid grid-cols-2 gap-2 text-xs">
+        <nav className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
           {CATEGORIES.map((c) => (
             <a
               key={c.key}
               href={`#${c.key}`}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-center font-medium active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:active:bg-zinc-800"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-center font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               {c.title}
             </a>
           ))}
           <a
             href="#redditors"
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-center font-medium active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:active:bg-zinc-800"
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-center font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
           >
             Redditors
           </a>
@@ -124,41 +120,44 @@ export default function ResourcesPage() {
             <section
               key={cat.key}
               id={cat.key}
-              className="flex flex-col gap-2 scroll-mt-4"
+              className="flex scroll-mt-20 flex-col gap-3"
             >
               <header className="flex flex-col gap-0.5">
-                <h2 className="text-base font-semibold">{cat.title}</h2>
+                <h2 className="text-xl font-semibold">{cat.title}</h2>
                 {cat.blurb && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     {cat.blurb}
                   </p>
                 )}
               </header>
-              <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+              <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {items.map((r) => (
-                  <ResourceItem key={r.url} r={r} />
+                  <ResourceCard key={r.url} r={r} />
                 ))}
               </ul>
             </section>
           );
         })}
 
-        <section id="redditors" className="flex flex-col gap-2 scroll-mt-4">
+        <section id="redditors" className="flex scroll-mt-20 flex-col gap-3">
           <header className="flex flex-col gap-0.5">
-            <h2 className="text-base font-semibold">Redditors</h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <h2 className="text-xl font-semibold">Redditors</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
               People worth following for analysis and rookie content.
             </p>
           </header>
-          <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+          <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {REDDITORS.map((u) => (
-              <li key={u.handle} className="flex flex-col gap-1.5 px-4 py-3">
+              <li
+                key={u.handle}
+                className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <a
                     href={u.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="min-w-0 flex-1 text-sm font-medium text-blue-700 dark:text-blue-400"
+                    className="min-w-0 flex-1 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-400"
                   >
                     {u.handle}
                     <span className="ml-1.5 text-xs text-zinc-400 dark:text-zinc-500">

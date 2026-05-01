@@ -1,9 +1,11 @@
 export default function SurvivorPage() {
   return (
-    <main className="min-h-dvh bg-zinc-50 px-4 py-10 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex max-w-2xl flex-col gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">Survivor</h1>
-        <p className="text-base text-zinc-600 dark:text-zinc-400">Coming soon.</p>
+        <p className="text-base text-zinc-600 dark:text-zinc-400">
+          Coming soon.
+        </p>
       </div>
     </main>
   );
