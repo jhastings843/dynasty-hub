@@ -93,3 +93,42 @@ export function fcFormatFromLeague(league: SleeperLeague): FCFormat {
 }
 
 export type { FCValue };
+
+// Apply a TE premium adjustment to FantasyCalc values.
+// FC's API doesn't accept TE bonus as a parameter, so we multiply TE values
+// by a factor derived from the league's bonus_rec_te scoring setting and
+// re-rank overall. This produces values closer to the user's true scoring.
+//
+// The factor uses 0.4x of the bonus per reception as a coarse approximation:
+// - 0.25 TE premium -> +10% TE values
+// - 0.5  TE premium -> +20%
+// - 1.0  TE premium -> +40%
+// Slightly aggressive vs. raw points-per-game scaling because trade values
+// reward scarcity and top-end TEs benefit non-linearly.
+export function applyTePremium(
+  values: FCValuesBySleeperId,
+  premiumPpr: number,
+): FCValuesBySleeperId {
+  if (!premiumPpr || premiumPpr <= 0) return values;
+  const factor = 1 + premiumPpr * 0.4;
+
+  const adjusted: FCValue[] = Object.values(values).map((v) =>
+    v.position === "TE"
+      ? { ...v, value: Math.round(v.value * factor) }
+      : { ...v },
+  );
+
+  adjusted.sort((a, b) => b.value - a.value);
+  adjusted.forEach((v, i) => {
+    v.overallRank = i + 1;
+  });
+
+  const out: FCValuesBySleeperId = {};
+  for (const v of adjusted) out[v.sleeperId] = v;
+  return out;
+}
+
+export function tePremiumFromLeague(league: SleeperLeague): number {
+  const bonus = league.scoring_settings?.bonus_rec_te;
+  return typeof bonus === "number" ? bonus : 0;
+}

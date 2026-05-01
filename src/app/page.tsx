@@ -26,6 +26,13 @@ export default function Home() {
             <span>Survivor</span>
             <span aria-hidden className="text-zinc-400">›</span>
           </Link>
+          <Link
+            href="/resources"
+            className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-lg font-medium shadow-sm active:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:active:bg-zinc-800"
+          >
+            <span>Resources</span>
+            <span aria-hidden className="text-zinc-400">›</span>
+          </Link>
         </nav>
       </div>
     </main>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import {
+  applyTePremium,
   fcFormatFromLeague,
   getDynastyValues,
+  tePremiumFromLeague,
 } from "@/lib/fantasycalc/client";
 import { computeTeamSummaries } from "@/lib/dynasty/power-rankings";
 import {
@@ -49,13 +51,15 @@ export default async function TradePage() {
   const league = await getLeague(leagueId);
   const fcFormat = fcFormatFromLeague(league);
 
-  const [me, rosters, users, players, fcValues] = await Promise.all([
+  const [me, rosters, users, players, fcValuesRaw] = await Promise.all([
     getUser(username),
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
     getDynastyValues(fcFormat),
   ]);
+
+  const fcValues = applyTePremium(fcValuesRaw, tePremiumFromLeague(league));
 
   const myRoster = rosters.find((r) => r.owner_id === me.user_id);
   if (!myRoster) {
