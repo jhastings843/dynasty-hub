@@ -3,6 +3,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
+  Compass,
   ListOrdered,
   Repeat,
   ShieldCheck,
@@ -19,6 +20,13 @@ const PRIMARY = {
 };
 
 const SECONDARY = [
+  {
+    href: "/dynasty/plan",
+    title: "Season plan",
+    blurb:
+      "Trajectory, auto goals from your data, custom goals, and key dates.",
+    icon: Compass,
+  },
   {
     href: "/dynasty/draft",
     title: "Draft helper",
