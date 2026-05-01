@@ -17,6 +17,7 @@ import {
 import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { RookieList, type RookieRow } from "./RookieList";
 
 export const dynamic = "force-dynamic";
 
@@ -162,7 +163,19 @@ export default async function DraftPage() {
     .sort((a, b) => b.value - a.value);
 
   const available = rookies.filter((p) => !drafted.has(p.player_id));
-  const top30 = available.slice(0, 30);
+  // Convert to plain rows for the client component (avoid passing the
+  // entire SleeperPlayer object).
+  const rookieRows: RookieRow[] = available.map((p) => ({
+    id: p.player_id,
+    name: nameOf(p),
+    position: p.position ?? null,
+    team: p.team ?? null,
+    age: typeof p.age === "number" ? p.age : null,
+    value: p.value,
+    rank: p.rank,
+    positionRank: p.positionRank,
+    photoUrl: p.photoUrl,
+  }));
 
   // Compute weakest positions from the FULL roster (not just RA-ranked
   // players) so deep bench gets counted.
@@ -337,58 +350,10 @@ export default async function DraftPage() {
               {available.length} remaining · {drafted.size} drafted
             </span>
           </header>
-          <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {top30.map((p, idx) => {
-              const targetMatch = weakestPositions.includes(
-                (p.position ?? "") as (typeof TRADE_POSITIONS)[number],
-              );
-              return (
-                <li
-                  key={p.player_id}
-                  className={`flex items-center gap-3 rounded-2xl border p-3 transition-colors ${
-                    targetMatch
-                      ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20"
-                      : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                  }`}
-                >
-                  <span className="w-6 shrink-0 text-sm font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">
-                    {idx + 1}
-                  </span>
-                  <PlayerAvatar
-                    name={nameOf(p)}
-                    position={p.position ?? null}
-                    photoUrl={p.photoUrl}
-                    size="sm"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate text-sm font-semibold">
-                      {nameOf(p)}
-                    </span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {[p.team ?? "FA", p.position, p.age ? `age ${p.age}` : null]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end">
-                    <span className="text-sm font-semibold tabular-nums">
-                      {p.value.toLocaleString()}
-                    </span>
-                    {targetMatch && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                        Fit
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-            {top30.length === 0 && (
-              <li className="text-sm text-zinc-500 dark:text-zinc-400">
-                No rookies available — draft may be complete.
-              </li>
-            )}
-          </ul>
+          <RookieList
+            rookies={rookieRows}
+            weakestPositions={weakestPositions as string[]}
+          />
         </section>
 
         {picks.length > 0 && (

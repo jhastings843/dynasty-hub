@@ -105,6 +105,61 @@ function pickValue(p: RAPick, isSuperflex: boolean): number {
   return isSuperflex ? p.valueSf : p.value1qb;
 }
 
+const FILTER_POSITIONS = ["QB", "RB", "WR", "TE"] as const;
+
+function PositionFilter({
+  filter,
+  setFilter,
+  players,
+}: {
+  filter: string;
+  setFilter: (f: string) => void;
+  players: PlayerRow[];
+}) {
+  const counts: Record<string, number> = {
+    all: players.length,
+    QB: 0,
+    RB: 0,
+    WR: 0,
+    TE: 0,
+  };
+  for (const p of players) {
+    if (p.position in counts && p.position !== "all") {
+      counts[p.position] += 1;
+    }
+  }
+  const items = [
+    { key: "all", label: "All" },
+    ...FILTER_POSITIONS.map((p) => ({ key: p, label: p })),
+  ];
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((it) => {
+        const active = filter === it.key;
+        const count = counts[it.key] ?? 0;
+        return (
+          <button
+            key={it.key}
+            type="button"
+            onClick={() => setFilter(it.key)}
+            disabled={count === 0 && it.key !== "all"}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              active
+                ? "bg-amber-500 text-white"
+                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {it.label}{" "}
+            <span className={active ? "opacity-80" : "opacity-60"}>
+              {count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function RecapColumn({
   name,
   items,
@@ -212,6 +267,8 @@ export default function TradeBuilder({
   const [theirSel, setTheirSel] = useState<Set<string>>(new Set());
   const [myPickIds, setMyPickIds] = useState<Set<number>>(new Set());
   const [theirPickIds, setTheirPickIds] = useState<Set<number>>(new Set());
+  const [myPosFilter, setMyPosFilter] = useState<string>("all");
+  const [theirPosFilter, setTheirPosFilter] = useState<string>("all");
 
   const picksById = useMemo(
     () => new Map(picks.map((p) => [p.id, p])),
@@ -779,16 +836,25 @@ export default function TradeBuilder({
             onToggle={(id) => togglePick(myPickIds, setMyPickIds, id)}
             isSuperflex={isSuperflex}
           />
+          <PositionFilter
+            filter={myPosFilter}
+            setFilter={setMyPosFilter}
+            players={myTeam.players}
+          />
           <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-            {myTeam.players.map((p) => (
-              <li key={p.id}>
-                <PlayerRowItem
-                  p={p}
-                  checked={mySel.has(p.id)}
-                  onChange={() => toggle(mySel, setMySel, p.id)}
-                />
-              </li>
-            ))}
+            {myTeam.players
+              .filter(
+                (p) => myPosFilter === "all" || p.position === myPosFilter,
+              )
+              .map((p) => (
+                <li key={p.id}>
+                  <PlayerRowItem
+                    p={p}
+                    checked={mySel.has(p.id)}
+                    onChange={() => toggle(mySel, setMySel, p.id)}
+                  />
+                </li>
+              ))}
           </ul>
         </section>
 
@@ -804,16 +870,26 @@ export default function TradeBuilder({
               onToggle={(id) => togglePick(theirPickIds, setTheirPickIds, id)}
               isSuperflex={isSuperflex}
             />
+            <PositionFilter
+              filter={theirPosFilter}
+              setFilter={setTheirPosFilter}
+              players={partnerTeam.players}
+            />
             <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-              {partnerTeam.players.map((p) => (
-                <li key={p.id}>
-                  <PlayerRowItem
-                    p={p}
-                    checked={theirSel.has(p.id)}
-                    onChange={() => toggle(theirSel, setTheirSel, p.id)}
-                  />
-                </li>
-              ))}
+              {partnerTeam.players
+                .filter(
+                  (p) =>
+                    theirPosFilter === "all" || p.position === theirPosFilter,
+                )
+                .map((p) => (
+                  <li key={p.id}>
+                    <PlayerRowItem
+                      p={p}
+                      checked={theirSel.has(p.id)}
+                      onChange={() => toggle(theirSel, setTheirSel, p.id)}
+                    />
+                  </li>
+                ))}
             </ul>
           </section>
         )}
