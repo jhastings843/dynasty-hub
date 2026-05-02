@@ -236,16 +236,20 @@ export function findLeagueWideMatches({
   mySendValue,
   allTeams,
   weakestPositions,
-  tolerance = 0.15,
-  limit = 10,
+  // Allow trades where you lose at most this many absolute value
+  // points (so "fair" trades still surface but clear losses are
+  // omitted). Set to 0 for strictly non-losing trades.
+  maxLoss = 100,
+  // Cap total to keep the list manageable.
+  limit = 18,
 }: {
   myTeam: TeamSummary;
   mySendPlayerIds: Set<string>;
-  mySendValue: number; // total give value (players + picks)
+  mySendValue: number;
   allTeams: TeamSummary[];
   weakestPositions: string[];
   isSuperflex?: boolean;
-  tolerance?: number;
+  maxLoss?: number;
   limit?: number;
 }): LeagueWideMatch[] {
   if (mySendValue === 0) return [];
@@ -268,11 +272,10 @@ export function findLeagueWideMatches({
     for (const p of partner.players) {
       if (p.value <= 0) continue;
 
-      // Match within tolerance
-      const baseline = Math.max(p.value, mySendValue);
       const delta = p.value - mySendValue;
-      const pct = baseline > 0 ? Math.abs(delta) / baseline : 1;
-      if (pct > tolerance) continue;
+      // Omit clear losses (anything where I give up more than maxLoss
+      // value points beyond what I receive).
+      if (delta < -maxLoss) continue;
 
       // Skip if receiving them would create a same-team conflict on my
       // post-trade roster.
@@ -285,7 +288,7 @@ export function findLeagueWideMatches({
 
       // Skip the partner's #1 player at any position (they won't trade
       // their best). Heuristic: skip if this is their highest-valued
-      // player in this position.
+      // player in this position AND that value is meaningful.
       const partnerPosBest = partner.players
         .filter((x) => x.position === p.position)
         .reduce((max, x) => (x.value > max ? x.value : max), 0);
@@ -294,25 +297,27 @@ export function findLeagueWideMatches({
       }
 
       const isFit = !!(p.position && weakestPositions.includes(p.position));
+      const baseline = Math.max(p.value, mySendValue);
+      const pctDelta = baseline > 0 ? delta / baseline : 0;
 
-      // Score: positional fit > value parity
       let score = 0;
-      score += (1 - pct) * 30; // value parity
-      if (isFit) score += 35;
-      if (p.age != null && p.age <= 23) score += 8;
-      if (p.age != null && p.age >= 27) score -= 4;
-      if (delta > 0) score += Math.min(delta / 80, 15);
+      score += delta / 50;
+      if (isFit) score += 25;
+      if (p.age != null && p.age <= 23) score += 6;
+      if (p.age != null && p.age >= 27) score -= 3;
 
       const reasoning: string[] = [];
       if (isFit && p.position) {
         reasoning.push(`Fills your weak ${p.position} room`);
       }
-      if (Math.abs(delta) <= 100) {
-        reasoning.push("Value is essentially even");
-      } else if (delta > 0) {
+      if (delta >= 1000) {
+        reasoning.push(`+${delta.toLocaleString()} value — major steal`);
+      } else if (delta >= 500) {
+        reasoning.push(`+${delta.toLocaleString()} value — clear edge`);
+      } else if (delta >= 100) {
         reasoning.push(`+${delta.toLocaleString()} value gain`);
-      } else {
-        reasoning.push(`${delta.toLocaleString()} value (within tolerance)`);
+      } else if (Math.abs(delta) <= 100) {
+        reasoning.push("Value is essentially even");
       }
       if (p.age != null && p.age <= 23) {
         reasoning.push(`Age ${p.age} — long dynasty runway`);
@@ -325,7 +330,7 @@ export function findLeagueWideMatches({
         sendValue: mySendValue,
         receiveValue: p.value,
         delta,
-        pctDelta: baseline > 0 ? delta / baseline : 0,
+        pctDelta,
         isFit,
         fitPositions: isFit && p.position ? [p.position] : [],
         conflictWarning: false,
@@ -335,8 +340,7 @@ export function findLeagueWideMatches({
     }
   }
 
-  // Dedup-ish: cap one match per (partnerRosterId, position) to avoid
-  // showing 4 RBs from the same partner.
+  // Cap to one per (partner, position) — best score wins.
   const bestPerKey = new Map<string, LeagueWideMatch>();
   for (const m of matches) {
     const key = `${m.partnerRosterId}-${m.receivePlayers[0]?.position ?? "X"}`;
@@ -347,8 +351,16 @@ export function findLeagueWideMatches({
   }
 
   return [...bestPerKey.values()]
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.delta - a.delta)
     .slice(0, limit);
+}
+
+export type LeagueWideMatchTier = "steal" | "edge" | "fair";
+
+export function tierForMatch(m: LeagueWideMatch): LeagueWideMatchTier {
+  if (m.delta >= 1000) return "steal";
+  if (m.delta >= 500) return "edge";
+  return "fair";
 }
 
 // ---------------------------------------------------------------

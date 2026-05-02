@@ -8,9 +8,11 @@ import {
   evaluateTrade,
   findBestTrades,
   findLeagueWideMatches,
+  tierForMatch,
   verdictLabel,
   type BestTradeIdea,
   type LeagueWideMatch,
+  type LeagueWideMatchTier,
   type TradeVerdict,
 } from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
@@ -395,8 +397,8 @@ export default function TradeBuilder({
       allTeams: teams,
       weakestPositions: myWeakPositions,
       isSuperflex,
-      tolerance: 0.18,
-      limit: 12,
+      maxLoss: 100,
+      limit: 18,
     });
   }, [
     partnerId,
@@ -995,86 +997,154 @@ export default function TradeBuilder({
                 {myGiveValue.toLocaleString()}). Try a different combo.
               </div>
             ) : (
-              <ul className="flex flex-col gap-2">
-                {leagueWideMatches.map((m, i) => (
-                  <li
-                    key={`${m.partnerRosterId}-${m.receivePlayers[0]?.id ?? i}`}
-                    className="flex flex-col gap-2 rounded-2xl border border-zinc-200/80 bg-white/80 p-3 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80"
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-sm font-bold">
-                        vs. {m.partnerName}
-                      </span>
-                      {m.isFit && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
-                          Fit
+              (() => {
+                const tiers: Record<LeagueWideMatchTier, LeagueWideMatch[]> = {
+                  steal: [],
+                  edge: [],
+                  fair: [],
+                };
+                for (const m of leagueWideMatches) {
+                  tiers[tierForMatch(m)].push(m);
+                }
+                const tierMeta: Array<{
+                  key: LeagueWideMatchTier;
+                  label: string;
+                  caption: string;
+                  pillCls: string;
+                  borderCls: string;
+                }> = [
+                  {
+                    key: "steal",
+                    label: "Steals",
+                    caption: "+1,000 or more value",
+                    pillCls:
+                      "bg-emerald-500 text-white dark:bg-emerald-500",
+                    borderCls:
+                      "border-emerald-300 dark:border-emerald-800",
+                  },
+                  {
+                    key: "edge",
+                    label: "Edge",
+                    caption: "+500 to +999 value",
+                    pillCls:
+                      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+                    borderCls:
+                      "border-emerald-200 dark:border-emerald-900/60",
+                  },
+                  {
+                    key: "fair",
+                    label: "Fair value",
+                    caption: "Roughly even",
+                    pillCls:
+                      "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+                    borderCls:
+                      "border-zinc-200/80 dark:border-zinc-800/80",
+                  },
+                ];
+
+                return tierMeta.map((meta) => {
+                  const list = tiers[meta.key];
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={meta.key} className="flex flex-col gap-2">
+                      <div className="flex items-baseline gap-2">
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${meta.pillCls}`}
+                        >
+                          {meta.label}
                         </span>
-                      )}
-                    </div>
-                    {m.receivePlayers.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center gap-2"
-                      >
-                        <PlayerAvatar
-                          name={p.name}
-                          position={p.position}
-                          photoUrl={p.photoUrl}
-                          size="sm"
-                        />
-                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                          <PlayerLink
-                            id={p.id}
-                            name={p.name}
-                            className="truncate text-sm font-semibold"
-                          />
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {[p.team ?? "FA", p.position]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </span>
-                        </div>
-                        <span className="shrink-0 text-sm font-bold tabular-nums">
-                          {p.value.toLocaleString()}
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          {meta.caption} · {list.length} match
+                          {list.length === 1 ? "" : "es"}
                         </span>
                       </div>
-                    ))}
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <span
-                        className={`text-xs font-semibold tabular-nums ${
-                          m.delta > 100
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : m.delta < -100
-                              ? "text-rose-600 dark:text-rose-400"
-                              : "text-zinc-500 dark:text-zinc-400"
-                        }`}
-                      >
-                        {m.delta > 0 ? "+" : ""}
-                        {m.delta.toLocaleString()} value
-                        {Math.abs(m.delta) <= 100 ? " (even)" : ""}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => applyMatch(m)}
-                        className="rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm shadow-amber-500/30 hover:shadow-md hover:shadow-amber-500/50 hover:brightness-110"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                    {m.reasoning.length > 0 && (
-                      <ul className="flex flex-col gap-0.5 pt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-                        {m.reasoning.map((r) => (
-                          <li key={r}>• {r}</li>
+                      <ul className="flex flex-col gap-2">
+                        {list.map((m, i) => (
+                          <li
+                            key={`${m.partnerRosterId}-${m.receivePlayers[0]?.id ?? i}`}
+                            className={`flex flex-col gap-2 rounded-2xl border bg-white/80 p-3 backdrop-blur dark:bg-zinc-900/80 ${meta.borderCls}`}
+                          >
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="text-sm font-bold">
+                                vs. {m.partnerName}
+                              </span>
+                              {m.isFit && (
+                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                                  Fit
+                                </span>
+                              )}
+                            </div>
+                            {m.receivePlayers.map((p) => (
+                              <div
+                                key={p.id}
+                                className="flex items-center gap-2"
+                              >
+                                <PlayerAvatar
+                                  name={p.name}
+                                  position={p.position}
+                                  photoUrl={p.photoUrl}
+                                  size="sm"
+                                />
+                                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                  <PlayerLink
+                                    id={p.id}
+                                    name={p.name}
+                                    className="truncate text-sm font-semibold"
+                                  />
+                                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                    {[p.team ?? "FA", p.position]
+                                      .filter(Boolean)
+                                      .join(" · ")}
+                                  </span>
+                                </div>
+                                <span className="shrink-0 text-sm font-bold tabular-nums">
+                                  {p.value.toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="flex items-center justify-between gap-2 pt-1">
+                              <span
+                                className={`text-xs font-semibold tabular-nums ${
+                                  m.delta >= 500
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : m.delta >= 100
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : m.delta >= -100
+                                        ? "text-zinc-500 dark:text-zinc-400"
+                                        : "text-rose-600 dark:text-rose-400"
+                                }`}
+                              >
+                                {m.delta > 0 ? "+" : ""}
+                                {m.delta.toLocaleString()} value
+                                {Math.abs(m.delta) <= 100 ? " (even)" : ""}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => applyMatch(m)}
+                                className="rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm shadow-amber-500/30 hover:shadow-md hover:shadow-amber-500/50 hover:brightness-110"
+                              >
+                                Apply
+                              </button>
+                            </div>
+                            {m.reasoning.length > 0 && (
+                              <ul className="flex flex-col gap-0.5 pt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {m.reasoning.map((r) => (
+                                  <li key={r}>• {r}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
                         ))}
                       </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                    </div>
+                  );
+                });
+              })()
             )}
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Matches filter out trades that would create same-team duplicates
-              on your roster (per your rule).
+              Tiered by value advantage. Losing trades are omitted. Matches
+              filter out trades that would create same-team duplicates on
+              your roster (per your rule).
             </p>
           </section>
         )}
