@@ -436,7 +436,7 @@ export default function TradeBuilder({
                   <span className="text-sm font-bold">
                     vs. {idea.partnerName}
                   </span>
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-950/50 dark:text-sky-300">
                     {idea.positionalGain.position} #
                     {idea.positionalGain.from} → #{idea.positionalGain.to}
                   </span>
@@ -458,9 +458,9 @@ export default function TradeBuilder({
                       </div>
                     ))}
                   </div>
-                  <span className="self-center text-amber-500">↔</span>
-                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-orange-50/40 p-2 dark:border-amber-900/60 dark:from-amber-950/30 dark:to-orange-950/20">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  <span className="self-center text-zinc-400">↔</span>
+                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 p-2 dark:border-emerald-900/60 dark:from-emerald-950/30 dark:to-emerald-950/15">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                       Receive
                     </span>
                     {idea.receive.map((p) => (

@@ -273,13 +273,13 @@ export default async function DraftPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {/* Slot card with giant slot tile */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-amber-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-amber-950/10">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+          {/* Slot card — sky for "data" feel */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-sky-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-sky-950/10">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Your draft slot
             </span>
             <div className="flex items-center gap-4">
-              <span className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl font-black tracking-tighter text-white shadow-lg shadow-amber-500/30">
+              <span className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-2xl font-black tracking-tighter text-white shadow-lg shadow-sky-500/30">
                 {mySlot ? `#${mySlot}` : "—"}
               </span>
               <div className="flex flex-col gap-0.5">
@@ -293,10 +293,10 @@ export default async function DraftPage() {
             </div>
           </div>
 
-          {/* Picks card with detailed list */}
+          {/* Picks card */}
           <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-5 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Your picks
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -324,7 +324,7 @@ export default async function DraftPage() {
                         {ordinal(p.round)}
                       </span>
                     </span>
-                    <span className="text-xs font-bold tabular-nums text-amber-700 dark:text-amber-400">
+                    <span className="text-xs font-bold tabular-nums text-zinc-700 dark:text-zinc-300">
                       {p.value != null ? p.value.toLocaleString() : "—"}
                     </span>
                   </li>
@@ -333,21 +333,48 @@ export default async function DraftPage() {
             )}
           </div>
 
-          {/* Target positions card */}
+          {/* Target positions card — per-position colors */}
           <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-5 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Target positions
             </span>
             <div className="flex flex-wrap gap-2">
               {weakestPositions.length > 0 ? (
-                weakestPositions.map((pos) => (
-                  <span
-                    key={pos}
-                    className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2 text-lg font-black tracking-tight text-white shadow-md shadow-amber-500/30"
-                  >
-                    {pos}
-                  </span>
-                ))
+                weakestPositions.map((pos) => {
+                  const positionTints: Record<
+                    string,
+                    { grad: string; shadow: string }
+                  > = {
+                    QB: {
+                      grad: "from-rose-400 to-rose-600",
+                      shadow: "shadow-rose-500/30",
+                    },
+                    RB: {
+                      grad: "from-emerald-400 to-emerald-600",
+                      shadow: "shadow-emerald-500/30",
+                    },
+                    WR: {
+                      grad: "from-sky-400 to-sky-600",
+                      shadow: "shadow-sky-500/30",
+                    },
+                    TE: {
+                      grad: "from-amber-400 to-orange-500",
+                      shadow: "shadow-amber-500/30",
+                    },
+                  };
+                  const tint = positionTints[pos] ?? {
+                    grad: "from-zinc-400 to-zinc-600",
+                    shadow: "shadow-zinc-500/20",
+                  };
+                  return (
+                    <span
+                      key={pos}
+                      className={`rounded-xl bg-gradient-to-br ${tint.grad} ${tint.shadow} px-4 py-2 text-lg font-black tracking-tight text-white shadow-md`}
+                    >
+                      {pos}
+                    </span>
+                  );
+                })
               ) : (
                 <span className="text-zinc-500 dark:text-zinc-400">—</span>
               )}

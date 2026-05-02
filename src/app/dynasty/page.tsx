@@ -237,15 +237,57 @@ export default async function DynastyPage() {
 
           {myRoster && grades[myRoster.roster_id] && (() => {
             const g = grades[myRoster.roster_id];
+            const gradeKey = (g.dynastyGrade || "C")[0].toUpperCase();
+            const tileTint =
+              gradeKey === "A"
+                ? {
+                    tile: "from-emerald-400 to-emerald-600",
+                    shadow: "shadow-emerald-500/30",
+                    bg: "to-emerald-50/40 dark:to-emerald-950/10",
+                    eyebrow: "text-emerald-700 dark:text-emerald-400",
+                  }
+                : gradeKey === "B"
+                  ? {
+                      tile: "from-sky-400 to-sky-600",
+                      shadow: "shadow-sky-500/30",
+                      bg: "to-sky-50/40 dark:to-sky-950/10",
+                      eyebrow: "text-sky-700 dark:text-sky-400",
+                    }
+                  : gradeKey === "C"
+                    ? {
+                        tile: "from-zinc-400 to-zinc-600",
+                        shadow: "shadow-zinc-500/20",
+                        bg: "to-zinc-100/40 dark:to-zinc-800/30",
+                        eyebrow: "text-zinc-600 dark:text-zinc-400",
+                      }
+                    : gradeKey === "D"
+                      ? {
+                          tile: "from-amber-400 to-orange-500",
+                          shadow: "shadow-amber-500/30",
+                          bg: "to-amber-50/40 dark:to-amber-950/10",
+                          eyebrow: "text-amber-700 dark:text-amber-400",
+                        }
+                      : {
+                          tile: "from-rose-400 to-rose-600",
+                          shadow: "shadow-rose-500/30",
+                          bg: "to-rose-50/40 dark:to-rose-950/10",
+                          eyebrow: "text-rose-700 dark:text-rose-400",
+                        };
             return (
-              <div className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-white via-white to-amber-50/40 p-5 shadow-sm dark:border-zinc-800/80 dark:from-zinc-900 dark:via-zinc-900 dark:to-amber-950/10">
+              <div
+                className={`relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-white via-white p-5 shadow-sm dark:border-zinc-800/80 dark:from-zinc-900 dark:via-zinc-900 ${tileTint.bg}`}
+              >
                 <div className="flex flex-wrap items-center gap-5">
                   <div className="flex items-center gap-4">
-                    <span className="grid size-20 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-4xl font-black tracking-tighter text-white shadow-lg shadow-amber-500/30">
+                    <span
+                      className={`grid size-20 place-items-center rounded-2xl bg-gradient-to-br text-4xl font-black tracking-tighter text-white shadow-lg ${tileTint.tile} ${tileTint.shadow}`}
+                    >
                       {g.dynastyGrade || "—"}
                     </span>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider ${tileTint.eyebrow}`}
+                      >
                         Dynasty grade
                       </span>
                       <span className="text-2xl font-bold tracking-tight">
