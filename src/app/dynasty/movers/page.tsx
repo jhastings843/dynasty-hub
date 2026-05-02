@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getMovers } from "@/lib/rosteraudit/client";
 import type { RAMover } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,11 @@ function MoverCard({ m, direction }: { m: RAMover; direction: "up" | "down" }) {
         <div className="flex min-w-0 items-center gap-2.5">
           <PlayerAvatar name={m.name} position={m.position} size="sm" />
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate text-sm font-medium">{m.name}</span>
+            <PlayerLink
+              id={m.sleeperId}
+              name={m.name}
+              className="truncate text-sm font-medium"
+            />
             <PositionChip position={m.position} />
           </div>
         </div>

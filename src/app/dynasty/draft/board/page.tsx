@@ -18,6 +18,7 @@ import {
 import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,7 @@ interface TeamSnapshot {
     pickNo: number;
     round: number;
     slot: number;
+    playerId: string;
     playerName: string;
     position: string | null;
     photoUrl: string | null;
@@ -191,6 +193,7 @@ export default async function DraftBoardPage() {
           pickNo: pk.pick_no,
           round: pk.round,
           slot: pk.draft_slot,
+          playerId: pk.player_id,
           playerName: nameOf(p),
           position: p.position ?? null,
           photoUrl: v?.photoUrl ?? null,
@@ -356,7 +359,10 @@ export default async function DraftBoardPage() {
                           size="sm"
                         />
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                          {pk.playerName}
+                          <PlayerLink
+                            id={pk.playerId}
+                            name={pk.playerName}
+                          />
                           <span className="ml-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                             {pk.position ?? ""}
                           </span>

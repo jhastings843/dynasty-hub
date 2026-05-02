@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 
 export interface RookieRow {
   id: string;
@@ -112,9 +113,11 @@ export function RookieList({
                 size="sm"
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate text-sm font-semibold">
-                  {p.name}
-                </span>
+                <PlayerLink
+                  id={p.id}
+                  name={p.name}
+                  className="truncate text-sm font-semibold"
+                />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
                   {[
                     p.team ?? "FA",

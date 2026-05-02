@@ -13,6 +13,7 @@ import {
 } from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 
 const POSITION_TINT: Record<string, string> = {
   QB: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
@@ -29,6 +30,7 @@ interface RecapItem {
   position: string;
   label: string;
   value: number;
+  playerId?: string;
 }
 
 const POSITIONS_DISPLAY = ["QB", "RB", "WR", "TE"] as const;
@@ -70,7 +72,12 @@ function PlayerRowItem({
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="truncate text-sm font-medium">{p.name}</span>
+          <PlayerLink
+            id={p.id}
+            name={p.name}
+            className="truncate text-sm font-medium"
+            stopPropagation
+          />
           {p.buyLow && (
             <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
               Buy
@@ -214,9 +221,17 @@ function RecapColumn({
               >
                 {it.position}
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm">
-                {it.label}
-              </span>
+              {it.playerId ? (
+                <PlayerLink
+                  id={it.playerId}
+                  name={it.label}
+                  className="min-w-0 flex-1 truncate text-sm"
+                />
+              ) : (
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {it.label}
+                </span>
+              )}
               <span className="shrink-0 text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
                 {it.value.toLocaleString()}
               </span>
@@ -451,7 +466,11 @@ export default function TradeBuilder({
                         key={p.id}
                         className="flex items-center justify-between gap-1"
                       >
-                        <span className="truncate text-xs">{p.name}</span>
+                        <PlayerLink
+                          id={p.id}
+                          name={p.name}
+                          className="truncate text-xs"
+                        />
                         <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
                           {p.value.toLocaleString()}
                         </span>
@@ -468,9 +487,11 @@ export default function TradeBuilder({
                         key={p.id}
                         className="flex items-center justify-between gap-1"
                       >
-                        <span className="truncate text-xs font-medium">
-                          {p.name}
-                        </span>
+                        <PlayerLink
+                          id={p.id}
+                          name={p.name}
+                          className="truncate text-xs font-medium"
+                        />
                         <span className="text-xs font-semibold tabular-nums">
                           {p.value.toLocaleString()}
                         </span>
@@ -608,7 +629,11 @@ export default function TradeBuilder({
                       key={p.id}
                       className="flex items-center gap-2 text-sm"
                     >
-                      <span className="truncate flex-1">{p.name}</span>
+                      <PlayerLink
+                        id={p.id}
+                        name={p.name}
+                        className="truncate flex-1"
+                      />
                       <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
                         {p.value > 0 ? p.value.toLocaleString() : "—"}
                       </span>
@@ -650,6 +675,7 @@ export default function TradeBuilder({
               position: p.position,
               label: p.name,
               value: p.value,
+              playerId: p.id,
             });
           }
         }
@@ -670,6 +696,7 @@ export default function TradeBuilder({
               position: p.position,
               label: p.name,
               value: p.value,
+              playerId: p.id,
             });
           }
         }

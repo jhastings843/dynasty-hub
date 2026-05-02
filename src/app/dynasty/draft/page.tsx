@@ -17,6 +17,7 @@ import {
 import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 import { RookieList, type NextPickRef, type RookieRow } from "./RookieList";
 import { RoundTargets } from "./RoundTargets";
 import { Recommendations } from "./Recommendations";
@@ -561,9 +562,11 @@ export default async function DraftPage() {
                           size="sm"
                         />
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                          <span className="truncate text-sm font-semibold">
-                            {nameOf(p)}
-                          </span>
+                          <PlayerLink
+                            id={p.player_id}
+                            name={nameOf(p)}
+                            className="truncate text-sm font-semibold"
+                          />
                           <span className="text-xs text-zinc-500 dark:text-zinc-400">
                             {[p.team ?? "FA", p.position]
                               .filter(Boolean)
@@ -642,9 +645,11 @@ export default async function DraftPage() {
                       />
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="truncate text-sm font-medium">
-                            {nameOf(p)}
-                          </span>
+                          <PlayerLink
+                            id={p.player_id}
+                            name={nameOf(p)}
+                            className="truncate text-sm font-medium"
+                          />
                           {isMine && (
                             <Trophy
                               size={12}

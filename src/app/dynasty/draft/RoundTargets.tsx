@@ -1,4 +1,5 @@
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 import type { RookieRow } from "./RookieList";
 
 interface UserPick {
@@ -92,7 +93,11 @@ function RookieRowItem({
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="truncate text-sm font-medium">{r.name}</span>
+          <PlayerLink
+            id={r.id}
+            name={r.name}
+            className="truncate text-sm font-medium"
+          />
           {isFit && (
             <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
               Fit

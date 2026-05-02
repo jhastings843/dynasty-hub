@@ -19,6 +19,7 @@ import {
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 
 export const dynamic = "force-dynamic";
 
@@ -393,9 +394,11 @@ export default async function DynastyPage() {
                       />
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="truncate text-base font-medium">
-                            {playerName(p)}
-                          </span>
+                          <PlayerLink
+                            id={p.player_id}
+                            name={playerName(p)}
+                            className="truncate text-base font-medium"
+                          />
                           {badge && (
                             <span
                               className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${badge.className}`}
