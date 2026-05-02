@@ -182,13 +182,29 @@ export default async function DraftPage() {
     };
   });
 
-  // Compute weakest positions from the FULL roster (not just RA-ranked
-  // players) so deep bench gets counted.
+  // Compute weakest positions from the FULL roster + any rookies the
+  // user has drafted in this active draft (whether or not Sleeper has
+  // already added them to the roster). De-duped via Set so we never
+  // double-count.
+  const myDraftedIds = picks
+    .filter((pk) => pk.picked_by === me.user_id)
+    .map((pk) => pk.player_id);
+  const effectivePlayerIds = new Set<string>([
+    ...(myRoster?.players ?? []),
+    ...myDraftedIds,
+  ]);
+
   const localPosValues: Record<string, number> = { QB: 0, RB: 0, WR: 0, TE: 0 };
-  for (const pid of myRoster?.players ?? []) {
+  const draftedByMeByPos: Record<string, number> = {};
+  for (const pid of effectivePlayerIds) {
     const p = players[pid];
     if (!p?.position || !(p.position in localPosValues)) continue;
     localPosValues[p.position] += fcValues[pid]?.value ?? 0;
+  }
+  for (const pid of myDraftedIds) {
+    const p = players[pid];
+    if (!p?.position || !(p.position in localPosValues)) continue;
+    draftedByMeByPos[p.position] = (draftedByMeByPos[p.position] ?? 0) + 1;
   }
   const weakestPositions = [...TRADE_POSITIONS]
     .sort((a, b) => localPosValues[a] - localPosValues[b])
@@ -374,12 +390,22 @@ export default async function DraftPage() {
                     grad: "from-zinc-400 to-zinc-600",
                     shadow: "shadow-zinc-500/20",
                   };
+                  const filledCount = draftedByMeByPos[pos] ?? 0;
                   return (
                     <span
                       key={pos}
-                      className={`rounded-xl bg-gradient-to-br ${tint.grad} ${tint.shadow} px-4 py-2 text-lg font-black tracking-tight text-white shadow-md`}
+                      className="relative inline-flex items-center"
                     >
-                      {pos}
+                      <span
+                        className={`rounded-xl bg-gradient-to-br ${tint.grad} ${tint.shadow} px-4 py-2 text-lg font-black tracking-tight text-white shadow-md`}
+                      >
+                        {pos}
+                      </span>
+                      {filledCount > 0 && (
+                        <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-emerald-500 text-[10px] font-bold text-white shadow-md ring-2 ring-white dark:ring-zinc-900">
+                          ✓
+                        </span>
+                      )}
                     </span>
                   );
                 })
@@ -388,7 +414,11 @@ export default async function DraftPage() {
               )}
             </div>
             <span className="mt-auto text-xs text-zinc-500 dark:text-zinc-400">
-              your weakest by total roster value
+              {Object.keys(draftedByMeByPos).length > 0
+                ? `Live update: ${Object.entries(draftedByMeByPos)
+                    .map(([p, n]) => `${n} ${p}${n === 1 ? "" : "s"}`)
+                    .join(" + ")} drafted`
+                : "your weakest by total roster value"}
             </span>
           </div>
         </div>
