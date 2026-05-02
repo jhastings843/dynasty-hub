@@ -240,6 +240,9 @@ export function findLeagueWideMatches({
   // points (so "fair" trades still surface but clear losses are
   // omitted). Set to 0 for strictly non-losing trades.
   maxLoss = 100,
+  // Cap on advantage — trades more lopsided than this are unrealistic
+  // (no one will accept a +3,000 value loss) so filter them out.
+  maxAdvantage = 2000,
   // Cap total to keep the list manageable.
   limit = 18,
 }: {
@@ -250,6 +253,7 @@ export function findLeagueWideMatches({
   weakestPositions: string[];
   isSuperflex?: boolean;
   maxLoss?: number;
+  maxAdvantage?: number;
   limit?: number;
 }): LeagueWideMatch[] {
   if (mySendValue === 0) return [];
@@ -276,6 +280,9 @@ export function findLeagueWideMatches({
       // Omit clear losses (anything where I give up more than maxLoss
       // value points beyond what I receive).
       if (delta < -maxLoss) continue;
+      // Omit trades that are too lopsided in your favor — partner
+      // wouldn't accept them even if RA values say so.
+      if (delta > maxAdvantage) continue;
 
       // Skip if receiving them would create a same-team conflict on my
       // post-trade roster.

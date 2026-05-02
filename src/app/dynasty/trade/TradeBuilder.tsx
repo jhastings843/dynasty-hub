@@ -1016,7 +1016,7 @@ export default function TradeBuilder({
                   {
                     key: "steal",
                     label: "Steals",
-                    caption: "+1,000 or more value",
+                    caption: "+1,000 to +2,000 value",
                     pillCls:
                       "bg-emerald-500 text-white dark:bg-emerald-500",
                     borderCls:
