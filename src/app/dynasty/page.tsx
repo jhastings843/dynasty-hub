@@ -18,8 +18,15 @@ import {
   getValues,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
+import {
+  detectRosterConflicts,
+  conflictedPlayerIds,
+  dropCandidateIds,
+  type ConflictPlayer,
+} from "@/lib/dynasty/roster-conflicts";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
+import { AlertTriangle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -161,6 +168,27 @@ export default async function DynastyPage() {
 
   const myGroups = myRoster ? groupRoster(myRoster.players ?? [], players) : [];
 
+  // Detect same-NFL-team + same-position conflicts on the user's roster.
+  const conflictPlayers: ConflictPlayer[] = (myRoster?.players ?? [])
+    .map((id): ConflictPlayer | null => {
+      const p = players[id];
+      const v = fcValues[id];
+      if (!p || !p.team || !p.position) return null;
+      return {
+        id,
+        name: playerName(p),
+        team: p.team,
+        position: p.position,
+        value: v?.value ?? 0,
+        age: typeof p.age === "number" ? p.age : null,
+        photoUrl: v?.photoUrl ?? null,
+      };
+    })
+    .filter((x): x is ConflictPlayer => x !== null);
+  const conflicts = detectRosterConflicts(conflictPlayers);
+  const conflictedIds = conflictedPlayerIds(conflicts);
+  const dropIds = dropCandidateIds(conflicts);
+
   // Compute per-position roster summary locally so deep-bench players
   // not in RA's ranked set still get counted.
   type LocalRoom = { count: number; value: number; ages: number[] };
@@ -218,6 +246,80 @@ export default async function DynastyPage() {
             </Link>
           </div>
         </div>
+
+        {conflicts.length > 0 && (
+          <section className="flex flex-col gap-3 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 to-white p-5 dark:border-rose-900/60 dark:from-rose-950/30 dark:to-zinc-900">
+            <header className="flex items-center gap-2">
+              <AlertTriangle
+                size={18}
+                className="text-rose-600 dark:text-rose-400"
+                aria-hidden
+              />
+              <h2 className="text-base font-bold tracking-tight">
+                Roster conflicts ({conflicts.length})
+              </h2>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                same NFL team, same position — drop the lower-value one
+              </span>
+            </header>
+            <ul className="grid gap-3 md:grid-cols-2">
+              {conflicts.map((c) => (
+                <li
+                  key={`${c.team}-${c.position}`}
+                  className="flex flex-col gap-2 rounded-xl border border-rose-200/60 bg-white/80 p-3 backdrop-blur dark:border-rose-900/60 dark:bg-zinc-900/80"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-bold">
+                      {c.team} · {c.position}
+                    </span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {c.players.length} players
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {c.players.map((p) => {
+                      const isDrop = p.id === c.dropCandidate.id;
+                      return (
+                        <li
+                          key={p.id}
+                          className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${
+                            isDrop
+                              ? "bg-rose-100/60 dark:bg-rose-950/30"
+                              : ""
+                          }`}
+                        >
+                          <PlayerAvatar
+                            name={p.name}
+                            position={p.position}
+                            photoUrl={p.photoUrl}
+                            size="sm"
+                          />
+                          <PlayerLink
+                            id={p.id}
+                            name={p.name}
+                            className="flex-1 truncate text-sm font-medium"
+                          />
+                          <span className="shrink-0 text-xs font-semibold tabular-nums">
+                            {p.value.toLocaleString()}
+                          </span>
+                          {isDrop && (
+                            <span className="shrink-0 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                              Drop
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Rule: avoid two players on the same NFL team at the same
+              position — they split work or compete for the same job.
+            </p>
+          </section>
+        )}
 
         <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
         <section className="flex flex-col gap-4">
@@ -419,6 +521,18 @@ export default async function DynastyPage() {
                           {v?.breakout && (
                             <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
                               Break
+                            </span>
+                          )}
+                          {conflictedIds.has(p.player_id) && (
+                            <span
+                              className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                dropIds.has(p.player_id)
+                                  ? "bg-rose-500 text-white"
+                                  : "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
+                              }`}
+                              title="Same NFL team + position duplicate"
+                            >
+                              {dropIds.has(p.player_id) ? "Drop" : "Stack"}
                             </span>
                           )}
                         </div>
