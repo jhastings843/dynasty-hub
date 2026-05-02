@@ -8,9 +8,12 @@ import type {
   RAMover,
   RAMovers,
   RAPick,
+  RAPlayerProfile,
+  RAPlayerStats,
   RATeamGrade,
   RAValue,
   RAValuesBySleeperId,
+  RAWeeklyStat,
 } from "./types";
 
 const RA_BASE = "https://rosteraudit.com/wp-json/ra/v1";
@@ -343,6 +346,162 @@ export function getRosterGrades(
   });
 }
 
+// --- Player profile + stats ---
+
+const PLAYER_PAGE_KEY = (id: string) => `rosteraudit:v1:player-page:${id}`;
+const PLAYER_PAGE_TTL = 6 * 60 * 60;
+const PLAYER_STATS_KEY = (id: string) => `rosteraudit:v1:player-stats:${id}`;
+const PLAYER_STATS_TTL = 24 * 60 * 60;
+
+type RawPlayerPage = {
+  player?: Record<string, unknown>;
+  value?: Record<string, unknown>;
+  value_history?: Array<{ date?: string; sf?: number; one_qb?: number }>;
+};
+
+function strOrNull(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v : null;
+}
+
+function numOrNull(v: unknown): number | null {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function slimProfile(raw: RawPlayerPage): RAPlayerProfile {
+  const p = (raw.player ?? {}) as Record<string, unknown>;
+  const v = (raw.value ?? {}) as Record<string, unknown>;
+  const history = (raw.value_history ?? []).map((h) => ({
+    date: h.date ?? "",
+    sf: num(h.sf),
+    oneQb: num(h.one_qb),
+  }));
+  return {
+    player: {
+      sleeperId: String(p.sleeper_id ?? ""),
+      name: String(p.name ?? ""),
+      position: String(p.position ?? ""),
+      team: strOrNull(p.team),
+      age: numOrNull(p.age),
+      yearsExp: numOrNull(p.years_exp),
+      college: strOrNull(p.college),
+      height: strOrNull(p.height),
+      weight: numOrNull(p.weight),
+      jersey: numOrNull(p.jersey),
+      photoUrl: strOrNull(p.photo_url),
+      status: strOrNull(p.status),
+      injuryStatus: strOrNull(p.injury_status),
+      buyLow: flag(p.buy_low),
+      sellHigh: flag(p.sell_high),
+      breakout: flag(p.breakout),
+    },
+    value: {
+      sf: num(v.sf),
+      oneQb: num(v.one_qb),
+      tier: num(v.tier),
+      tierLabel: String(v.tier_label ?? ""),
+      rankSf: num(v.rank_sf),
+      rank1qb: num(v.rank_1qb),
+      rankPosSf: num(v.rank_pos_sf),
+      rankPos1qb: num(v.rank_pos_1qb),
+      trend7d: trendNum(v.trend_7d),
+      trend30d: trendNum(v.trend_30d),
+      trend90d: trendNum(v.trend_90d),
+      delta7d: num(v.delta_7d),
+      delta30d: num(v.delta_30d),
+      buyLow: flag(v.buy_low),
+      sellHigh: flag(v.sell_high),
+      breakout: flag(v.breakout),
+    },
+    valueHistory: history,
+  };
+}
+
+export function getPlayerProfile(
+  sleeperId: string,
+): Promise<RAPlayerProfile | null> {
+  return cached(PLAYER_PAGE_KEY(sleeperId), PLAYER_PAGE_TTL, async () => {
+    try {
+      const raw = await raFetch<RawPlayerPage>(`/player-page/${sleeperId}`);
+      if (!raw.player) return null;
+      return slimProfile(raw);
+    } catch {
+      return null;
+    }
+  });
+}
+
+type RawWeeklyStat = {
+  wk?: number;
+  fp?: number;
+  fpp?: number;
+  opp?: string | null;
+  cmp?: number;
+  att?: number;
+  pass?: number;
+  ptd?: number;
+  int?: number;
+  car?: number;
+  rush?: number;
+  rtd?: number;
+  rec?: number;
+  tgt?: number;
+  recy?: number;
+  retd?: number;
+  epa?: number;
+  repa?: number;
+};
+
+type RawPlayerStats = {
+  season?: number;
+  weekly?: RawWeeklyStat[];
+  error?: string;
+};
+
+function slimStat(raw: RawWeeklyStat): RAWeeklyStat {
+  return {
+    week: num(raw.wk),
+    fp: num(raw.fp),
+    fpp: num(raw.fpp),
+    opp: typeof raw.opp === "string" ? raw.opp : null,
+    cmp: raw.cmp != null ? num(raw.cmp) : undefined,
+    att: raw.att != null ? num(raw.att) : undefined,
+    pass: raw.pass != null ? num(raw.pass) : undefined,
+    ptd: raw.ptd != null ? num(raw.ptd) : undefined,
+    int: raw.int != null ? num(raw.int) : undefined,
+    car: raw.car != null ? num(raw.car) : undefined,
+    rush: raw.rush != null ? num(raw.rush) : undefined,
+    rtd: raw.rtd != null ? num(raw.rtd) : undefined,
+    rec: raw.rec != null ? num(raw.rec) : undefined,
+    tgt: raw.tgt != null ? num(raw.tgt) : undefined,
+    recy: raw.recy != null ? num(raw.recy) : undefined,
+    retd: raw.retd != null ? num(raw.retd) : undefined,
+    epa: raw.epa != null ? num(raw.epa) : undefined,
+    repa: raw.repa != null ? num(raw.repa) : undefined,
+  };
+}
+
+export function getPlayerStats(
+  sleeperId: string,
+): Promise<RAPlayerStats | null> {
+  return cached(PLAYER_STATS_KEY(sleeperId), PLAYER_STATS_TTL, async () => {
+    try {
+      const raw = await raFetch<RawPlayerStats>(`/player-stats/${sleeperId}`);
+      if (raw.error || !raw.weekly) return null;
+      return {
+        season: num(raw.season),
+        weekly: raw.weekly.map(slimStat),
+      };
+    } catch {
+      return null;
+    }
+  });
+}
+
 export type {
   RAValue,
   RAValuesBySleeperId,
@@ -352,5 +511,8 @@ export type {
   RAMovers,
   RATeamGrade,
   RAGradesByRosterId,
+  RAPlayerProfile,
+  RAPlayerStats,
+  RAWeeklyStat,
   PickSlot,
 };

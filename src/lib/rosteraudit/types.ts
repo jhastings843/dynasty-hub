@@ -88,3 +88,75 @@ export interface RATeamGrade {
 }
 
 export type RAGradesByRosterId = Record<number, RATeamGrade>;
+
+// --- Player profile data ---
+
+export interface RAPlayerProfile {
+  player: {
+    sleeperId: string;
+    name: string;
+    position: string;
+    team: string | null;
+    age: number | null;
+    yearsExp: number | null;
+    college: string | null;
+    height: string | null;
+    weight: number | null;
+    jersey: number | null;
+    photoUrl: string | null;
+    status: string | null;
+    injuryStatus: string | null;
+    buyLow: boolean;
+    sellHigh: boolean;
+    breakout: boolean;
+  };
+  value: {
+    sf: number;
+    oneQb: number;
+    tier: number;
+    tierLabel: string;
+    rankSf: number;
+    rank1qb: number;
+    rankPosSf: number;
+    rankPos1qb: number;
+    trend7d: number;
+    trend30d: number;
+    trend90d: number;
+    delta7d: number;
+    delta30d: number;
+    buyLow: boolean;
+    sellHigh: boolean;
+    breakout: boolean;
+  };
+  valueHistory: Array<{
+    date: string;
+    sf: number;
+    oneQb: number;
+  }>;
+}
+
+export interface RAWeeklyStat {
+  week: number;
+  fp: number;
+  fpp: number;
+  opp: string | null;
+  cmp?: number;
+  att?: number;
+  pass?: number;
+  ptd?: number;
+  int?: number;
+  car?: number;
+  rush?: number;
+  rtd?: number;
+  rec?: number;
+  tgt?: number;
+  recy?: number;
+  retd?: number;
+  epa?: number;
+  repa?: number;
+}
+
+export interface RAPlayerStats {
+  season: number;
+  weekly: RAWeeklyStat[];
+}
