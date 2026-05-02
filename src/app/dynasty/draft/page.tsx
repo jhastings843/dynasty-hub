@@ -19,6 +19,8 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { RookieList, type NextPickRef, type RookieRow } from "./RookieList";
 import { RoundTargets } from "./RoundTargets";
+import { Recommendations } from "./Recommendations";
+import { buildRecommendations } from "@/lib/dynasty/draft-recommender";
 
 export const dynamic = "force-dynamic";
 
@@ -236,6 +238,30 @@ export default async function DraftPage() {
     0,
   );
 
+  // Find the user's next pick (first unused pick in order).
+  const myDraftedPickNoSet = new Set(
+    picks
+      .filter((pk) => pk.picked_by === me.user_id)
+      .map((pk) => pk.pick_no),
+  );
+  const nextUserPick = userPicks.find(
+    (p) => !myDraftedPickNoSet.has(p.pickNo) && p.value != null,
+  );
+  const nextPickRef: NextPickRef | null = nextUserPick
+    ? {
+        label: `${nextUserPick.round}.${nextUserPick.slot.toString().padStart(2, "0")}`,
+        value: nextUserPick.value!,
+      }
+    : null;
+
+  const recommendations = buildRecommendations({
+    rookies: rookieRows,
+    nextPickValue: nextPickRef?.value ?? null,
+    nextPickLabel: nextPickRef?.label ?? null,
+    weakestPositions: weakestPositions as string[],
+    limit: 3,
+  });
+
   const startTime = formatStartTime(draft.start_time ?? null);
 
   return (
@@ -423,6 +449,11 @@ export default async function DraftPage() {
           </div>
         </div>
 
+        <Recommendations
+          recommendations={recommendations}
+          nextPickLabel={nextPickRef?.label ?? null}
+        />
+
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between">
             <h2 className="text-xl font-semibold tracking-tight">
@@ -435,21 +466,7 @@ export default async function DraftPage() {
           <RookieList
             rookies={rookieRows}
             weakestPositions={weakestPositions as string[]}
-            nextPick={(() => {
-              const myDraftedPickNos = new Set(
-                picks
-                  .filter((pk) => pk.picked_by === me.user_id)
-                  .map((pk) => pk.pick_no),
-              );
-              const next = userPicks.find(
-                (p) => !myDraftedPickNos.has(p.pickNo) && p.value != null,
-              );
-              if (!next) return null;
-              return {
-                label: `${next.round}.${next.slot.toString().padStart(2, "0")}`,
-                value: next.value!,
-              } as NextPickRef;
-            })()}
+            nextPick={nextPickRef}
           />
         </section>
 
