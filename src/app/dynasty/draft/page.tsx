@@ -273,25 +273,35 @@ export default async function DraftPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          {/* Slot card with giant slot tile */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-amber-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-amber-950/10">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               Your draft slot
             </span>
-            <span className="text-3xl font-semibold tabular-nums">
-              {mySlot ? `#${mySlot}` : "—"}
-            </span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              of {totalTeams} teams
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl font-black tracking-tighter text-white shadow-lg shadow-amber-500/30">
+                {mySlot ? `#${mySlot}` : "—"}
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-2xl font-bold tracking-tight tabular-nums">
+                  {mySlot ?? "—"}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  of {totalTeams} teams
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+
+          {/* Picks card with detailed list */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-5 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                 Your picks
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                total value{" "}
-                <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                total{" "}
+                <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
                   {totalPickValue.toLocaleString()}
                 </span>
               </span>
@@ -299,14 +309,14 @@ export default async function DraftPage() {
             {userPicks.length === 0 ? (
               <span className="text-sm text-zinc-400 dark:text-zinc-600">—</span>
             ) : (
-              <ul className="flex flex-col gap-1.5">
+              <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60">
                 {userPicks.map((p) => (
                   <li
                     key={p.pickNo}
-                    className="flex items-center justify-between gap-2 text-sm"
+                    className="flex items-center justify-between gap-2 py-1.5 text-sm"
                   >
                     <span className="tabular-nums">
-                      <span className="font-semibold">
+                      <span className="font-bold">
                         {p.round}.{p.slot.toString().padStart(2, "0")}
                       </span>
                       <span className="ml-1.5 text-xs text-zinc-500 dark:text-zinc-400">
@@ -314,7 +324,7 @@ export default async function DraftPage() {
                         {ordinal(p.round)}
                       </span>
                     </span>
-                    <span className="text-xs font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                    <span className="text-xs font-bold tabular-nums text-amber-700 dark:text-amber-400">
                       {p.value != null ? p.value.toLocaleString() : "—"}
                     </span>
                   </li>
@@ -322,16 +332,18 @@ export default async function DraftPage() {
               </ul>
             )}
           </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+
+          {/* Target positions card */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-5 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               Target positions
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {weakestPositions.length > 0 ? (
                 weakestPositions.map((pos) => (
                   <span
                     key={pos}
-                    className="rounded-full bg-amber-100 px-2.5 py-1 text-sm font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                    className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2 text-lg font-black tracking-tight text-white shadow-md shadow-amber-500/30"
                   >
                     {pos}
                   </span>
@@ -340,8 +352,8 @@ export default async function DraftPage() {
                 <span className="text-zinc-500 dark:text-zinc-400">—</span>
               )}
             </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              your weakest by total value
+            <span className="mt-auto text-xs text-zinc-500 dark:text-zinc-400">
+              your weakest by total roster value
             </span>
           </div>
         </div>

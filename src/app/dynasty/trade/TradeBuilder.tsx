@@ -171,24 +171,32 @@ function RecapColumn({
   total: number;
   outcome: "win" | "lose" | "even";
 }) {
+  const containerCls =
+    outcome === "win"
+      ? "bg-gradient-to-br from-emerald-50/80 to-transparent border-emerald-200/60 dark:from-emerald-950/30 dark:border-emerald-900/60"
+      : outcome === "lose"
+        ? "bg-gradient-to-br from-rose-50/80 to-transparent border-rose-200/60 dark:from-rose-950/30 dark:border-rose-900/60"
+        : "bg-zinc-50/50 border-zinc-200/60 dark:bg-zinc-900/40 dark:border-zinc-800/60";
   const headColor =
     outcome === "win"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-emerald-700 dark:text-emerald-400"
       : outcome === "lose"
-        ? "text-rose-600 dark:text-rose-400"
+        ? "text-rose-700 dark:text-rose-400"
         : "text-zinc-700 dark:text-zinc-300";
   const totalColor =
     outcome === "win"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent dark:from-emerald-400 dark:to-emerald-300"
       : outcome === "lose"
-        ? "text-rose-600 dark:text-rose-400"
+        ? "bg-gradient-to-r from-rose-600 to-rose-500 bg-clip-text text-transparent dark:from-rose-400 dark:to-rose-300"
         : "text-zinc-700 dark:text-zinc-300";
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      className={`flex flex-col gap-2 rounded-xl border p-3 ${containerCls}`}
+    >
       <div className={`flex items-center gap-1.5 text-sm font-bold ${headColor}`}>
         <span className="truncate">{name} receives</span>
         {outcome === "win" && (
-          <Check size={14} aria-hidden className="shrink-0" />
+          <Check size={14} aria-hidden className="shrink-0" strokeWidth={3} />
         )}
       </div>
       {items.length === 0 ? (
@@ -216,8 +224,8 @@ function RecapColumn({
           ))}
         </ul>
       )}
-      <div className="border-t border-zinc-200 pt-2 dark:border-zinc-800">
-        <span className={`text-2xl font-bold tabular-nums ${totalColor}`}>
+      <div className="border-t border-zinc-200/60 pt-2 dark:border-zinc-800/60">
+        <span className={`text-3xl font-black tracking-tight tabular-nums ${totalColor}`}>
           {total.toLocaleString()}
         </span>
       </div>
@@ -422,19 +430,19 @@ export default function TradeBuilder({
             {bestTrades.map((idea, i) => (
               <li
                 key={`${idea.partnerRosterId}-${i}`}
-                className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                className="group flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-500/10 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:hover:border-amber-800"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm font-semibold">
+                  <span className="text-sm font-bold">
                     vs. {idea.partnerName}
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
                     {idea.positionalGain.position} #
                     {idea.positionalGain.from} → #{idea.positionalGain.to}
                   </span>
                 </div>
                 <div className="flex items-stretch gap-2 text-sm">
-                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
+                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-2 dark:border-zinc-800/80 dark:bg-zinc-950/40">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                       Send
                     </span>
@@ -450,9 +458,9 @@ export default function TradeBuilder({
                       </div>
                     ))}
                   </div>
-                  <span className="self-center text-zinc-400">↔</span>
-                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-amber-200 bg-amber-50/50 p-2 dark:border-amber-900/60 dark:bg-amber-950/20">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  <span className="self-center text-amber-500">↔</span>
+                  <div className="flex flex-1 flex-col gap-1 rounded-lg border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-orange-50/40 p-2 dark:border-amber-900/60 dark:from-amber-950/30 dark:to-orange-950/20">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                       Receive
                     </span>
                     {idea.receive.map((p) => (
@@ -460,8 +468,10 @@ export default function TradeBuilder({
                         key={p.id}
                         className="flex items-center justify-between gap-1"
                       >
-                        <span className="truncate text-xs">{p.name}</span>
-                        <span className="text-xs tabular-nums">
+                        <span className="truncate text-xs font-medium">
+                          {p.name}
+                        </span>
+                        <span className="text-xs font-semibold tabular-nums">
                           {p.value.toLocaleString()}
                         </span>
                       </div>
@@ -481,7 +491,7 @@ export default function TradeBuilder({
                 <button
                   type="button"
                   onClick={() => applyBestTrade(idea)}
-                  className="self-start rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                  className="self-start rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-amber-500/30 transition-all hover:shadow-md hover:shadow-amber-500/50 hover:brightness-110"
                 >
                   Apply
                 </button>
