@@ -1,5 +1,10 @@
 // Pure logic for ranking the next pick. Composite score across value,
-// positional fit, age, surplus vs your next pick, and RA flags.
+// positional fit, age, surplus vs your next pick, and RA flags. KTC data
+// from the secondary scrape is used for consensus checks but never
+// overrides RosterAudit's primary value.
+
+import type { KTCByName } from "@/lib/ktc/types";
+import { normalizeName } from "@/lib/ktc/client";
 
 export interface RookieCandidate {
   id: string;
@@ -16,6 +21,17 @@ export interface RookieCandidate {
   breakout?: boolean;
 }
 
+export type ConsensusLevel = "high" | "moderate" | "split" | "unknown";
+
+export interface ConsensusInfo {
+  level: ConsensusLevel;
+  ktcRookieRank: number | null; // 1-based within rookies, or null if not in KTC
+  raRookieRank: number; // 1-based within RA rookies
+  rankGap: number | null; // KTC - RA (positive: KTC ranks lower / values less)
+  ktcValue: number | null;
+  note: string;
+}
+
 export interface Recommendation {
   rank: number; // 1, 2, 3
   player: RookieCandidate;
@@ -24,6 +40,7 @@ export interface Recommendation {
   isFit: boolean;
   headline: string;
   reasoning: string[];
+  consensus: ConsensusInfo;
 }
 
 const TIER_LABELS: Record<number, string> = {
@@ -47,18 +64,24 @@ export function buildRecommendations({
   nextPickValue,
   nextPickLabel,
   weakestPositions,
+  ktcByName,
   limit = 3,
 }: {
   rookies: RookieCandidate[];
   nextPickValue: number | null;
   nextPickLabel: string | null;
   weakestPositions: string[];
+  ktcByName?: KTCByName;
   limit?: number;
 }): Recommendation[] {
   if (rookies.length === 0) return [];
 
   const candidates = rookies.filter((r) => r.value > 0);
   const sortedByValue = [...candidates].sort((a, b) => b.value - a.value);
+
+  // Build a map of player.id → RA rookie rank (1-based, by value desc)
+  const raRookieRankById = new Map<string, number>();
+  sortedByValue.forEach((c, idx) => raRookieRankById.set(c.id, idx + 1));
 
   const scored = candidates.map((c) => {
     const isFit = !!c.position && weakestPositions.includes(c.position);
@@ -152,6 +175,10 @@ export function buildRecommendations({
     if (c.breakout) reasoning.push("RosterAudit tagged Breakout candidate");
     if (c.sellHigh) reasoning.push("RosterAudit tagged Sell High — risk of regression");
 
+    // KTC consensus check
+    const consensus = computeConsensus(c, raRookieRankById, ktcByName);
+    if (consensus.note) reasoning.push(consensus.note);
+
     // Headline: most distinctive single reason
     let headline: string;
     if (isFit && surplus >= 200) {
@@ -178,8 +205,63 @@ export function buildRecommendations({
       isFit,
       headline,
       reasoning,
+      consensus,
     };
   });
+}
+
+function computeConsensus(
+  c: RookieCandidate,
+  raRookieRankById: Map<string, number>,
+  ktcByName?: KTCByName,
+): ConsensusInfo {
+  const raRookieRank = raRookieRankById.get(c.id) ?? 0;
+  if (!ktcByName) {
+    return {
+      level: "unknown",
+      ktcRookieRank: null,
+      raRookieRank,
+      rankGap: null,
+      ktcValue: null,
+      note: "",
+    };
+  }
+  const ktc = ktcByName[normalizeName(c.name)];
+  if (!ktc || !ktc.rookie || ktc.rookieRank === 0) {
+    return {
+      level: "unknown",
+      ktcRookieRank: null,
+      raRookieRank,
+      rankGap: null,
+      ktcValue: null,
+      note: "Not found in KTC rookie set",
+    };
+  }
+  const gap = ktc.rookieRank - raRookieRank;
+  const absGap = Math.abs(gap);
+  let level: ConsensusLevel;
+  let note: string;
+  if (absGap <= 2) {
+    level = "high";
+    note = `Consensus: KTC ranks rookie #${ktc.rookieRank} (RA #${raRookieRank}) — both agree`;
+  } else if (absGap <= 5) {
+    level = "moderate";
+    note = `Moderate consensus: KTC #${ktc.rookieRank} vs RA #${raRookieRank}`;
+  } else {
+    level = "split";
+    note =
+      gap > 0
+        ? `Split signal: RA ranks #${raRookieRank} but KTC drops to #${ktc.rookieRank}`
+        : `Split signal: KTC ranks #${ktc.rookieRank} (much higher than RA #${raRookieRank})`;
+  }
+  return {
+    level,
+    ktcRookieRank: ktc.rookieRank,
+    raRookieRank,
+    rankGap: gap,
+    ktcValue: ktc.value,
+    note,
+  };
 }
 
 export function tierLabel(tier: number): string {

@@ -21,6 +21,8 @@ import { RookieList, type NextPickRef, type RookieRow } from "./RookieList";
 import { RoundTargets } from "./RoundTargets";
 import { Recommendations } from "./Recommendations";
 import { buildRecommendations } from "@/lib/dynasty/draft-recommender";
+import { getKTCValues, ktcFormatFromLeague } from "@/lib/ktc/client";
+import type { KTCByName } from "@/lib/ktc/types";
 
 export const dynamic = "force-dynamic";
 
@@ -124,13 +126,16 @@ export default async function DraftPage() {
   const league = await getLeague(leagueId);
   const raFormat = formatKeyFromLeague(league);
 
-  const [drafts, rosters, players, fcValues, raPicks] = await Promise.all([
-    getLeagueDrafts(leagueId),
-    getLeagueRosters(leagueId),
-    getAllPlayers(),
-    getValues(raFormat),
-    getPicks(),
-  ]);
+  const ktcFormat = ktcFormatFromLeague(league);
+  const [drafts, rosters, players, fcValues, raPicks, ktcByName] =
+    await Promise.all([
+      getLeagueDrafts(leagueId),
+      getLeagueRosters(leagueId),
+      getAllPlayers(),
+      getValues(raFormat),
+      getPicks(),
+      getKTCValues(ktcFormat).catch((): KTCByName => ({})),
+    ]);
 
   if (drafts.length === 0) {
     return (
@@ -259,6 +264,7 @@ export default async function DraftPage() {
     nextPickValue: nextPickRef?.value ?? null,
     nextPickLabel: nextPickRef?.label ?? null,
     weakestPositions: weakestPositions as string[],
+    ktcByName,
     limit: 3,
   });
 

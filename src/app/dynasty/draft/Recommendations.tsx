@@ -44,8 +44,8 @@ export function Recommendations({
         </div>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {nextPickLabel
-            ? `If your pick was right now (${nextPickLabel}). Ranked by composite of value, fit, age, and RosterAudit signals.`
-            : "Ranked by composite of value, fit, age, and RosterAudit signals."}
+            ? `If your pick was right now (${nextPickLabel}). Ranked by RosterAudit value + position fit + age, with KeepTradeCut as a consensus check.`
+            : "Ranked by RosterAudit value + position fit + age, with KeepTradeCut as a consensus check."}
         </p>
       </header>
       <ol className="flex flex-col gap-3">
@@ -91,6 +91,22 @@ export function Recommendations({
                     {rec.player.sellHigh && (
                       <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                         Risk
+                      </span>
+                    )}
+                    {rec.consensus.level === "high" && (
+                      <span
+                        title={rec.consensus.note}
+                        className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                      >
+                        Consensus
+                      </span>
+                    )}
+                    {rec.consensus.level === "split" && (
+                      <span
+                        title={rec.consensus.note}
+                        className="shrink-0 rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                      >
+                        Split
                       </span>
                     )}
                   </div>
