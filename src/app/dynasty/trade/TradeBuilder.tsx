@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
 import { suggestTradeFits } from "@/lib/dynasty/trade-fits";
 import {
@@ -1046,8 +1046,17 @@ export default function TradeBuilder({
                   const list = tiers[meta.key];
                   if (list.length === 0) return null;
                   return (
-                    <div key={meta.key} className="flex flex-col gap-2">
-                      <div className="flex items-baseline gap-2">
+                    <details
+                      key={meta.key}
+                      className="group flex flex-col gap-2"
+                      open
+                    >
+                      <summary className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
+                        <ChevronDown
+                          size={14}
+                          aria-hidden
+                          className="shrink-0 -rotate-90 text-zinc-400 transition-transform group-open:rotate-0 dark:text-zinc-500"
+                        />
                         <span
                           className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${meta.pillCls}`}
                         >
@@ -1057,8 +1066,8 @@ export default function TradeBuilder({
                           {meta.caption} · {list.length} match
                           {list.length === 1 ? "" : "es"}
                         </span>
-                      </div>
-                      <ul className="flex flex-col gap-2">
+                      </summary>
+                      <ul className="flex flex-col gap-2 pt-1">
                         {list.map((m, i) => (
                           <li
                             key={`${m.partnerRosterId}-${m.receivePlayers[0]?.id ?? i}`}
@@ -1136,7 +1145,7 @@ export default function TradeBuilder({
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </details>
                   );
                 });
               })()
