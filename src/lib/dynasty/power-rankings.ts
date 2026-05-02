@@ -32,6 +32,7 @@ export type PlayerRow = {
   value: number;
   overallRank: number;
   positionRank: number;
+  age?: number | null;
   photoUrl?: string | null;
   buyLow?: boolean;
   sellHigh?: boolean;
@@ -87,6 +88,7 @@ export function computeTeamSummaries(
           value: v?.value ?? 0,
           overallRank: v?.overallRank ?? 0,
           positionRank: v?.positionRank ?? 0,
+          age: typeof p.age === "number" ? p.age : null,
           photoUrl: v?.photoUrl ?? null,
           buyLow: v?.buyLow ?? false,
           sellHigh: v?.sellHigh ?? false,

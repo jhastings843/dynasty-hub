@@ -7,8 +7,10 @@ import { suggestTradeFits } from "@/lib/dynasty/trade-fits";
 import {
   evaluateTrade,
   findBestTrades,
+  findLeagueWideMatches,
   verdictLabel,
   type BestTradeIdea,
+  type LeagueWideMatch,
   type TradeVerdict,
 } from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
@@ -113,6 +115,8 @@ function pickValue(p: RAPick, isSuperflex: boolean): number {
 }
 
 const FILTER_POSITIONS = ["QB", "RB", "WR", "TE"] as const;
+// Sentinel partner id meaning "any team in the league" (auto-match mode).
+const ANYONE = -1;
 
 function PositionFilter({
   filter,
@@ -283,9 +287,8 @@ export default function TradeBuilder({
     [teams, myRosterId],
   );
 
-  const [partnerId, setPartnerId] = useState<number>(
-    otherTeams[0]?.rosterId ?? -1,
-  );
+  // Default to "Anyone (auto-match)" mode.
+  const [partnerId, setPartnerId] = useState<number>(ANYONE);
   const [mySel, setMySel] = useState<Set<string>>(new Set());
   const [theirSel, setTheirSel] = useState<Set<string>>(new Set());
   const [myPickIds, setMyPickIds] = useState<Set<number>>(new Set());
@@ -304,6 +307,15 @@ export default function TradeBuilder({
     if (!myTeam || !partnerTeam) return [];
     return suggestTradeFits(myTeam, partnerTeam, teams.length);
   }, [myTeam, partnerTeam, teams.length]);
+
+  const myWeakPositions = useMemo(() => {
+    if (!myTeam) return [];
+    return ["QB", "RB", "WR", "TE"]
+      .map((p) => ({ p, rank: myTeam.positionRanks[p] ?? 99 }))
+      .sort((a, b) => b.rank - a.rank)
+      .slice(0, 2)
+      .map((x) => x.p);
+  }, [myTeam]);
 
   const bestTrades = useMemo(() => {
     if (!myTeam) return [];
@@ -368,6 +380,35 @@ export default function TradeBuilder({
     return playerSum + pickSum;
   }, [partnerTeam, theirSel, theirPickIds, picksById, isSuperflex]);
 
+  const leagueWideMatches = useMemo(() => {
+    if (
+      partnerId !== ANYONE ||
+      !myTeam ||
+      (mySel.size === 0 && myPickIds.size === 0)
+    ) {
+      return [];
+    }
+    return findLeagueWideMatches({
+      myTeam,
+      mySendPlayerIds: mySel,
+      mySendValue: myGiveValue,
+      allTeams: teams,
+      weakestPositions: myWeakPositions,
+      isSuperflex,
+      tolerance: 0.18,
+      limit: 12,
+    });
+  }, [
+    partnerId,
+    myTeam,
+    mySel,
+    myPickIds,
+    myGiveValue,
+    teams,
+    myWeakPositions,
+    isSuperflex,
+  ]);
+
   if (!myTeam) {
     return (
       <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
@@ -413,6 +454,12 @@ export default function TradeBuilder({
     setMySel(new Set(idea.send.map((p) => p.id)));
     setTheirSel(new Set(idea.receive.map((p) => p.id)));
     setMyPickIds(new Set());
+    setTheirPickIds(new Set());
+  }
+
+  function applyMatch(match: LeagueWideMatch) {
+    setPartnerId(match.partnerRosterId);
+    setTheirSel(new Set(match.receivePlayers.map((p) => p.id)));
     setTheirPickIds(new Set());
   }
 
@@ -535,6 +582,7 @@ export default function TradeBuilder({
           value={partnerId}
           onChange={(e) => changePartner(Number(e.target.value))}
         >
+          <option value={ANYONE}>Anyone (auto-match across the league)</option>
           {otherTeams.map((t) => (
             <option key={t.rosterId} value={t.rosterId}>
               {t.ownerName}
@@ -928,6 +976,106 @@ export default function TradeBuilder({
                   </li>
                 ))}
             </ul>
+          </section>
+        )}
+
+        {partnerId === ANYONE && (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              You get — auto-matches across the league
+            </h2>
+            {mySel.size === 0 && myPickIds.size === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/40 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400">
+                Pick players or picks on the left to see league-wide trade
+                options.
+              </div>
+            ) : leagueWideMatches.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/40 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400">
+                No competitive matches found at this value (
+                {myGiveValue.toLocaleString()}). Try a different combo.
+              </div>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {leagueWideMatches.map((m, i) => (
+                  <li
+                    key={`${m.partnerRosterId}-${m.receivePlayers[0]?.id ?? i}`}
+                    className="flex flex-col gap-2 rounded-2xl border border-zinc-200/80 bg-white/80 p-3 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80"
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-bold">
+                        vs. {m.partnerName}
+                      </span>
+                      {m.isFit && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                          Fit
+                        </span>
+                      )}
+                    </div>
+                    {m.receivePlayers.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-2"
+                      >
+                        <PlayerAvatar
+                          name={p.name}
+                          position={p.position}
+                          photoUrl={p.photoUrl}
+                          size="sm"
+                        />
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <PlayerLink
+                            id={p.id}
+                            name={p.name}
+                            className="truncate text-sm font-semibold"
+                          />
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {[p.team ?? "FA", p.position]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        </div>
+                        <span className="shrink-0 text-sm font-bold tabular-nums">
+                          {p.value.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span
+                        className={`text-xs font-semibold tabular-nums ${
+                          m.delta > 100
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : m.delta < -100
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-zinc-500 dark:text-zinc-400"
+                        }`}
+                      >
+                        {m.delta > 0 ? "+" : ""}
+                        {m.delta.toLocaleString()} value
+                        {Math.abs(m.delta) <= 100 ? " (even)" : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => applyMatch(m)}
+                        className="rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm shadow-amber-500/30 hover:shadow-md hover:shadow-amber-500/50 hover:brightness-110"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {m.reasoning.length > 0 && (
+                      <ul className="flex flex-col gap-0.5 pt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {m.reasoning.map((r) => (
+                          <li key={r}>• {r}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Matches filter out trades that would create same-team duplicates
+              on your roster (per your rule).
+            </p>
           </section>
         )}
       </div>

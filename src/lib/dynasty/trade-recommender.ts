@@ -1,5 +1,12 @@
 // Pure logic for league-wide trade recommendations and proposed-trade
 // evaluation. Safe to import from client components.
+//
+// Includes:
+// - findBestTrades: scan all partners for fit-driven trades (legacy)
+// - findLeagueWideMatches: given a fixed give side, find ALL competitive
+//   trade options across the league
+// - evaluateTrade: verdict on a specific proposal
+// - suggestCounters: counter-offer suggestions when verdict is unfavorable
 
 import type { PlayerRow, TeamSummary } from "./power-rankings";
 import type { RAPick } from "@/lib/rosteraudit/types";
@@ -201,6 +208,147 @@ export function findBestTrades(
   }
 
   return [...seen.values()].sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+// ---------------------------------------------------------------
+// League-wide auto-match: given my selected give side, surface every
+// competitive trade option across all partner teams.
+// ---------------------------------------------------------------
+
+export interface LeagueWideMatch {
+  partnerRosterId: number;
+  partnerName: string;
+  receivePlayers: PlayerRow[];
+  sendValue: number;
+  receiveValue: number;
+  delta: number; // receive - send (positive = you win)
+  pctDelta: number;
+  isFit: boolean;
+  fitPositions: string[];
+  conflictWarning: boolean;
+  reasoning: string[];
+  score: number;
+}
+
+export function findLeagueWideMatches({
+  myTeam,
+  mySendPlayerIds,
+  mySendValue,
+  allTeams,
+  weakestPositions,
+  tolerance = 0.15,
+  limit = 10,
+}: {
+  myTeam: TeamSummary;
+  mySendPlayerIds: Set<string>;
+  mySendValue: number; // total give value (players + picks)
+  allTeams: TeamSummary[];
+  weakestPositions: string[];
+  isSuperflex?: boolean;
+  tolerance?: number;
+  limit?: number;
+}): LeagueWideMatch[] {
+  if (mySendValue === 0) return [];
+
+  // Compute my POST-trade team+position set (for conflict avoidance per
+  // Jack's rule).
+  const myPostTradePositions = new Set<string>();
+  for (const p of myTeam.players) {
+    if (mySendPlayerIds.has(p.id)) continue;
+    if (p.team && p.position) {
+      myPostTradePositions.add(`${p.team}-${p.position}`);
+    }
+  }
+
+  const matches: LeagueWideMatch[] = [];
+
+  for (const partner of allTeams) {
+    if (partner.rosterId === myTeam.rosterId) continue;
+
+    for (const p of partner.players) {
+      if (p.value <= 0) continue;
+
+      // Match within tolerance
+      const baseline = Math.max(p.value, mySendValue);
+      const delta = p.value - mySendValue;
+      const pct = baseline > 0 ? Math.abs(delta) / baseline : 1;
+      if (pct > tolerance) continue;
+
+      // Skip if receiving them would create a same-team conflict on my
+      // post-trade roster.
+      const wouldConflict = !!(
+        p.team &&
+        p.position &&
+        myPostTradePositions.has(`${p.team}-${p.position}`)
+      );
+      if (wouldConflict) continue;
+
+      // Skip the partner's #1 player at any position (they won't trade
+      // their best). Heuristic: skip if this is their highest-valued
+      // player in this position.
+      const partnerPosBest = partner.players
+        .filter((x) => x.position === p.position)
+        .reduce((max, x) => (x.value > max ? x.value : max), 0);
+      if (p.value === partnerPosBest && p.value > 1500) {
+        continue;
+      }
+
+      const isFit = !!(p.position && weakestPositions.includes(p.position));
+
+      // Score: positional fit > value parity
+      let score = 0;
+      score += (1 - pct) * 30; // value parity
+      if (isFit) score += 35;
+      if (p.age != null && p.age <= 23) score += 8;
+      if (p.age != null && p.age >= 27) score -= 4;
+      if (delta > 0) score += Math.min(delta / 80, 15);
+
+      const reasoning: string[] = [];
+      if (isFit && p.position) {
+        reasoning.push(`Fills your weak ${p.position} room`);
+      }
+      if (Math.abs(delta) <= 100) {
+        reasoning.push("Value is essentially even");
+      } else if (delta > 0) {
+        reasoning.push(`+${delta.toLocaleString()} value gain`);
+      } else {
+        reasoning.push(`${delta.toLocaleString()} value (within tolerance)`);
+      }
+      if (p.age != null && p.age <= 23) {
+        reasoning.push(`Age ${p.age} — long dynasty runway`);
+      }
+
+      matches.push({
+        partnerRosterId: partner.rosterId,
+        partnerName: partner.ownerName,
+        receivePlayers: [p],
+        sendValue: mySendValue,
+        receiveValue: p.value,
+        delta,
+        pctDelta: baseline > 0 ? delta / baseline : 0,
+        isFit,
+        fitPositions: isFit && p.position ? [p.position] : [],
+        conflictWarning: false,
+        reasoning,
+        score,
+      });
+    }
+  }
+
+  // Dedup-ish: cap one match per (partnerRosterId, position) to avoid
+  // showing 4 RBs from the same partner.
+  const bestPerKey = new Map<string, LeagueWideMatch>();
+  for (const m of matches) {
+    const key = `${m.partnerRosterId}-${m.receivePlayers[0]?.position ?? "X"}`;
+    const existing = bestPerKey.get(key);
+    if (!existing || m.score > existing.score) {
+      bestPerKey.set(key, m);
+    }
+  }
+
+  return [...bestPerKey.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 // ---------------------------------------------------------------
