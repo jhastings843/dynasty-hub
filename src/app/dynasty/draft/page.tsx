@@ -236,24 +236,32 @@ export default async function DraftPage() {
             <h1 className="text-3xl font-semibold tracking-tight">
               Draft helper
             </h1>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
-                draft.status === "drafting"
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-                  : draft.status === "complete"
-                    ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-              }`}
-            >
-              <Clock size={12} aria-hidden />
-              {draft.status === "pre_draft"
-                ? "Pre-draft"
-                : draft.status === "drafting"
-                  ? "Drafting"
-                  : draft.status === "complete"
-                    ? "Complete"
-                    : draft.status}
-            </span>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dynasty/draft/board"
+                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+              >
+                League board →
+              </Link>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  draft.status === "drafting"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : draft.status === "complete"
+                      ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                      : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                }`}
+              >
+                <Clock size={12} aria-hidden />
+                {draft.status === "pre_draft"
+                  ? "Pre-draft"
+                  : draft.status === "drafting"
+                    ? "Drafting"
+                    : draft.status === "complete"
+                      ? "Complete"
+                      : draft.status}
+              </span>
+            </div>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {league.name} · {draft.season} · {totalRounds}-round {draft.type}{" "}
@@ -414,6 +422,126 @@ export default async function DraftPage() {
             })()}
           />
         </section>
+
+        {(() => {
+          const myPicks = picks
+            .filter((pk) => pk.picked_by === me.user_id)
+            .sort((a, b) => a.pick_no - b.pick_no);
+          if (myPicks.length === 0) return null;
+
+          // Compute total drafted value + surplus vs the picks I used.
+          const drafted = myPicks.reduce(
+            (s, pk) => s + (fcValues[pk.player_id]?.value ?? 0),
+            0,
+          );
+          const expected = myPicks.reduce((s, pk) => {
+            const u = userPicks.find((up) => up.pickNo === pk.pick_no);
+            return s + (u?.value ?? 0);
+          }, 0);
+          const surplus = drafted - expected;
+
+          return (
+            <section className="flex flex-col gap-3">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-xl font-semibold tracking-tight">
+                  Your draft so far
+                </h2>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {myPicks.length} of {userPicks.length} picks
+                </span>
+              </div>
+              <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-emerald-50/20 p-4 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-emerald-950/10">
+                <div className="flex flex-wrap items-center gap-6 border-b border-zinc-200/60 pb-3 dark:border-zinc-800/60">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Drafted value
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums">
+                      {drafted.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Expected
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums text-zinc-500 dark:text-zinc-400">
+                      {expected.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Surplus
+                    </span>
+                    <span
+                      className={`text-2xl font-bold tabular-nums ${
+                        surplus >= 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-400"
+                      }`}
+                    >
+                      {surplus >= 0 ? "+" : ""}
+                      {surplus.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <ul className="flex flex-col gap-2">
+                  {myPicks.map((pk) => {
+                    const p = players[pk.player_id];
+                    const v = fcValues[pk.player_id];
+                    if (!p) return null;
+                    const u = userPicks.find((up) => up.pickNo === pk.pick_no);
+                    const playerVal = v?.value ?? 0;
+                    const expectedVal = u?.value ?? 0;
+                    const pickSurplus = playerVal - expectedVal;
+                    return (
+                      <li
+                        key={pk.pick_no}
+                        className="flex items-center gap-3"
+                      >
+                        <span className="w-14 shrink-0 text-sm font-bold tabular-nums">
+                          {pk.round}.{pk.draft_slot.toString().padStart(2, "0")}
+                        </span>
+                        <PlayerAvatar
+                          name={nameOf(p)}
+                          position={p.position ?? null}
+                          photoUrl={v?.photoUrl ?? null}
+                          size="sm"
+                        />
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="truncate text-sm font-semibold">
+                            {nameOf(p)}
+                          </span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {[p.team ?? "FA", p.position]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end">
+                          <span className="text-sm font-semibold tabular-nums">
+                            {playerVal.toLocaleString()}
+                          </span>
+                          {Math.abs(pickSurplus) >= 50 && (
+                            <span
+                              className={`text-[10px] font-bold tabular-nums ${
+                                pickSurplus > 0
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-rose-600 dark:text-rose-400"
+                              }`}
+                            >
+                              {pickSurplus > 0 ? "+" : ""}
+                              {pickSurplus.toLocaleString()} vs pick
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </section>
+          );
+        })()}
 
         <RoundTargets
           userPicks={userPicks}
