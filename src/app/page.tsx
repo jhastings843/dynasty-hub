@@ -2,8 +2,11 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
+  BarChart3,
   BookOpen,
+  Calendar,
   Compass,
+  Layers,
   ListOrdered,
   Repeat,
   ShieldCheck,
@@ -64,23 +67,28 @@ const SECONDARY = [
 ];
 
 const STATS = [
-  { value: "523+", label: "ranked dynasty players" },
-  { value: "60", label: "rookie picks valued (2026 to 2029)" },
-  { value: "12", label: "team league, superflex, TE premium" },
-  { value: "Live", label: "movers updated daily" },
+  { value: "523+", label: "Ranked dynasty players", icon: BarChart3 },
+  { value: "60", label: "Rookie picks valued", icon: Layers },
+  { value: "12", label: "Team superflex league", icon: Trophy },
+  { value: "Live", label: "Movers updated daily", icon: Calendar },
 ];
 
 export default function Home() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
       {/* Hero */}
-      <section className="mb-16 flex flex-col gap-6">
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+      <section className="relative mb-16 flex flex-col gap-6">
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800 shadow-sm shadow-amber-500/5 backdrop-blur dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+          <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
           Dah Dynasty League · 2026
         </span>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-          Your dynasty league,{" "}
-          <span className="text-amber-600 dark:text-amber-400">decoded.</span>
+        <h1 className="max-w-3xl text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+          <span className="block text-zinc-900 dark:text-zinc-50">
+            Your dynasty league,
+          </span>
+          <span className="block bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text pb-1 text-transparent">
+            decoded.
+          </span>
         </h1>
         <p className="max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
           Live values, league-aware power rankings, and a trade analyzer that
@@ -89,40 +97,66 @@ export default function Home() {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href={PRIMARY.href}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400"
+            className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:shadow-xl hover:shadow-amber-500/40 hover:brightness-110"
           >
             Open dashboard
-            <ArrowRight size={16} aria-hidden />
+            <ArrowRight
+              size={16}
+              aria-hidden
+              className="transition-transform group-hover:translate-x-0.5"
+            />
           </Link>
           <Link
             href="/dynasty/trade"
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:bg-zinc-800"
+            className="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/70 px-5 py-3 text-sm font-bold text-zinc-900 backdrop-blur transition-all hover:bg-white hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-50 dark:hover:bg-zinc-900"
           >
             Build a trade
-            <ArrowUpRight size={16} aria-hidden />
+            <ArrowUpRight
+              size={16}
+              aria-hidden
+              className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            />
           </Link>
         </div>
 
-        {/* Stat strip */}
-        <dl className="mt-6 grid grid-cols-2 gap-4 border-y border-zinc-200 py-6 sm:grid-cols-4 dark:border-zinc-800">
-          {STATS.map((s) => (
-            <div key={s.label} className="flex flex-col gap-1">
-              <dt className="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
-                {s.value}
-              </dt>
-              <dd className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {s.label}
-              </dd>
-            </div>
-          ))}
+        {/* Stat cards */}
+        <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {STATS.map((s) => {
+            const Icon = s.icon;
+            return (
+              <div
+                key={s.label}
+                className="flex flex-col gap-2 rounded-2xl border border-zinc-200/80 bg-white/70 p-4 shadow-sm backdrop-blur transition-shadow hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/70"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Icon
+                    size={12}
+                    className="text-amber-600 dark:text-amber-400"
+                    aria-hidden
+                  />
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    {s.label}
+                  </dt>
+                </div>
+                <dd className="text-3xl font-bold tracking-tight tabular-nums">
+                  {s.value}
+                </dd>
+              </div>
+            );
+          })}
         </dl>
       </section>
 
       {/* Cards */}
       <section className="flex flex-col gap-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Tools
-        </h2>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Tools
+          </h2>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            {1 + SECONDARY.length} sections
+          </span>
+        </div>
         <ul className="grid gap-4 md:grid-cols-2">
           {[PRIMARY, ...SECONDARY].map((c) => {
             const Icon = c.icon;
@@ -130,13 +164,13 @@ export default function Home() {
               <li key={c.href}>
                 <Link
                   href={c.href}
-                  className="group flex h-full flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-6 transition-colors hover:border-amber-300 hover:bg-amber-50/30 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-amber-800 dark:hover:bg-amber-950/10"
+                  className="group relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 p-6 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-500/10 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:hover:border-amber-800 dark:hover:shadow-amber-500/5"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-amber-100 p-2 text-amber-700 transition-colors group-hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:group-hover:bg-amber-900/60">
+                    <div className="rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 p-2 text-amber-700 transition-all group-hover:from-amber-200 group-hover:to-amber-300 dark:from-amber-950/50 dark:to-amber-900/30 dark:text-amber-300 dark:group-hover:from-amber-900/60">
                       <Icon size={18} aria-hidden />
                     </div>
-                    <h3 className="text-lg font-semibold tracking-tight">
+                    <h3 className="text-lg font-bold tracking-tight">
                       {c.title}
                     </h3>
                     <span
@@ -155,19 +189,6 @@ export default function Home() {
           })}
         </ul>
       </section>
-
-      <p className="mt-12 text-xs text-zinc-500 dark:text-zinc-400">
-        Player values via{" "}
-        <a
-          href="https://rosteraudit.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-amber-700 hover:underline dark:text-amber-400"
-        >
-          RosterAudit
-        </a>
-        . League data via Sleeper.
-      </p>
     </main>
   );
 }

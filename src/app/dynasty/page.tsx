@@ -238,24 +238,35 @@ export default async function DynastyPage() {
           {myRoster && grades[myRoster.roster_id] && (() => {
             const g = grades[myRoster.roster_id];
             return (
-              <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-xl font-bold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+              <div className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-white via-white to-amber-50/40 p-5 shadow-sm dark:border-zinc-800/80 dark:from-zinc-900 dark:via-zinc-900 dark:to-amber-950/10">
+                <div className="flex flex-wrap items-center gap-5">
+                  <div className="flex items-center gap-4">
+                    <span className="grid size-20 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-4xl font-black tracking-tighter text-white shadow-lg shadow-amber-500/30">
                       {g.dynastyGrade || "—"}
                     </span>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Dynasty grade · #{g.dynastyRank} of {rosters.length}
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                        Dynasty grade
                       </span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Contender {g.contenderGrade || "—"} · power #
-                        {g.powerRank} · {g.projectedPpg.toFixed(1)} ppg
+                      <span className="text-2xl font-bold tracking-tight">
+                        #{g.dynastyRank} of {rosters.length}
+                      </span>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Contender{" "}
+                        <span className="font-semibold">
+                          {g.contenderGrade || "—"}
+                        </span>
+                        {" · "}power #{g.powerRank}
+                        {" · "}
+                        <span className="tabular-nums">
+                          {g.projectedPpg.toFixed(1)}
+                        </span>{" "}
+                        ppg
                       </span>
                     </div>
                   </div>
                   {g.weakness && (
-                    <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                    <span className="ml-auto rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
                       {g.weakness}
                     </span>
                   )}
