@@ -414,39 +414,117 @@ export default async function DraftPage() {
 
         <div className="grid gap-4 md:grid-cols-3">
           {/* Next pick card */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-sky-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-sky-950/10">
+          <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-sky-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-sky-950/10">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Your next pick
             </span>
             {nextUserPick ? (
-              <div className="flex items-center gap-4">
-                <span
-                  className={`grid size-16 place-items-center rounded-2xl bg-gradient-to-br text-xl font-black tracking-tighter text-white shadow-lg ${
-                    userIsOnTheClock
-                      ? "from-emerald-400 to-emerald-600 shadow-emerald-500/40"
-                      : "from-sky-400 to-sky-600 shadow-sky-500/30"
-                  }`}
-                >
-                  {nextUserPick.round}.
-                  {nextUserPick.slot.toString().padStart(2, "0")}
-                </span>
-                <div className="flex flex-col gap-0.5">
-                  {userIsOnTheClock ? (
-                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                      On the clock
-                    </span>
-                  ) : (
-                    <span className="text-2xl font-bold tracking-tight tabular-nums">
-                      {picksUntilUserUp}
-                    </span>
-                  )}
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {userIsOnTheClock
-                      ? `pick ${nextUserPick.pickNo} of ${totalTeams * totalRounds}`
-                      : `pick${picksUntilUserUp === 1 ? "" : "s"} until your turn (overall #${nextUserPick.pickNo})`}
+              <>
+                <div className="flex items-center gap-4">
+                  <span
+                    className={`grid size-20 place-items-center rounded-2xl bg-gradient-to-br text-2xl font-black tracking-tighter text-white shadow-lg ${
+                      userIsOnTheClock
+                        ? "from-emerald-400 to-emerald-600 shadow-emerald-500/40"
+                        : "from-sky-400 to-sky-600 shadow-sky-500/30"
+                    }`}
+                  >
+                    {nextUserPick.round}.
+                    {nextUserPick.slot.toString().padStart(2, "0")}
                   </span>
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    {userIsOnTheClock ? (
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                        On the clock
+                      </span>
+                    ) : (
+                      <span className="text-3xl font-black tracking-tight tabular-nums">
+                        {picksUntilUserUp}
+                      </span>
+                    )}
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {userIsOnTheClock
+                        ? `pick ${nextUserPick.pickNo} of ${totalTeams * totalRounds}`
+                        : `pick${picksUntilUserUp === 1 ? "" : "s"} until your turn`}
+                    </span>
+                  </div>
                 </div>
-              </div>
+
+                {/* Detail grid */}
+                <dl className="grid grid-cols-2 gap-3 border-t border-zinc-200/60 pt-3 text-xs dark:border-zinc-800/60">
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Round / zone
+                    </dt>
+                    <dd className="font-semibold">
+                      {nextUserPick.zone.charAt(0).toUpperCase() +
+                        nextUserPick.zone.slice(1)}{" "}
+                      {ordinal(nextUserPick.round)}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Pick value
+                    </dt>
+                    <dd className="font-semibold tabular-nums">
+                      {nextUserPick.value != null
+                        ? nextUserPick.value.toLocaleString()
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Overall pick
+                    </dt>
+                    <dd className="font-semibold tabular-nums">
+                      #{nextUserPick.pickNo} of {totalTeams * totalRounds}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Source
+                    </dt>
+                    <dd className="font-semibold">
+                      {pickOriginalOwner.get(nextUserPick.pickNo) !==
+                      myRoster?.roster_id
+                        ? `via roster ${pickOriginalOwner.get(nextUserPick.pickNo)}`
+                        : "Your original"}
+                    </dd>
+                  </div>
+                </dl>
+
+                {/* Draft progress bar */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    <span>Draft progress</span>
+                    <span className="tabular-nums">
+                      {picks.length} / {totalTeams * totalRounds}
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                    {/* Picks made fill */}
+                    <div
+                      className="absolute inset-y-0 left-0 bg-zinc-400 dark:bg-zinc-600"
+                      style={{
+                        width: `${
+                          (picks.length / (totalTeams * totalRounds)) * 100
+                        }%`,
+                      }}
+                    />
+                    {/* User's next-pick marker */}
+                    <div
+                      className="absolute inset-y-0 w-0.5 bg-sky-500"
+                      style={{
+                        left: `calc(${
+                          ((nextUserPick.pickNo - 1) /
+                            (totalTeams * totalRounds)) *
+                          100
+                        }% - 1px)`,
+                      }}
+                      aria-label="Your next pick"
+                    />
+                  </div>
+                </div>
+              </>
             ) : (
               <span className="text-sm text-zinc-400 dark:text-zinc-600">
                 All your picks made.
