@@ -88,4 +88,12 @@ export interface SleeperDraftPick {
   metadata?: Record<string, string> | null;
 }
 
+export interface SleeperTradedPick {
+  season: string;
+  round: number;
+  roster_id: number; // original owner
+  owner_id: number; // current owner
+  previous_owner_id?: number | null;
+}
+
 export type SleeperPlayersById = Record<string, SleeperPlayer>;

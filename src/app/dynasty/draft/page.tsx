@@ -12,6 +12,7 @@ import {
   getLeague,
   getLeagueDrafts,
   getLeagueRosters,
+  getTradedPicks,
   getUser,
 } from "@/lib/sleeper/client";
 import type { SleeperPlayer } from "@/lib/sleeper/types";
@@ -128,7 +129,7 @@ export default async function DraftPage() {
   const raFormat = formatKeyFromLeague(league);
 
   const ktcFormat = ktcFormatFromLeague(league);
-  const [drafts, rosters, players, fcValues, raPicks, ktcByName] =
+  const [drafts, rosters, players, fcValues, raPicks, ktcByName, tradedPicks] =
     await Promise.all([
       getLeagueDrafts(leagueId),
       getLeagueRosters(leagueId),
@@ -136,6 +137,7 @@ export default async function DraftPage() {
       getValues(raFormat),
       getPicks(),
       getKTCValues(ktcFormat).catch((): KTCByName => ({})),
+      getTradedPicks(leagueId).catch(() => []),
     ]);
 
   if (drafts.length === 0) {
@@ -147,7 +149,6 @@ export default async function DraftPage() {
   const draft = drafts[0];
   const picks = await getDraftPicks(draft.draft_id).catch(() => []);
   const myRoster = rosters.find((r) => r.owner_id === me.user_id) ?? null;
-  const mySlot = draft.draft_order?.[me.user_id] ?? null;
   const totalRounds = draft.settings?.rounds ?? 4;
   const totalTeams = draft.settings?.teams ?? rosters.length ?? 12;
 
@@ -218,20 +219,85 @@ export default async function DraftPage() {
     .sort((a, b) => localPosValues[a] - localPosValues[b])
     .slice(0, 2);
 
-  const myPickNumbers: number[] = [];
-  if (mySlot && draft.type === "linear") {
-    for (let r = 1; r <= totalRounds; r++) {
-      myPickNumbers.push((r - 1) * totalTeams + mySlot);
+  // Compute pick number for a given roster's pick in a given round,
+  // accounting for snake direction.
+  function pickNumberFor(
+    rosterId: number,
+    round: number,
+  ): number | null {
+    const roster = rosters.find((r) => r.roster_id === rosterId);
+    if (!roster?.owner_id) return null;
+    const slot = draft.draft_order?.[roster.owner_id];
+    if (!slot) return null;
+    if (draft.type === "snake") {
+      const slotInRound = round % 2 === 1 ? slot : totalTeams - slot + 1;
+      return (round - 1) * totalTeams + slotInRound;
     }
-  } else if (mySlot) {
+    return (round - 1) * totalTeams + slot;
+  }
+
+  const myRosterId = myRoster?.roster_id ?? null;
+  const seasonStr = draft.season ?? new Date().getFullYear().toString();
+
+  // Start with the user's default picks (one per round at their slot).
+  type ResolvedPick = {
+    season: string;
+    round: number;
+    originalRosterId: number;
+    pickNo: number;
+  };
+  const myResolvedPicks: ResolvedPick[] = [];
+  if (myRosterId != null) {
     for (let r = 1; r <= totalRounds; r++) {
-      const slotInRound = r % 2 === 1 ? mySlot : totalTeams - mySlot + 1;
-      myPickNumbers.push((r - 1) * totalTeams + slotInRound);
+      const pn = pickNumberFor(myRosterId, r);
+      if (pn != null) {
+        myResolvedPicks.push({
+          season: seasonStr,
+          round: r,
+          originalRosterId: myRosterId,
+          pickNo: pn,
+        });
+      }
     }
   }
 
+  // Apply traded picks scoped to this draft's season.
+  const seasonTradedPicks = tradedPicks.filter(
+    (tp) => tp.season === seasonStr,
+  );
+
+  // Remove picks I gave away (my originals where current owner != me).
+  const givenAway = new Set(
+    seasonTradedPicks
+      .filter(
+        (tp) => tp.roster_id === myRosterId && tp.owner_id !== myRosterId,
+      )
+      .map((tp) => tp.round),
+  );
+  const afterGiven = myResolvedPicks.filter((p) => !givenAway.has(p.round));
+
+  // Add picks I received (where I'm now the owner of someone else's pick).
+  const received = seasonTradedPicks.filter(
+    (tp) => tp.owner_id === myRosterId && tp.roster_id !== myRosterId,
+  );
+  for (const tp of received) {
+    const pn = pickNumberFor(tp.roster_id, tp.round);
+    if (pn != null) {
+      afterGiven.push({
+        season: tp.season,
+        round: tp.round,
+        originalRosterId: tp.roster_id,
+        pickNo: pn,
+      });
+    }
+  }
+
+  // Sort by pickNo
+  afterGiven.sort((a, b) => a.pickNo - b.pickNo);
+
   const isSuperflex = raFormat.startsWith("sf");
-  const seasonNum = Number(draft.season ?? new Date().getFullYear());
+  const seasonNum = Number(seasonStr);
+  const myPickNumbers = afterGiven.map((p) => p.pickNo);
   const userPicks = buildUserPicks(
     myPickNumbers,
     totalTeams,
@@ -239,19 +305,26 @@ export default async function DraftPage() {
     raPicks,
     isSuperflex,
   );
+
+  // Map of pickNo -> originalRosterId for "via" annotation
+  const pickOriginalOwner = new Map<number, number>();
+  for (const p of afterGiven) {
+    pickOriginalOwner.set(p.pickNo, p.originalRosterId);
+  }
+
+  // Map of pickNo -> draft pick if made
+  const draftPickByPickNo = new Map<number, (typeof picks)[number]>();
+  for (const pk of picks) draftPickByPickNo.set(pk.pick_no, pk);
+
   const totalPickValue = userPicks.reduce(
     (s, p) => s + (p.value ?? 0),
     0,
   );
 
   // Find the user's next pick (first unused pick in order).
-  const myDraftedPickNoSet = new Set(
-    picks
-      .filter((pk) => pk.picked_by === me.user_id)
-      .map((pk) => pk.pick_no),
-  );
+  const madePickNos = new Set(picks.map((pk) => pk.pick_no));
   const nextUserPick = userPicks.find(
-    (p) => !myDraftedPickNoSet.has(p.pickNo) && p.value != null,
+    (p) => !madePickNos.has(p.pickNo) && p.value != null,
   );
   const nextPickRef: NextPickRef | null = nextUserPick
     ? {
@@ -259,6 +332,16 @@ export default async function DraftPage() {
         value: nextUserPick.value!,
       }
     : null;
+
+  // Pick currently up next overall in the draft (1-based)
+  const currentOverallPick = picks.length + 1;
+  // Picks remaining until user's next pick
+  const picksUntilUserUp = nextUserPick
+    ? Math.max(0, nextUserPick.pickNo - currentOverallPick)
+    : null;
+  const userIsOnTheClock = nextUserPick
+    ? nextUserPick.pickNo === currentOverallPick
+    : false;
 
   const recommendations = buildRecommendations({
     rookies: rookieRows,
@@ -330,24 +413,45 @@ export default async function DraftPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {/* Slot card — sky for "data" feel */}
+          {/* Next pick card */}
           <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-sky-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-sky-950/10">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Your draft slot
+              Your next pick
             </span>
-            <div className="flex items-center gap-4">
-              <span className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-2xl font-black tracking-tighter text-white shadow-lg shadow-sky-500/30">
-                {mySlot ? `#${mySlot}` : "—"}
-              </span>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-2xl font-bold tracking-tight tabular-nums">
-                  {mySlot ?? "—"}
+            {nextUserPick ? (
+              <div className="flex items-center gap-4">
+                <span
+                  className={`grid size-16 place-items-center rounded-2xl bg-gradient-to-br text-xl font-black tracking-tighter text-white shadow-lg ${
+                    userIsOnTheClock
+                      ? "from-emerald-400 to-emerald-600 shadow-emerald-500/40"
+                      : "from-sky-400 to-sky-600 shadow-sky-500/30"
+                  }`}
+                >
+                  {nextUserPick.round}.
+                  {nextUserPick.slot.toString().padStart(2, "0")}
                 </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  of {totalTeams} teams
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  {userIsOnTheClock ? (
+                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                      On the clock
+                    </span>
+                  ) : (
+                    <span className="text-2xl font-bold tracking-tight tabular-nums">
+                      {picksUntilUserUp}
+                    </span>
+                  )}
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {userIsOnTheClock
+                      ? `pick ${nextUserPick.pickNo} of ${totalTeams * totalRounds}`
+                      : `pick${picksUntilUserUp === 1 ? "" : "s"} until your turn (overall #${nextUserPick.pickNo})`}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <span className="text-sm text-zinc-400 dark:text-zinc-600">
+                All your picks made.
+              </span>
+            )}
           </div>
 
           {/* Picks card */}
@@ -367,25 +471,59 @@ export default async function DraftPage() {
               <span className="text-sm text-zinc-400 dark:text-zinc-600">—</span>
             ) : (
               <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                {userPicks.map((p) => (
-                  <li
-                    key={p.pickNo}
-                    className="flex items-center justify-between gap-2 py-1.5 text-sm"
-                  >
-                    <span className="tabular-nums">
-                      <span className="font-bold">
-                        {p.round}.{p.slot.toString().padStart(2, "0")}
+                {userPicks.map((p) => {
+                  const made = draftPickByPickNo.get(p.pickNo);
+                  const draftedPlayer = made
+                    ? players[made.player_id]
+                    : null;
+                  const draftedValue = made
+                    ? fcValues[made.player_id]?.value ?? 0
+                    : null;
+                  const originalRoster = pickOriginalOwner.get(p.pickNo);
+                  const isReceivedPick =
+                    originalRoster != null &&
+                    originalRoster !== myRoster?.roster_id;
+                  return (
+                    <li
+                      key={p.pickNo}
+                      className={`flex items-center justify-between gap-2 py-1.5 text-sm ${
+                        made ? "opacity-70" : ""
+                      }`}
+                    >
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold tabular-nums">
+                            {p.round}.{p.slot.toString().padStart(2, "0")}
+                          </span>
+                          {draftedPlayer ? (
+                            <span className="truncate text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                              {draftedPlayer.full_name ??
+                                `${draftedPlayer.first_name ?? ""} ${draftedPlayer.last_name ?? ""}`.trim()}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {p.zone.charAt(0).toUpperCase() +
+                                p.zone.slice(1)}{" "}
+                              {ordinal(p.round)}
+                            </span>
+                          )}
+                        </div>
+                        {isReceivedPick && (
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-500">
+                            via roster {originalRoster}
+                          </span>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-xs font-bold tabular-nums text-zinc-700 dark:text-zinc-300">
+                        {draftedValue != null
+                          ? draftedValue.toLocaleString()
+                          : p.value != null
+                            ? p.value.toLocaleString()
+                            : "—"}
                       </span>
-                      <span className="ml-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                        {p.zone.charAt(0).toUpperCase() + p.zone.slice(1)}{" "}
-                        {ordinal(p.round)}
-                      </span>
-                    </span>
-                    <span className="text-xs font-bold tabular-nums text-zinc-700 dark:text-zinc-300">
-                      {p.value != null ? p.value.toLocaleString() : "—"}
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

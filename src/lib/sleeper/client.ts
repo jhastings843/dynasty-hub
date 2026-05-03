@@ -7,6 +7,7 @@ import type {
   SleeperPlayer,
   SleeperPlayersById,
   SleeperRoster,
+  SleeperTradedPick,
   SleeperUser,
 } from "./types";
 
@@ -21,6 +22,7 @@ const KEY = {
   drafts: (id: string) => `sleeper:v1:league:${id}:drafts`,
   draft: (id: string) => `sleeper:v1:draft:${id}`,
   draftPicks: (id: string) => `sleeper:v1:draft:${id}:picks`,
+  tradedPicks: (id: string) => `sleeper:v1:league:${id}:traded_picks`,
 };
 
 const TTL = {
@@ -33,6 +35,8 @@ const TTL = {
   draft: 60 * 60,
   // Draft picks change in real-time during the draft itself; short TTL.
   draftPicks: 60,
+  // Traded picks change at trade events (rare); 6h is plenty.
+  tradedPicks: 6 * 60 * 60,
 };
 
 async function sleeperFetch<T>(path: string): Promise<T> {
@@ -138,4 +142,12 @@ export function getDraftPicks(draftId: string): Promise<SleeperDraftPick[]> {
 
 export async function revalidateDraft(draftId: string): Promise<void> {
   await invalidate(KEY.draft(draftId), KEY.draftPicks(draftId));
+}
+
+export function getTradedPicks(
+  leagueId: string,
+): Promise<SleeperTradedPick[]> {
+  return cached(KEY.tradedPicks(leagueId), TTL.tradedPicks, () =>
+    sleeperFetch<SleeperTradedPick[]>(`/league/${leagueId}/traded_picks`),
+  );
 }
