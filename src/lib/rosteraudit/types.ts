@@ -160,3 +160,59 @@ export interface RAPlayerStats {
   season: number;
   weekly: RAWeeklyStat[];
 }
+
+// --- League history (for GM Scout) ---
+
+export interface RAManagerSummary {
+  userId: string;
+  displayName: string;
+  avatar: string | null;
+  seasonsPlayed: number;
+  totalGames: number;
+  totalWins: number;
+  totalLosses: number;
+  totalTies: number;
+  winPct: number;
+  totalPf: number;
+  avgPfPerSeason: number;
+  championships: number;
+  runnerUps: number;
+  lastPlaces: number;
+  playoffAppearances: number;
+  playoffWins: number;
+  playoffLosses: number;
+  highestWeekScore: number;
+  lowestWeekScore: number;
+}
+
+export interface RAManagerSeasonRow {
+  season: string;
+  rosterId: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  finalStanding: number;
+  madePlayoffs: boolean;
+  wonChampionship: boolean;
+  runnerUp: boolean;
+  lastPlace: boolean;
+}
+
+export interface RAManagerHistory {
+  totals: {
+    displayName: string;
+    seasons: number;
+    totalWins: number;
+    totalLosses: number;
+    championships: number;
+    runnerUps: number;
+    lastPlaces: number;
+    totalPf: number;
+    playoffWins: number;
+    playoffLosses: number;
+    winPct: number;
+  };
+  seasons: RAManagerSeasonRow[];
+}

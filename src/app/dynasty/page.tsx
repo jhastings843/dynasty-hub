@@ -603,10 +603,19 @@ export default async function DynastyPage() {
                     <span className="w-5 shrink-0 text-sm font-medium tabular-nums text-zinc-500 dark:text-zinc-400">
                       {i + 1}
                     </span>
-                    <span className="truncate text-base font-medium">
-                      {ownerName(r, usersById)}
-                      {isMe ? " (you)" : ""}
-                    </span>
+                    {r.owner_id ? (
+                      <Link
+                        href={`/dynasty/scout/${r.owner_id}`}
+                        className="truncate text-base font-medium hover:text-amber-700 hover:underline dark:hover:text-amber-400"
+                      >
+                        {ownerName(r, usersById)}
+                        {isMe ? " (you)" : ""}
+                      </Link>
+                    ) : (
+                      <span className="truncate text-base font-medium">
+                        {ownerName(r, usersById)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex shrink-0 flex-col items-end">
                     <span className="text-sm font-medium tabular-nums">

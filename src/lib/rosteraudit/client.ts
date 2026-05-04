@@ -5,6 +5,9 @@ import type {
   PickSlot,
   RAFormatKey,
   RAGradesByRosterId,
+  RAManagerHistory,
+  RAManagerSeasonRow,
+  RAManagerSummary,
   RAMover,
   RAMovers,
   RAPick,
@@ -502,6 +505,105 @@ export function getPlayerStats(
   });
 }
 
+// --- League history for GM Scout ---
+
+const HISTORY_MGRS_KEY = (leagueId: string) =>
+  `rosteraudit:v1:history:managers:${leagueId}`;
+const HISTORY_MGR_KEY = (leagueId: string, userId: string) =>
+  `rosteraudit:v1:history:manager:${leagueId}:${userId}`;
+const HISTORY_TTL = 12 * 60 * 60;
+
+type RawManagerSummary = Record<string, unknown>;
+type RawManagerHistory = {
+  totals?: Record<string, unknown>;
+  seasons?: Array<Record<string, unknown>>;
+};
+
+function slimManagerSummary(raw: RawManagerSummary): RAManagerSummary {
+  return {
+    userId: String(raw.user_id ?? ""),
+    displayName: String(raw.display_name ?? ""),
+    avatar: typeof raw.avatar === "string" ? raw.avatar : null,
+    seasonsPlayed: num(raw.seasons_played),
+    totalGames: num(raw.total_games),
+    totalWins: num(raw.total_wins),
+    totalLosses: num(raw.total_losses),
+    totalTies: num(raw.total_ties),
+    winPct: num(raw.win_pct),
+    totalPf: num(raw.total_pf),
+    avgPfPerSeason: num(raw.avg_pf_per_season),
+    championships: num(raw.championships),
+    runnerUps: num(raw.runner_ups),
+    lastPlaces: num(raw.last_places),
+    playoffAppearances: num(raw.playoff_appearances),
+    playoffWins: num(raw.total_playoff_wins),
+    playoffLosses: num(raw.total_playoff_losses),
+    highestWeekScore: num(raw.highest_week_score),
+    lowestWeekScore: num(raw.lowest_week_score),
+  };
+}
+
+export function getLeagueManagers(
+  leagueId: string,
+): Promise<RAManagerSummary[]> {
+  return cached(HISTORY_MGRS_KEY(leagueId), HISTORY_TTL, async () => {
+    try {
+      const raw = await raFetch<{ managers?: RawManagerSummary[] }>(
+        `/league-history/${leagueId}/managers`,
+      );
+      return (raw.managers ?? []).map(slimManagerSummary);
+    } catch {
+      return [];
+    }
+  });
+}
+
+export function getManagerHistory(
+  leagueId: string,
+  userId: string,
+): Promise<RAManagerHistory | null> {
+  return cached(HISTORY_MGR_KEY(leagueId, userId), HISTORY_TTL, async () => {
+    try {
+      const raw = await raFetch<RawManagerHistory>(
+        `/league-history/${leagueId}/manager/${userId}`,
+      );
+      const t = (raw.totals ?? {}) as Record<string, unknown>;
+      const seasons: RAManagerSeasonRow[] = (raw.seasons ?? []).map((s) => ({
+        season: String(s.season ?? ""),
+        rosterId: num(s.roster_id),
+        wins: num(s.wins),
+        losses: num(s.losses),
+        ties: num(s.ties),
+        pointsFor: num(s.points_for),
+        pointsAgainst: num(s.points_against),
+        finalStanding: num(s.final_standing),
+        madePlayoffs: flag(s.made_playoffs),
+        wonChampionship: flag(s.won_championship),
+        runnerUp: flag(s.runner_up),
+        lastPlace: flag(s.last_place),
+      }));
+      return {
+        totals: {
+          displayName: String(t.display_name ?? ""),
+          seasons: num(t.seasons),
+          totalWins: num(t.total_wins),
+          totalLosses: num(t.total_losses),
+          championships: num(t.championships),
+          runnerUps: num(t.runner_ups),
+          lastPlaces: num(t.last_places),
+          totalPf: num(t.total_pf),
+          playoffWins: num(t.playoff_wins),
+          playoffLosses: num(t.playoff_losses),
+          winPct: num(t.win_pct),
+        },
+        seasons,
+      };
+    } catch {
+      return null;
+    }
+  });
+}
+
 export type {
   RAValue,
   RAValuesBySleeperId,
@@ -513,6 +615,8 @@ export type {
   RAGradesByRosterId,
   RAPlayerProfile,
   RAPlayerStats,
+  RAManagerSummary,
+  RAManagerHistory,
   RAWeeklyStat,
   PickSlot,
 };

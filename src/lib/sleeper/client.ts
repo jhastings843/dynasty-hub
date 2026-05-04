@@ -23,6 +23,8 @@ const KEY = {
   draft: (id: string) => `sleeper:v1:draft:${id}`,
   draftPicks: (id: string) => `sleeper:v1:draft:${id}:picks`,
   tradedPicks: (id: string) => `sleeper:v1:league:${id}:traded_picks`,
+  userLeagues: (userId: string, season: string) =>
+    `sleeper:v1:user:${userId}:leagues:nfl:${season}`,
 };
 
 const TTL = {
@@ -37,6 +39,7 @@ const TTL = {
   draftPicks: 60,
   // Traded picks change at trade events (rare); 6h is plenty.
   tradedPicks: 6 * 60 * 60,
+  userLeagues: 6 * 60 * 60,
 };
 
 async function sleeperFetch<T>(path: string): Promise<T> {
@@ -149,5 +152,14 @@ export function getTradedPicks(
 ): Promise<SleeperTradedPick[]> {
   return cached(KEY.tradedPicks(leagueId), TTL.tradedPicks, () =>
     sleeperFetch<SleeperTradedPick[]>(`/league/${leagueId}/traded_picks`),
+  );
+}
+
+export function getUserLeagues(
+  userId: string,
+  season: string,
+): Promise<SleeperLeague[]> {
+  return cached(KEY.userLeagues(userId, season), TTL.userLeagues, () =>
+    sleeperFetch<SleeperLeague[]>(`/user/${userId}/leagues/nfl/${season}`),
   );
 }
