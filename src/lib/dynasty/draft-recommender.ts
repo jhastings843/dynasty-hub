@@ -87,21 +87,31 @@ export function buildRecommendations({
     const isFit = !!c.position && weakestPositions.includes(c.position);
     const surplus = nextPickValue ? c.value - nextPickValue : 0;
 
+    // Composite score:
+    //   - value is the dominant signal (per value point)
+    //   - surplus modifies it: bonus if positive, mild penalty if below pick
+    //   - position fit is a meaningful but bounded boost
+    //   - age is a tiebreaker only, not a primary signal
+    //   - RA flags nudge in either direction
     let score = 0;
-    score += c.value / 100;
-    if (surplus > 0) score += Math.min(surplus / 30, 50);
-    if (isFit) score += 25;
-    if (c.age != null) {
-      if (c.age <= 21) score += 12;
-      else if (c.age <= 22) score += 8;
-      else if (c.age >= 24) score -= 4;
+    score += c.value / 30;
+    if (surplus > 0) {
+      score += Math.min(surplus / 25, 60);
+    } else {
+      score += Math.max(surplus / 30, -10);
     }
-    if (c.buyLow) score += 10;
-    if (c.breakout) score += 15;
-    if (c.sellHigh) score -= 6;
+    if (isFit) score += 30;
+    if (c.age != null) {
+      if (c.age <= 21) score += 4;
+      else if (c.age <= 22) score += 2;
+      else if (c.age >= 25) score -= 3;
+    }
+    if (c.buyLow) score += 8;
+    if (c.breakout) score += 12;
+    if (c.sellHigh) score -= 5;
 
     // Penalty if extremely above pick value (unrealistic — they'll be gone)
-    if (surplus > (nextPickValue ?? 0) * 1.5) score -= 20;
+    if (nextPickValue && surplus > nextPickValue * 1.5) score -= 20;
 
     return { c, score, surplus, isFit };
   });
