@@ -15,7 +15,7 @@ const SLEEPER_BASE = "https://api.sleeper.app/v1";
 
 const KEY = {
   league: (id: string) => `sleeper:v1:league:${id}`,
-  rosters: (id: string) => `sleeper:v1:league:${id}:rosters`,
+  rosters: (id: string) => `sleeper:v2:league:${id}:rosters`,
   users: (id: string) => `sleeper:v1:league:${id}:users`,
   user: (u: string) => `sleeper:v1:user:${u}`,
   playersSlim: () => `sleeper:v2:players:nfl:slim`,
@@ -29,7 +29,7 @@ const KEY = {
 
 const TTL = {
   league: 12 * 60 * 60,
-  rosters: 60 * 60,
+  rosters: 15 * 60,
   users: 24 * 60 * 60,
   user: 24 * 60 * 60,
   playersSlim: 24 * 60 * 60,

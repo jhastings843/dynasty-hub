@@ -1,0 +1,59 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { RefreshCw } from "lucide-react";
+
+// Manually busts the league cache (rosters, users, draft, players)
+// then re-renders the page. Use after a draft completes, a trade
+// processes on Sleeper, or any other moment we know league state
+// has changed and we want immediate fresh data.
+export function RefreshButton({
+  label = "Refresh league",
+}: {
+  label?: string;
+}) {
+  const router = useRouter();
+  const [state, setState] = useState<"idle" | "loading" | "done" | "error">(
+    "idle",
+  );
+
+  async function trigger() {
+    setState("loading");
+    try {
+      const res = await fetch("/api/refresh", { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+      router.refresh();
+      setState("done");
+      setTimeout(() => setState("idle"), 1500);
+    } catch {
+      setState("error");
+      setTimeout(() => setState("idle"), 2500);
+    }
+  }
+
+  const text =
+    state === "loading"
+      ? "Refreshing..."
+      : state === "done"
+        ? "Updated"
+        : state === "error"
+          ? "Failed"
+          : label;
+
+  return (
+    <button
+      type="button"
+      onClick={trigger}
+      disabled={state === "loading"}
+      className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+    >
+      <RefreshCw
+        size={14}
+        aria-hidden
+        className={state === "loading" ? "animate-spin" : ""}
+      />
+      {text}
+    </button>
+  );
+}
