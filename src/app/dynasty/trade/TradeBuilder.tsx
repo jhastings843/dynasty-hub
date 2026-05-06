@@ -8,11 +8,13 @@ import {
   evaluateTrade,
   findBestTrades,
   findLeagueWideMatches,
+  suggestLevelers,
   tierForMatch,
   verdictLabel,
   type BestTradeIdea,
   type LeagueWideMatch,
   type LeagueWideMatchTier,
+  type LevelerOption,
   type TradeVerdict,
 } from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
@@ -455,6 +457,38 @@ export default function TradeBuilder({
     return playerSum + pickSum;
   }, [partnerTeam, theirSel, theirPickIds, picksById, isSuperflex]);
 
+  const levelers = useMemo<LevelerOption[]>(() => {
+    if (!myTeam || !partnerTeam || partnerId === ANYONE) return [];
+    if (mySel.size + theirSel.size + myPickIds.size + theirPickIds.size === 0) {
+      return [];
+    }
+    const delta = theirGiveValue - myGiveValue;
+    return suggestLevelers({
+      myTeam,
+      partnerTeam,
+      mySelectedIds: mySel,
+      theirSelectedIds: theirSel,
+      delta,
+      picks,
+      selectedPickIds: new Set([...myPickIds, ...theirPickIds]),
+      isSuperflex,
+      myWeakPositions,
+    });
+  }, [
+    myTeam,
+    partnerTeam,
+    partnerId,
+    mySel,
+    theirSel,
+    myPickIds,
+    theirPickIds,
+    myGiveValue,
+    theirGiveValue,
+    picks,
+    isSuperflex,
+    myWeakPositions,
+  ]);
+
   const leagueWideMatches = useMemo(() => {
     if (
       partnerId !== ANYONE ||
@@ -541,6 +575,53 @@ export default function TradeBuilder({
     setPartnerId(match.partnerRosterId);
     setTheirSel(new Set(match.receivePlayers.map((p) => p.id)));
     setTheirPickIds(new Set());
+  }
+
+  function applyLeveler(opt: LevelerOption) {
+    switch (opt.type) {
+      case "add_my_player":
+        if (opt.player) {
+          const next = new Set(mySel);
+          next.add(opt.player.id);
+          setMySel(next);
+        }
+        break;
+      case "add_their_player":
+        if (opt.player) {
+          const next = new Set(theirSel);
+          next.add(opt.player.id);
+          setTheirSel(next);
+        }
+        break;
+      case "remove_my_player":
+        if (opt.player) {
+          const next = new Set(mySel);
+          next.delete(opt.player.id);
+          setMySel(next);
+        }
+        break;
+      case "remove_their_player":
+        if (opt.player) {
+          const next = new Set(theirSel);
+          next.delete(opt.player.id);
+          setTheirSel(next);
+        }
+        break;
+      case "add_my_pick":
+        if (opt.pickId !== undefined) {
+          const next = new Set(myPickIds);
+          next.add(opt.pickId);
+          setMyPickIds(next);
+        }
+        break;
+      case "add_their_pick":
+        if (opt.pickId !== undefined) {
+          const next = new Set(theirPickIds);
+          next.add(opt.pickId);
+          setTheirPickIds(next);
+        }
+        break;
+    }
   }
 
   function togglePick(
@@ -927,6 +1008,94 @@ export default function TradeBuilder({
               ))}
             </ul>
           </div>
+
+          {partnerTeam &&
+            partnerId !== ANYONE &&
+            Math.abs(delta) >= 100 &&
+            levelers.length > 0 && (
+              <details className="group flex flex-col gap-2 rounded-xl border border-sky-200 bg-sky-50/40 p-3 dark:border-sky-900/60 dark:bg-sky-950/20">
+                <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
+                  <div className="flex items-center gap-2">
+                    <ChevronDown
+                      size={14}
+                      aria-hidden
+                      className="shrink-0 -rotate-90 text-sky-700 transition-transform group-open:rotate-0 dark:text-sky-300"
+                    />
+                    <span className="text-sm font-bold text-sky-900 dark:text-sky-200">
+                      Level out this trade
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium text-sky-700 dark:text-sky-300">
+                    {delta > 0
+                      ? `You're up ${delta.toLocaleString()} — add to your side`
+                      : `You're down ${Math.abs(delta).toLocaleString()} — ask for more`}
+                  </span>
+                </summary>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Each option below shows the resulting value gap if applied.
+                  Smaller gaps mean a more balanced trade.
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  {levelers.map((opt, i) => {
+                    const isAdd = opt.type.startsWith("add_");
+                    const isMine =
+                      opt.type === "add_my_player" ||
+                      opt.type === "add_my_pick" ||
+                      opt.type === "remove_my_player";
+                    const sideLabel = isMine ? "your side" : "their side";
+                    const action = isAdd ? "Add" : "Remove";
+                    return (
+                      <li
+                        key={`${opt.type}-${opt.player?.id ?? opt.pickId ?? i}`}
+                        className="flex items-center gap-2 rounded-lg border border-sky-200/60 bg-white/80 px-3 py-2 dark:border-sky-900/40 dark:bg-zinc-900/60"
+                      >
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="flex items-center gap-1.5 text-sm font-medium">
+                            {opt.player && (
+                              <span
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                  POSITION_TINT[opt.player.position] ??
+                                  POSITION_TINT.PK
+                                }`}
+                              >
+                                {opt.player.position}
+                              </span>
+                            )}
+                            {!opt.player && (
+                              <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                PK
+                              </span>
+                            )}
+                            <span className="truncate">{opt.description}</span>
+                          </span>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            {opt.closesGapBy.toLocaleString()} value on{" "}
+                            {sideLabel} · resulting gap{" "}
+                            <span
+                              className={
+                                Math.abs(opt.resultingDelta) <= 100
+                                  ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                                  : ""
+                              }
+                            >
+                              {opt.resultingDelta > 0 ? "+" : ""}
+                              {opt.resultingDelta.toLocaleString()}
+                            </span>
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => applyLeveler(opt)}
+                          className="shrink-0 rounded-md border border-sky-300 bg-sky-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-sky-600 dark:border-sky-700"
+                        >
+                          {action}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            )}
 
           {assessment.counters.length > 0 && (
             <div className="flex flex-col gap-2">

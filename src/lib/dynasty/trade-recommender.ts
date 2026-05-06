@@ -364,6 +364,192 @@ export function findLeagueWideMatches({
 
 export type LeagueWideMatchTier = "steal" | "edge" | "fair";
 
+// ---------------------------------------------------------------
+// Level out an unbalanced trade
+// ---------------------------------------------------------------
+
+export type LevelerType =
+  | "add_my_player"
+  | "add_my_pick"
+  | "add_their_player"
+  | "add_their_pick"
+  | "remove_my_player"
+  | "remove_their_player";
+
+export interface LevelerOption {
+  type: LevelerType;
+  description: string;
+  closesGapBy: number; // absolute value of the asset moved
+  resultingDelta: number; // signed delta after applying (closer to 0 = better)
+  player?: PlayerRow;
+  pickId?: number;
+  pickLabel?: string;
+  pickValue?: number;
+}
+
+interface LevelerInput {
+  myTeam: TeamSummary;
+  partnerTeam: TeamSummary;
+  mySelectedIds: Set<string>;
+  theirSelectedIds: Set<string>;
+  delta: number; // their - mine; positive = you're winning
+  picks: RAPick[]; // all RA picks
+  selectedPickIds: Set<number>; // picks already in trade (either side)
+  isSuperflex: boolean;
+  myWeakPositions: string[];
+}
+
+export function suggestLevelers({
+  myTeam,
+  partnerTeam,
+  mySelectedIds,
+  theirSelectedIds,
+  delta,
+  picks,
+  selectedPickIds,
+  isSuperflex,
+  myWeakPositions,
+}: LevelerInput): LevelerOption[] {
+  if (Math.abs(delta) < 100) return [];
+
+  const options: LevelerOption[] = [];
+
+  function pickValueFor(p: RAPick): number {
+    return isSuperflex ? p.valueSf : p.value1qb;
+  }
+
+  const winning = delta > 0;
+  const target = Math.abs(delta);
+
+  if (winning) {
+    // I'm getting more than I'm giving. Either I add value to my side
+    // (most common ask from partner) or remove value from their side.
+
+    // 1. Players I can ADD from my roster (excluding already-selected)
+    for (const p of myTeam.players) {
+      if (mySelectedIds.has(p.id)) continue;
+      if (p.value <= 0) continue;
+      const resulting = delta - p.value; // adding to my side reduces delta
+      // Only show if it actually moves us closer to zero
+      if (Math.abs(resulting) >= target) continue;
+      options.push({
+        type: "add_my_player",
+        description: `Add ${p.name}`,
+        closesGapBy: p.value,
+        resultingDelta: resulting,
+        player: p,
+      });
+    }
+
+    // 2. Picks I can ADD (any RA pick not already in the trade)
+    for (const pk of picks) {
+      if (selectedPickIds.has(pk.id)) continue;
+      const pv = pickValueFor(pk);
+      if (pv <= 0) continue;
+      const resulting = delta - pv;
+      if (Math.abs(resulting) >= target) continue;
+      options.push({
+        type: "add_my_pick",
+        description: `Add ${pk.label}`,
+        closesGapBy: pv,
+        resultingDelta: resulting,
+        pickId: pk.id,
+        pickLabel: pk.label,
+        pickValue: pv,
+      });
+    }
+
+    // 3. Remove a small player from THEIR side (if multiple selected)
+    if (theirSelectedIds.size > 1) {
+      for (const p of partnerTeam.players) {
+        if (!theirSelectedIds.has(p.id)) continue;
+        const resulting = delta - p.value;
+        if (Math.abs(resulting) >= target) continue;
+        options.push({
+          type: "remove_their_player",
+          description: `Drop ${p.name} from their side`,
+          closesGapBy: p.value,
+          resultingDelta: resulting,
+          player: p,
+        });
+      }
+    }
+  } else {
+    // I'm losing. Either partner adds value, I add value to my side too,
+    // or I remove value from my side.
+
+    // 1. Players partner could ADD from their roster
+    for (const p of partnerTeam.players) {
+      if (theirSelectedIds.has(p.id)) continue;
+      if (p.value <= 0) continue;
+      const resulting = delta + p.value; // adding to their side increases delta toward zero
+      if (Math.abs(resulting) >= target) continue;
+      options.push({
+        type: "add_their_player",
+        description: `Ask for ${p.name}`,
+        closesGapBy: p.value,
+        resultingDelta: resulting,
+        player: p,
+      });
+    }
+
+    // 2. Picks I could ask them to throw in
+    for (const pk of picks) {
+      if (selectedPickIds.has(pk.id)) continue;
+      const pv = pickValueFor(pk);
+      if (pv <= 0) continue;
+      const resulting = delta + pv;
+      if (Math.abs(resulting) >= target) continue;
+      options.push({
+        type: "add_their_pick",
+        description: `Ask for ${pk.label}`,
+        closesGapBy: pv,
+        resultingDelta: resulting,
+        pickId: pk.id,
+        pickLabel: pk.label,
+        pickValue: pv,
+      });
+    }
+
+    // 3. Remove a small player from MY side (if multiple selected)
+    if (mySelectedIds.size > 1) {
+      for (const p of myTeam.players) {
+        if (!mySelectedIds.has(p.id)) continue;
+        const resulting = delta + p.value;
+        if (Math.abs(resulting) >= target) continue;
+        options.push({
+          type: "remove_my_player",
+          description: `Pull ${p.name} from your side`,
+          closesGapBy: p.value,
+          resultingDelta: resulting,
+          player: p,
+        });
+      }
+    }
+  }
+
+  // Sort by closeness to zero (best level wins). Tiebreakers: prefer
+  // adding from my surplus positions, prefer cheaper assets.
+  options.sort((a, b) => {
+    const aDist = Math.abs(a.resultingDelta);
+    const bDist = Math.abs(b.resultingDelta);
+    if (aDist !== bDist) return aDist - bDist;
+    // Tiebreaker: prefer "add_my_player" from a non-weak position
+    const aIsAddMy = a.type === "add_my_player";
+    const bIsAddMy = b.type === "add_my_player";
+    if (aIsAddMy && bIsAddMy) {
+      const aFromWeak =
+        a.player && myWeakPositions.includes(a.player.position);
+      const bFromWeak =
+        b.player && myWeakPositions.includes(b.player.position);
+      if (aFromWeak !== bFromWeak) return aFromWeak ? 1 : -1;
+    }
+    return a.closesGapBy - b.closesGapBy;
+  });
+
+  return options.slice(0, 6);
+}
+
 export function tierForMatch(m: LeagueWideMatch): LeagueWideMatchTier {
   if (m.delta >= 1000) return "steal";
   if (m.delta >= 500) return "edge";
