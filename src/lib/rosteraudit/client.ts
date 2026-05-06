@@ -168,8 +168,18 @@ export function formatKeyFromLeague(league: SleeperLeague): RAFormatKey {
 
 // --- Picks ---
 
-const PICKS_KEY = "rosteraudit:v1:picks";
+const PICKS_KEY = "rosteraudit:v2:picks";
 const PICKS_TTL = 24 * 60 * 60;
+
+// Earliest pick season that should be tradeable. Rookie drafts wrap
+// up by early May, so once we're past May 1 the current year's picks
+// are considered spent and only future seasons can be traded.
+function minPickSeason(): number {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  return month >= 5 ? year + 1 : year;
+}
 
 type RawPick = {
   id?: number;
@@ -214,7 +224,8 @@ function slimPicks(rows: RawPick[]): RAPick[] {
 export function getPicks(): Promise<RAPick[]> {
   return cached(PICKS_KEY, PICKS_TTL, async () => {
     const res = await raFetch<PicksResponse>("/picks");
-    return slimPicks(res.picks ?? []);
+    const min = minPickSeason();
+    return slimPicks(res.picks ?? []).filter((p) => p.season >= min);
   });
 }
 
