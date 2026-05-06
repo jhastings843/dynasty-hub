@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import type { PlayerRow, TeamSummary } from "@/lib/dynasty/power-rankings";
 import { suggestTradeFits } from "@/lib/dynasty/trade-fits";
@@ -119,6 +119,20 @@ function pickValue(p: RAPick, isSuperflex: boolean): number {
 const FILTER_POSITIONS = ["QB", "RB", "WR", "TE"] as const;
 // Sentinel partner id meaning "any team in the league" (auto-match mode).
 const ANYONE = -1;
+// sessionStorage key for trade-builder state. sessionStorage so the
+// state survives navigation within the tab (e.g. clicking a player to
+// view their profile and coming back) but resets in a new tab.
+const STORAGE_KEY = "dynasty-hub:trade-builder:v1";
+
+interface PersistedState {
+  partnerId: number;
+  mySel: string[];
+  theirSel: string[];
+  myPickIds: number[];
+  theirPickIds: number[];
+  myPosFilter: string;
+  theirPosFilter: string;
+}
 
 function PositionFilter({
   filter,
@@ -297,6 +311,65 @@ export default function TradeBuilder({
   const [theirPickIds, setTheirPickIds] = useState<Set<number>>(new Set());
   const [myPosFilter, setMyPosFilter] = useState<string>("all");
   const [theirPosFilter, setTheirPosFilter] = useState<string>("all");
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate state from sessionStorage on mount so navigating away and
+  // back (e.g. clicking a player name to view their profile) preserves
+  // the trade in progress.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const persisted = JSON.parse(raw) as Partial<PersistedState>;
+        // Hydrating from sessionStorage on mount is the documented
+        // pattern; the rule overfires for it.
+        /* eslint-disable react-hooks/set-state-in-effect */
+        setPartnerId(
+          typeof persisted.partnerId === "number"
+            ? persisted.partnerId
+            : ANYONE,
+        );
+        setMySel(new Set(persisted.mySel ?? []));
+        setTheirSel(new Set(persisted.theirSel ?? []));
+        setMyPickIds(new Set(persisted.myPickIds ?? []));
+        setTheirPickIds(new Set(persisted.theirPickIds ?? []));
+        setMyPosFilter(persisted.myPosFilter ?? "all");
+        setTheirPosFilter(persisted.theirPosFilter ?? "all");
+        /* eslint-enable react-hooks/set-state-in-effect */
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist on every relevant state change after hydration.
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const state: PersistedState = {
+        partnerId,
+        mySel: [...mySel],
+        theirSel: [...theirSel],
+        myPickIds: [...myPickIds],
+        theirPickIds: [...theirPickIds],
+        myPosFilter,
+        theirPosFilter,
+      };
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // ignore quota errors
+    }
+  }, [
+    hydrated,
+    partnerId,
+    mySel,
+    theirSel,
+    myPickIds,
+    theirPickIds,
+    myPosFilter,
+    theirPosFilter,
+  ]);
 
   const picksById = useMemo(
     () => new Map(picks.map((p) => [p.id, p])),
@@ -443,6 +516,11 @@ export default function TradeBuilder({
     setTheirSel(new Set());
     setMyPickIds(new Set());
     setTheirPickIds(new Set());
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }
 
   function changePartner(id: number) {
