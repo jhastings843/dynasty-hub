@@ -3,7 +3,7 @@ import {
   formatKeyFromLeague,
   getPlayerProfile,
   getPlayerStats,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import {
   getKTCValues,
@@ -69,8 +69,10 @@ export default async function PlayerPage({
     leagueId ? getLeagueRosters(leagueId) : Promise.resolve([]),
     leagueId ? getLeagueUsers(leagueId) : Promise.resolve([]),
     getAllPlayers().catch(() => ({})),
-    raFormat
-      ? getValues(raFormat).catch((): RAValuesBySleeperId => ({}))
+    league
+      ? getValuesForLeague(league).catch(
+          (): RAValuesBySleeperId => ({}),
+        )
       : Promise.resolve({} as RAValuesBySleeperId),
     ktcFormat
       ? getKTCValues(ktcFormat).catch((): KTCByName => ({}))

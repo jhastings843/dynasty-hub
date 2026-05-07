@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   formatKeyFromLeague,
   getPicks,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import { computeTeamSummaries } from "@/lib/dynasty/power-rankings";
 import {
@@ -13,6 +13,7 @@ import {
   getUser,
 } from "@/lib/sleeper/client";
 import TradeBuilder from "./TradeBuilder";
+import { RefreshButton } from "@/components/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export default async function TradePage() {
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
-    getValues(raFormat),
+    getValuesForLeague(league),
     getPicks(),
   ]);
 
@@ -81,9 +82,12 @@ export default async function TradePage() {
           >
             ‹ Dynasty
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Trade analyzer
-          </h1>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Trade analyzer
+            </h1>
+            <RefreshButton />
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {league.name} · {league.season}
           </p>

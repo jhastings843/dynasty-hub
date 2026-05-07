@@ -149,6 +149,45 @@ export async function revalidateValues(formatKey: RAFormatKey): Promise<void> {
   await invalidate(key(formatKey));
 }
 
+// RA's public API silently ignores the _tep variant of format_key —
+// values come back identical to plain sf_ppr. Apply the TE-premium
+// boost on top of whatever RA returned, scaled to the actual league
+// bonus_rec_te value (0.25 → +7.5%, 0.5 → +15%, 1.0 → +30%).
+//
+// The boost only touches the TE pool. Picks, QB/RB/WR, ranks, ages,
+// and trend flags pass through unchanged. Overall rank and positional
+// rank are intentionally NOT recomputed here because callers usually
+// re-derive them from the boosted values via computeTeamSummaries.
+export function applyTepBoost(
+  values: RAValuesBySleeperId,
+  bonusRecTe: number,
+): RAValuesBySleeperId {
+  if (!bonusRecTe || bonusRecTe <= 0) return values;
+  const factor = 1 + Math.min(0.40, bonusRecTe * 0.30);
+  const out: RAValuesBySleeperId = {};
+  for (const [id, v] of Object.entries(values)) {
+    if (v.position === "TE" && v.value > 0) {
+      out[id] = { ...v, value: Math.round(v.value * factor) };
+    } else {
+      out[id] = v;
+    }
+  }
+  return out;
+}
+
+// One-call wrapper: derives the RA format key from the league, fetches
+// values, and applies the TE-premium boost so all downstream consumers
+// (power rankings, trade analyzer, draft helper, scout pages, plan)
+// see TE-premium-correct values without each having to remember.
+export async function getValuesForLeague(
+  league: SleeperLeague,
+): Promise<RAValuesBySleeperId> {
+  const formatKey = formatKeyFromLeague(league);
+  const bonus = league.scoring_settings?.bonus_rec_te ?? 0;
+  const raw = await getValues(formatKey);
+  return applyTepBoost(raw, bonus);
+}
+
 // Derive the RosterAudit format_key from a Sleeper league.
 export function formatKeyFromLeague(league: SleeperLeague): RAFormatKey {
   const positions = league.roster_positions ?? [];
@@ -229,6 +268,10 @@ export function getPicks(): Promise<RAPick[]> {
   });
 }
 
+export async function revalidatePicks(): Promise<void> {
+  await invalidate(PICKS_KEY);
+}
+
 // --- Movers ---
 
 const MOVERS_KEY = (limit: number) => `rosteraudit:v1:movers:${limit}`;
@@ -282,6 +325,18 @@ export function getMovers(limit = 30): Promise<RAMovers> {
       .filter((x): x is RAMover => x !== null);
     return { risers, fallers };
   });
+}
+
+export async function revalidateMovers(limits: number[] = [30]): Promise<void> {
+  await invalidate(...limits.map((l) => MOVERS_KEY(l)));
+}
+
+export async function revalidateGrades(
+  leagueId: string,
+  userIds: string[],
+): Promise<void> {
+  if (userIds.length === 0) return;
+  await invalidate(...userIds.map((u) => GRADES_KEY(leagueId, u)));
 }
 
 // --- Roster grades ---

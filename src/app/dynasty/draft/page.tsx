@@ -3,7 +3,7 @@ import { Clock, Trophy } from "lucide-react";
 import {
   formatKeyFromLeague,
   getPicks,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
 import {
@@ -19,6 +19,7 @@ import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
+import { RefreshButton } from "@/components/RefreshButton";
 import { RookieList, type NextPickRef, type RookieRow } from "./RookieList";
 import { RoundTargets } from "./RoundTargets";
 import { Recommendations } from "./Recommendations";
@@ -134,7 +135,7 @@ export default async function DraftPage() {
       getLeagueDrafts(leagueId),
       getLeagueRosters(leagueId),
       getAllPlayers(),
-      getValues(raFormat),
+      getValuesForLeague(league),
       getPicks(),
       getKTCValues(ktcFormat).catch((): KTCByName => ({})),
       getTradedPicks(leagueId).catch(() => []),
@@ -369,6 +370,7 @@ export default async function DraftPage() {
               Draft helper
             </h1>
             <div className="flex items-center gap-2">
+              <RefreshButton />
               <Link
                 href="/dynasty/draft/board"
                 className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"

@@ -13,9 +13,8 @@ import type {
   SleeperUser,
 } from "@/lib/sleeper/types";
 import {
-  formatKeyFromLeague,
   getRosterGrades,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import {
@@ -134,14 +133,12 @@ export default async function DynastyPage() {
   }
 
   const league = await getLeague(leagueId);
-  const raFormat = formatKeyFromLeague(league);
-
   const me = await getUser(username);
   const [rosters, users, players, fcValues, grades] = await Promise.all([
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
-    getValues(raFormat),
+    getValuesForLeague(league),
     getRosterGrades(leagueId, me.user_id).catch(
       (): RAGradesByRosterId => ({}),
     ),
@@ -248,80 +245,6 @@ export default async function DynastyPage() {
             </Link>
           </div>
         </div>
-
-        {conflicts.length > 0 && (
-          <section className="flex flex-col gap-3 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 to-white p-5 dark:border-rose-900/60 dark:from-rose-950/30 dark:to-zinc-900">
-            <header className="flex items-center gap-2">
-              <AlertTriangle
-                size={18}
-                className="text-rose-600 dark:text-rose-400"
-                aria-hidden
-              />
-              <h2 className="text-base font-bold tracking-tight">
-                Roster conflicts ({conflicts.length})
-              </h2>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                same NFL team, same position — drop the lower-value one
-              </span>
-            </header>
-            <ul className="grid gap-3 md:grid-cols-2">
-              {conflicts.map((c) => (
-                <li
-                  key={`${c.team}-${c.position}`}
-                  className="flex flex-col gap-2 rounded-xl border border-rose-200/60 bg-white/80 p-3 backdrop-blur dark:border-rose-900/60 dark:bg-zinc-900/80"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm font-bold">
-                      {c.team} · {c.position}
-                    </span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {c.players.length} players
-                    </span>
-                  </div>
-                  <ul className="flex flex-col gap-1">
-                    {c.players.map((p) => {
-                      const isDrop = p.id === c.dropCandidate.id;
-                      return (
-                        <li
-                          key={p.id}
-                          className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${
-                            isDrop
-                              ? "bg-rose-100/60 dark:bg-rose-950/30"
-                              : ""
-                          }`}
-                        >
-                          <PlayerAvatar
-                            name={p.name}
-                            position={p.position}
-                            photoUrl={p.photoUrl}
-                            size="sm"
-                          />
-                          <PlayerLink
-                            id={p.id}
-                            name={p.name}
-                            className="flex-1 truncate text-sm font-medium"
-                          />
-                          <span className="shrink-0 text-xs font-semibold tabular-nums">
-                            {p.value.toLocaleString()}
-                          </span>
-                          {isDrop && (
-                            <span className="shrink-0 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                              Drop
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Rule: avoid two players on the same NFL team at the same
-              position — they split work or compete for the same job.
-            </p>
-          </section>
-        )}
 
         <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
         <section className="flex flex-col gap-4">
@@ -634,6 +557,80 @@ export default async function DynastyPage() {
           </ol>
         </section>
         </div>
+
+        {conflicts.length > 0 && (
+          <section className="flex flex-col gap-3 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 to-white p-5 dark:border-rose-900/60 dark:from-rose-950/30 dark:to-zinc-900">
+            <header className="flex items-center gap-2">
+              <AlertTriangle
+                size={18}
+                className="text-rose-600 dark:text-rose-400"
+                aria-hidden
+              />
+              <h2 className="text-base font-bold tracking-tight">
+                Roster conflicts ({conflicts.length})
+              </h2>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                same NFL team, same position — drop the lower-value one
+              </span>
+            </header>
+            <ul className="grid gap-3 md:grid-cols-2">
+              {conflicts.map((c) => (
+                <li
+                  key={`${c.team}-${c.position}`}
+                  className="flex flex-col gap-2 rounded-xl border border-rose-200/60 bg-white/80 p-3 backdrop-blur dark:border-rose-900/60 dark:bg-zinc-900/80"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-bold">
+                      {c.team} · {c.position}
+                    </span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {c.players.length} players
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {c.players.map((p) => {
+                      const isDrop = p.id === c.dropCandidate.id;
+                      return (
+                        <li
+                          key={p.id}
+                          className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${
+                            isDrop
+                              ? "bg-rose-100/60 dark:bg-rose-950/30"
+                              : ""
+                          }`}
+                        >
+                          <PlayerAvatar
+                            name={p.name}
+                            position={p.position}
+                            photoUrl={p.photoUrl}
+                            size="sm"
+                          />
+                          <PlayerLink
+                            id={p.id}
+                            name={p.name}
+                            className="flex-1 truncate text-sm font-medium"
+                          />
+                          <span className="shrink-0 text-xs font-semibold tabular-nums">
+                            {p.value.toLocaleString()}
+                          </span>
+                          {isDrop && (
+                            <span className="shrink-0 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                              Drop
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Rule: avoid two players on the same NFL team at the same
+              position — they split work or compete for the same job.
+            </p>
+          </section>
+        )}
 
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Player values via{" "}

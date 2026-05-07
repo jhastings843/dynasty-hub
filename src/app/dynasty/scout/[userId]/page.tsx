@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { Compass, Trophy } from "lucide-react";
 import {
-  formatKeyFromLeague,
   getManagerHistory,
   getRosterGrades,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import {
@@ -17,6 +16,7 @@ import {
 import type { SleeperPlayer, SleeperRoster } from "@/lib/sleeper/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
+import { RefreshButton } from "@/components/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -114,10 +114,9 @@ export default async function ScoutPage({
     }
   }
 
-  const raFormat = formatKeyFromLeague(homeLeague);
   const [allPlayers, raValues, grades] = await Promise.all([
     getAllPlayers(),
-    getValues(raFormat),
+    getValuesForLeague(homeLeague),
     getRosterGrades(homeLeagueId, userId).catch(
       (): RAGradesByRosterId => ({}),
     ),
@@ -179,6 +178,9 @@ export default async function ScoutPage({
                 ? `(${otherLeagues.length} leagues this season)`
                 : "(no other leagues found)"}
             </p>
+          </div>
+          <div className="sm:ml-auto">
+            <RefreshButton />
           </div>
         </header>
 

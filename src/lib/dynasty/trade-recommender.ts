@@ -574,11 +574,19 @@ export interface ProposedTrade {
   theirPicks: RAPick[];
 }
 
+export type HoleChange =
+  | "opens" // wasn't a hole before, will be after
+  | "closes" // was a hole, won't be after
+  | "deepens" // already a hole, getting worse
+  | "stays_strong" // wasn't a hole, won't be a hole
+  | "stays_hole"; // still a hole, but unchanged
+
 export interface PositionalImpact {
   position: string;
   beforeRank: number;
   afterRank: number;
   delta: number; // positive = improved (lower rank number)
+  holeChange: HoleChange;
 }
 
 export interface CounterSuggestion {
@@ -656,6 +664,11 @@ export function evaluateTrade(
     touchedPositions.add(p.position);
   }
 
+  // A "hole" is a bottom-3 ranked position room. Used to flag trades
+  // that turn a healthy room into a hole (opens) or plug an existing
+  // hole (closes), since those swings outweigh raw value delta.
+  const holeThreshold = Math.max(1, totalTeams - 2);
+
   const positionalImpact: PositionalImpact[] = [];
   for (const pos of touchedPositions) {
     const beforeRank = myTeam.positionRanks[pos] ?? 99;
@@ -666,20 +679,35 @@ export function evaluateTrade(
       proposal.myPlayers.filter((p) => p.position === pos),
       proposal.theirPlayers.filter((p) => p.position === pos),
     );
+    const wasHole = beforeRank >= holeThreshold;
+    const willBeHole = afterRank >= holeThreshold;
+    let holeChange: HoleChange;
+    if (!wasHole && willBeHole) holeChange = "opens";
+    else if (wasHole && !willBeHole) holeChange = "closes";
+    else if (wasHole && willBeHole && afterRank > beforeRank)
+      holeChange = "deepens";
+    else if (wasHole) holeChange = "stays_hole";
+    else holeChange = "stays_strong";
     positionalImpact.push({
       position: pos,
       beforeRank,
       afterRank,
       delta: beforeRank - afterRank,
+      holeChange,
     });
   }
 
   // Score positional impact: sum of (delta * how-weak-it-was) so improving
-  // a weak room counts more than improving an already-strong one.
+  // a weak room counts more than improving an already-strong one. On top
+  // of that, opening a hole is a heavier penalty and closing a hole is a
+  // heavier bonus than the rank delta alone would suggest.
   let positionalScore = 0;
   for (const imp of positionalImpact) {
     const weakness = Math.max(0, imp.beforeRank - 6);
     positionalScore += imp.delta * (1 + weakness * 0.3);
+    if (imp.holeChange === "opens") positionalScore -= 5;
+    else if (imp.holeChange === "closes") positionalScore += 5;
+    else if (imp.holeChange === "deepens") positionalScore -= 2;
   }
 
   // Combine: pct * 100 + positional score * 5 (roughly comparable scales)
@@ -704,14 +732,41 @@ export function evaluateTrade(
     reasoning.push("Value is essentially even");
   }
 
-  const improvedPositions = positionalImpact.filter((p) => p.delta > 0);
-  const worsenedPositions = positionalImpact.filter((p) => p.delta < 0);
-  for (const imp of improvedPositions) {
+  // Lead with hole transitions, then improvements, then non-hole
+  // weakening. Holes get explicit language because opening one is
+  // typically a worse outcome than the raw rank delta suggests.
+  const opens = positionalImpact.filter((p) => p.holeChange === "opens");
+  const closes = positionalImpact.filter((p) => p.holeChange === "closes");
+  const deepens = positionalImpact.filter((p) => p.holeChange === "deepens");
+  const improvements = positionalImpact.filter(
+    (p) => p.delta > 0 && p.holeChange !== "closes",
+  );
+  const otherWeakening = positionalImpact.filter(
+    (p) =>
+      p.delta < 0 && p.holeChange !== "opens" && p.holeChange !== "deepens",
+  );
+
+  for (const imp of opens) {
+    reasoning.push(
+      `Opens a hole at ${imp.position} (#${imp.beforeRank} → projected #${imp.afterRank} of ${totalTeams})`,
+    );
+  }
+  for (const imp of closes) {
+    reasoning.push(
+      `Fills your ${imp.position} hole (#${imp.beforeRank} → projected #${imp.afterRank} of ${totalTeams})`,
+    );
+  }
+  for (const imp of deepens) {
+    reasoning.push(
+      `Deepens your ${imp.position} hole (#${imp.beforeRank} → projected #${imp.afterRank} of ${totalTeams})`,
+    );
+  }
+  for (const imp of improvements) {
     reasoning.push(
       `Improves ${imp.position} room (#${imp.beforeRank} → projected #${imp.afterRank})`,
     );
   }
-  for (const imp of worsenedPositions) {
+  for (const imp of otherWeakening) {
     reasoning.push(
       `Weakens ${imp.position} room (#${imp.beforeRank} → projected #${imp.afterRank})`,
     );
@@ -747,7 +802,8 @@ export function evaluateTrade(
     }
 
     // If a position got weaker, suggest removing the worst player you give in that position
-    for (const imp of worsenedPositions) {
+    const weakenedRooms = positionalImpact.filter((p) => p.delta < 0);
+    for (const imp of weakenedRooms) {
       const candidate = proposal.myPlayers
         .filter((p) => p.position === imp.position)
         .sort((a, b) => b.value - a.value)[0];

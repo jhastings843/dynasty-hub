@@ -15,30 +15,39 @@ const SLEEPER_BASE = "https://api.sleeper.app/v1";
 
 const KEY = {
   league: (id: string) => `sleeper:v1:league:${id}`,
-  rosters: (id: string) => `sleeper:v2:league:${id}:rosters`,
+  rosters: (id: string) => `sleeper:v3:league:${id}:rosters`,
   users: (id: string) => `sleeper:v1:league:${id}:users`,
   user: (u: string) => `sleeper:v1:user:${u}`,
   playersSlim: () => `sleeper:v2:players:nfl:slim`,
   drafts: (id: string) => `sleeper:v1:league:${id}:drafts`,
-  draft: (id: string) => `sleeper:v1:draft:${id}`,
+  draft: (id: string) => `sleeper:v2:draft:${id}`,
   draftPicks: (id: string) => `sleeper:v1:draft:${id}:picks`,
-  tradedPicks: (id: string) => `sleeper:v1:league:${id}:traded_picks`,
+  tradedPicks: (id: string) => `sleeper:v2:league:${id}:traded_picks`,
   userLeagues: (userId: string, season: string) =>
     `sleeper:v1:user:${userId}:leagues:nfl:${season}`,
 };
 
+// TTLs are aggressive on anything that responds to live league
+// activity (rosters, draft state, traded picks). Slow-moving lookups
+// (league settings, NFL player metadata) keep longer windows since
+// they barely change between sessions.
 const TTL = {
   league: 12 * 60 * 60,
-  rosters: 15 * 60,
+  // Rosters change with every add/drop, trade, and draft pick — keep
+  // it fresh enough that a refresh isn't strictly required after most
+  // league actions.
+  rosters: 5 * 60,
   users: 24 * 60 * 60,
   user: 24 * 60 * 60,
   playersSlim: 24 * 60 * 60,
   drafts: 60 * 60,
-  draft: 60 * 60,
-  // Draft picks change in real-time during the draft itself; short TTL.
+  // Draft state (picks board cursor, status) updates during a live draft.
+  draft: 15 * 60,
+  // Per-pick rows update in real-time during the draft itself.
   draftPicks: 60,
-  // Traded picks change at trade events (rare); 6h is plenty.
-  tradedPicks: 6 * 60 * 60,
+  // Traded picks change at trade events; tighter so post-trade UIs
+  // catch up without manual refresh.
+  tradedPicks: 60 * 60,
   userLeagues: 6 * 60 * 60,
 };
 
@@ -116,6 +125,7 @@ export async function revalidateLeague(leagueId: string): Promise<void> {
     KEY.league(leagueId),
     KEY.rosters(leagueId),
     KEY.users(leagueId),
+    KEY.tradedPicks(leagueId),
   );
 }
 

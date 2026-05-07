@@ -3,7 +3,7 @@ import { Trophy } from "lucide-react";
 import {
   formatKeyFromLeague,
   getPicks,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
 import {
@@ -19,6 +19,7 @@ import type { SleeperPlayer } from "@/lib/sleeper/types";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
+import { RefreshButton } from "@/components/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -147,7 +148,7 @@ export default async function DraftBoardPage() {
       getLeagueRosters(leagueId),
       getLeagueUsers(leagueId),
       getAllPlayers(),
-      getValues(raFormat),
+      getValuesForLeague(league),
       getPicks(),
     ]);
 
@@ -246,23 +247,26 @@ export default async function DraftBoardPage() {
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Draft board
             </h1>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
-                draft.status === "drafting"
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-                  : draft.status === "complete"
-                    ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-              }`}
-            >
-              {draft.status === "pre_draft"
-                ? "Pre-draft"
-                : draft.status === "drafting"
-                  ? "Drafting"
-                  : draft.status === "complete"
-                    ? "Complete"
-                    : draft.status}
-            </span>
+            <div className="flex items-center gap-2">
+              <RefreshButton />
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  draft.status === "drafting"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : draft.status === "complete"
+                      ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                      : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                }`}
+              >
+                {draft.status === "pre_draft"
+                  ? "Pre-draft"
+                  : draft.status === "drafting"
+                    ? "Drafting"
+                    : draft.status === "complete"
+                      ? "Complete"
+                      : draft.status}
+              </span>
+            </div>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {league.name} · {league.season} · {picks.length} of {totalPicks}{" "}

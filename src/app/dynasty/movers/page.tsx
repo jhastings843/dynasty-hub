@@ -3,6 +3,7 @@ import { getMovers } from "@/lib/rosteraudit/client";
 import type { RAMover } from "@/lib/rosteraudit/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
+import { RefreshButton } from "@/components/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -125,9 +126,12 @@ export default async function MoversPage() {
           >
             ‹ Dynasty
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Value movers
-          </h1>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Value movers
+            </h1>
+            <RefreshButton />
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Biggest risers and fallers in the dynasty market over the past 30
             days. Useful for buy-low / sell-high targets and rookie spike

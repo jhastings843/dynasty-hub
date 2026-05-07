@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Calendar, CheckCircle2, Circle, Compass, Target } from "lucide-react";
 import {
-  formatKeyFromLeague,
   getRosterGrades,
-  getValues,
+  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import {
@@ -26,6 +25,7 @@ import {
   type Trajectory,
 } from "@/lib/dynasty/season-plan";
 import { CustomGoals } from "./CustomGoals";
+import { RefreshButton } from "@/components/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -125,7 +125,6 @@ export default async function SeasonPlanPage() {
 
   const me = await getUser(username);
   const league = await getLeague(leagueId);
-  const raFormat = formatKeyFromLeague(league);
 
   const [drafts, rosters, users, players, fcValues, grades] =
     await Promise.all([
@@ -133,7 +132,7 @@ export default async function SeasonPlanPage() {
       getLeagueRosters(leagueId),
       getLeagueUsers(leagueId),
       getAllPlayers(),
-      getValues(raFormat),
+      getValuesForLeague(league),
       getRosterGrades(leagueId, me.user_id).catch(
         (): RAGradesByRosterId => ({}),
       ),
@@ -203,9 +202,12 @@ export default async function SeasonPlanPage() {
           >
             ‹ Dynasty
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Season plan
-          </h1>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Season plan
+            </h1>
+            <RefreshButton />
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {league.name} · {league.season} · {rosters.length}-team superflex
             with TE premium
