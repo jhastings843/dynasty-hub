@@ -1,7 +1,5 @@
 import "server-only";
 
-import createBrowserClient from "@/lib/supabase/client";
-import { createAdminClient } from "@/lib/supabase/server";
 import { redis } from "@/lib/redis/client";
 import { getLeague, getUser } from "@/lib/sleeper/client";
 
@@ -13,43 +11,6 @@ type Check =
 
 function fail(e: unknown): Check {
   return { status: "fail", reason: e instanceof Error ? e.message : String(e) };
-}
-
-async function checkSupabase(): Promise<Check> {
-  try {
-    createBrowserClient();
-    createAdminClient();
-
-    const url = process.env.SUPABASE_URL!;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const probe = `${url}/rest/v1/_dh_probe?select=*&limit=0`;
-
-    const realRes = await fetch(probe, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-      cache: "no-store",
-    });
-    if (realRes.status === 401) {
-      return { status: "fail", reason: "Service role key rejected (401)" };
-    }
-    if (realRes.status >= 500) {
-      return { status: "fail", reason: `Supabase project unhealthy (${realRes.status})` };
-    }
-
-    const badRes = await fetch(probe, {
-      headers: { apikey: "not-a-real-key" },
-      cache: "no-store",
-    });
-    if (badRes.status !== 401) {
-      return { status: "fail", reason: `Gateway not enforcing auth (bad key returned ${badRes.status})` };
-    }
-
-    return {
-      status: "ok",
-      detail: `creds accepted (real=${realRes.status}, bad=${badRes.status})`,
-    };
-  } catch (e) {
-    return fail(e);
-  }
 }
 
 async function checkUpstash(): Promise<Check> {
@@ -96,13 +57,12 @@ export async function GET() {
     );
   }
 
-  const [supabase, upstash, sleeper] = await Promise.all([
-    checkSupabase(),
+  const [upstash, sleeper] = await Promise.all([
     checkUpstash(),
     checkSleeper(),
   ]);
 
-  const ok = [supabase, upstash, sleeper].every((c) => c.status === "ok");
+  const ok = [upstash, sleeper].every((c) => c.status === "ok");
 
-  return Response.json({ ok, supabase, upstash, sleeper });
+  return Response.json({ ok, upstash, sleeper });
 }
