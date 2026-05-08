@@ -21,6 +21,8 @@ function pickValue(p: RAPick, isSuperflex: boolean): number {
 // Best trades across the league
 // ---------------------------------------------------------------
 
+export type BestTradeKind = "position_fit" | "youth_arbitrage";
+
 export interface BestTradeIdea {
   partnerRosterId: number;
   partnerName: string;
@@ -31,6 +33,25 @@ export interface BestTradeIdea {
   reasoning: string[];
   positionalGain: { position: string; from: number; to: number };
   score: number;
+  kind: BestTradeKind;
+}
+
+// Position-specific cutoffs for "aging" status. Dynasty values
+// typically dip after these ages.
+function agingThreshold(position: string): number {
+  if (position === "QB") return 31;
+  if (position === "TE") return 29;
+  return 27; // RB / WR
+}
+
+function isAging(p: PlayerRow): boolean {
+  if (p.age == null) return false;
+  return p.age >= agingThreshold(p.position);
+}
+
+function isYoung(p: PlayerRow): boolean {
+  if (p.age == null) return false;
+  return p.age <= 24;
 }
 
 // Compute the projected new positional value for a team after a swap.
@@ -100,32 +121,51 @@ export function findBestTrades(
       // Partner must be strictly stronger than us at this position.
       if (partnerRank >= (myTeam.positionRanks[recvPos] ?? 99)) continue;
 
+      // Receive candidates: prefer young upside at the weak position.
+      // Sort by an effective score (value + youth bonus) so a 6500-value
+      // 22-year-old beats a 6800-value 28-year-old.
       const theirCandidates = partner.players
         .filter((p) => p.position === recvPos && p.value > 200)
-        .sort((a, b) => b.value - a.value)
-        .slice(1, 6);
+        .map((p) => ({
+          p,
+          effective: p.value + (isYoung(p) ? 600 : 0) - (isAging(p) ? 400 : 0),
+        }))
+        .sort((a, b) => b.effective - a.effective)
+        .slice(1, 6)
+        .map((x) => x.p);
 
       for (const recvPlayer of theirCandidates) {
-        // Find one of my players at fair value. Prefer giving from
-        // positions where I'm strong (highest rank-number = strongest).
+        // Find one of my players at fair value. Bias the sort heavily
+        // toward older / less-coveted send candidates so we don't keep
+        // recommending the same young centerpiece players.
         const myCandidates = myTeam.players
           .filter((p) => {
             if (p.position === recvPos) return false; // don't trade WITHIN the same position
             const baseline = Math.max(recvPlayer.value, p.value);
             const pct =
               baseline > 0 ? Math.abs(recvPlayer.value - p.value) / baseline : 1;
-            return p.value > 200 && pct <= 0.18;
+            return p.value > 200 && pct <= 0.20;
           })
           .map((p) => ({
             p,
             myRank: myTeam.positionRanks[p.position] ?? 99,
             valueDist: Math.abs(p.value - recvPlayer.value),
+            // "Send-suitability": low if young + valuable, high if older
+            // or in a position where we have surplus. Lower = better
+            // candidate to keep, so we want HIGH suitability values
+            // sorted to the front.
+            suitability:
+              (isAging(p) ? 1.5 : 0) -
+              (isYoung(p) ? 2.0 : 0) +
+              ((totalTeams - (myTeam.positionRanks[p.position] ?? 99)) /
+                totalTeams) *
+                1.0,
           }))
-          // Prefer giving from my strongest positions (low rank #), then
-          // closest in value.
           .sort(
             (a, b) =>
-              a.myRank - b.myRank || a.valueDist - b.valueDist,
+              b.suitability - a.suitability ||
+              a.myRank - b.myRank ||
+              a.valueDist - b.valueDist,
           )
           .slice(0, 4);
 
@@ -146,11 +186,19 @@ export function findBestTrades(
           const valuePct =
             baseline > 0 ? Math.abs(recvPlayer.value - sendPlayer.value) / baseline : 1;
           const valueParityBonus = 1 - valuePct;
-          // Bonus for trading from a strong position (lower rank # is stronger).
           const surplusBonus = Math.max(0, (totalTeams - sendPosRank) / totalTeams);
 
+          // Age arbitrage: positive when we send older for younger.
+          const sendAge = sendPlayer.age ?? 25;
+          const recvAge = recvPlayer.age ?? 25;
+          const ageDelta = sendAge - recvAge;
+          const ageBonus = Math.max(-3, Math.min(6, ageDelta));
+
           const score =
-            positionalJump * 10 + valueParityBonus * 4 + surplusBonus * 3;
+            positionalJump * 10 +
+            valueParityBonus * 4 +
+            surplusBonus * 3 +
+            ageBonus * 2;
 
           const reasoning: string[] = [];
           reasoning.push(
@@ -163,6 +211,11 @@ export function findBestTrades(
           } else {
             reasoning.push(
               `Sends a ${sendPlayer.position} you can spare (you're #${sendPosRank} of ${totalTeams})`,
+            );
+          }
+          if (ageDelta >= 3) {
+            reasoning.push(
+              `Gets younger by ${ageDelta.toFixed(0)} years (${sendPlayer.name} ${sendAge.toFixed(0)} → ${recvPlayer.name} ${recvAge.toFixed(0)})`,
             );
           }
           const delta = recvPlayer.value - sendPlayer.value;
@@ -190,8 +243,92 @@ export function findBestTrades(
               to: afterRank,
             },
             score,
+            kind: "position_fit",
           });
         }
+      }
+    }
+  }
+
+  // ---------- Youth arbitrage ----------
+  // Generate "sell aging value for young upside" ideas independent of
+  // positional fit. For each of my aging stars, find a younger player
+  // on a partner's roster within 70-110% of my player's value.
+  const myAgingStars = myTeam.players
+    .filter((p) => isAging(p) && p.value >= 1500)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+
+  for (const oldPlayer of myAgingStars) {
+    for (const partner of allTeams) {
+      if (partner.rosterId === myTeam.rosterId) continue;
+      const youngTargets = partner.players
+        .filter(
+          (p) =>
+            isYoung(p) &&
+            p.value >= oldPlayer.value * 0.7 &&
+            p.value <= oldPlayer.value * 1.10 &&
+            // Don't suggest swapping for someone in a position we're
+            // already deep in unless we're getting clear value back.
+            (myTeam.positionRanks[p.position] ?? 99) >= 4,
+        )
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 2);
+
+      for (const youngPlayer of youngTargets) {
+        const sendAge = oldPlayer.age ?? 28;
+        const recvAge = youngPlayer.age ?? 23;
+        const ageDelta = sendAge - recvAge;
+        const valueDelta = youngPlayer.value - oldPlayer.value;
+        const baseline = Math.max(oldPlayer.value, youngPlayer.value);
+        const pct = baseline > 0 ? valueDelta / baseline : 0;
+
+        // Score the dynasty arc: age delta is the headline, value
+        // parity matters less but losing too much still hurts.
+        const score = ageDelta * 3 + pct * 30 + 6; // base bump so these compete with position-fit ideas
+
+        // Capture positional ranks for the receive position so the
+        // existing UI ("X #from → #to") still has data even though
+        // this isn't a strict positional-fit trade.
+        const beforeRank = myTeam.positionRanks[youngPlayer.position] ?? 99;
+        const afterRank = projectedRank(
+          myTeam,
+          allTeams,
+          youngPlayer.position,
+          [],
+          [youngPlayer],
+        );
+
+        const reasoning: string[] = [
+          `Sells aging ${oldPlayer.name} (age ${sendAge.toFixed(0)}) for ${ageDelta.toFixed(0)}-year-younger upside`,
+          `${youngPlayer.name} is ${recvAge.toFixed(0)} — long dynasty runway`,
+        ];
+        if (Math.abs(valueDelta) <= 200) {
+          reasoning.push("Value is essentially even");
+        } else if (valueDelta > 0) {
+          reasoning.push(`You gain +${valueDelta.toLocaleString()} in value`);
+        } else {
+          reasoning.push(
+            `You give up ${Math.abs(valueDelta).toLocaleString()} in value for the age swap`,
+          );
+        }
+
+        ideas.push({
+          partnerRosterId: partner.rosterId,
+          partnerName: partner.ownerName,
+          send: [oldPlayer],
+          receive: [youngPlayer],
+          myValue: oldPlayer.value,
+          theirValue: youngPlayer.value,
+          reasoning,
+          positionalGain: {
+            position: youngPlayer.position,
+            from: beforeRank,
+            to: afterRank,
+          },
+          score,
+          kind: "youth_arbitrage",
+        });
       }
     }
   }
@@ -207,7 +344,49 @@ export function findBestTrades(
     }
   }
 
-  return [...seen.values()].sort((a, b) => b.score - a.score).slice(0, limit);
+  // Diversify: cap each unique send player at 2 appearances in the
+  // final list so the same one or two pieces don't dominate every row,
+  // and try to mix at least one youth-arbitrage idea into the top.
+  const sorted = [...seen.values()].sort((a, b) => b.score - a.score);
+  const final: BestTradeIdea[] = [];
+  const sendCount = new Map<string, number>();
+  const SEND_CAP = 2;
+
+  // First pass: take ideas in score order while respecting the cap.
+  for (const idea of sorted) {
+    const sendId = idea.send[0]?.id;
+    if (sendId) {
+      const c = sendCount.get(sendId) ?? 0;
+      if (c >= SEND_CAP) continue;
+    }
+    final.push(idea);
+    if (sendId) sendCount.set(sendId, (sendCount.get(sendId) ?? 0) + 1);
+    if (final.length >= limit) break;
+  }
+
+  // Ensure at least one youth_arbitrage idea makes the list when we
+  // have one — the user explicitly wants that flavor surfaced.
+  if (
+    final.length > 0 &&
+    !final.some((i) => i.kind === "youth_arbitrage") &&
+    sorted.some((i) => i.kind === "youth_arbitrage")
+  ) {
+    const bestYouth = sorted.find((i) => i.kind === "youth_arbitrage");
+    if (bestYouth) {
+      // Replace the lowest-scoring position_fit idea with the best youth one.
+      const lastFitIdx = final
+        .map((idea, idx) => ({ idea, idx }))
+        .reverse()
+        .find((x) => x.idea.kind === "position_fit")?.idx;
+      if (lastFitIdx !== undefined) {
+        final[lastFitIdx] = bestYouth;
+      } else {
+        final.push(bestYouth);
+      }
+    }
+  }
+
+  return final;
 }
 
 // ---------------------------------------------------------------

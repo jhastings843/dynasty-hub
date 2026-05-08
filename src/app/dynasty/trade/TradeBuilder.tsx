@@ -659,10 +659,17 @@ export default function TradeBuilder({
                   <span className="text-sm font-bold">
                     vs. {idea.partnerName}
                   </span>
-                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-950/50 dark:text-sky-300">
-                    {idea.positionalGain.position} #
-                    {idea.positionalGain.from} → #{idea.positionalGain.to}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {idea.kind === "youth_arbitrage" && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+                        Get younger
+                      </span>
+                    )}
+                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-950/50 dark:text-sky-300">
+                      {idea.positionalGain.position} #
+                      {idea.positionalGain.from} → #{idea.positionalGain.to}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-stretch gap-2 text-sm">
                   <div className="flex flex-1 flex-col gap-1 rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-2 dark:border-zinc-800/80 dark:bg-zinc-950/40">
