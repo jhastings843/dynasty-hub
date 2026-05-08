@@ -160,14 +160,18 @@ export function PlayerSearch({ players }: { players: SearchablePlayer[] }) {
                       {p.position}
                     </span>
                   )}
-                  {!p.rostered && (
-                    <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                      Waiver
-                    </span>
-                  )}
                 </div>
                 <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                  {[p.team ?? "FA", p.ownerName].filter(Boolean).join(" · ")}
+                  {p.team ?? "FA"} ·{" "}
+                  {p.rostered ? (
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      {p.ownerName ?? "rostered"}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      Available
+                    </span>
+                  )}
                 </span>
               </div>
               <span className="shrink-0 text-sm font-semibold tabular-nums">

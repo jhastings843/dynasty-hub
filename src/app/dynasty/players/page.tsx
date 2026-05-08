@@ -306,7 +306,10 @@ export default async function PlayersPage() {
                         )}
                       </div>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {p.team ?? "FA"} · waiver wire
+                        {p.team ?? "FA"} ·{" "}
+                        <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                          Available
+                        </span>
                       </span>
                     </div>
                     <span className="shrink-0 text-sm font-semibold tabular-nums">
