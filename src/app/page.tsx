@@ -45,10 +45,10 @@ const SECONDARY = [
     icon: Repeat,
   },
   {
-    href: "/dynasty/movers",
-    title: "Value movers",
+    href: "/dynasty/players",
+    title: "Players",
     blurb:
-      "Risers, fallers, buy-low and sell-high targets across the dynasty market.",
+      "Search the league, scout the waiver wire, and track risers and fallers across the dynasty market.",
     icon: TrendingUp,
   },
   {

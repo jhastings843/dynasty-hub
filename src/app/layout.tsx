@@ -25,7 +25,7 @@ const NAV_LINKS = [
   { href: "/dynasty/plan", label: "Plan" },
   { href: "/dynasty/draft", label: "Draft" },
   { href: "/dynasty/trade", label: "Trade" },
-  { href: "/dynasty/movers", label: "Movers" },
+  { href: "/dynasty/players", label: "Players" },
   { href: "/survivor", label: "Survivor" },
   { href: "/resources", label: "Resources" },
 ];

@@ -75,6 +75,55 @@ function slotZone(slot: number, teams: number): PickSlot {
   return "mid";
 }
 
+function gradeFromPct(pct: number, picksMade: number): string {
+  if (picksMade === 0) return "—";
+  if (pct >= 0.3) return "A+";
+  if (pct >= 0.18) return "A";
+  if (pct >= 0.1) return "A-";
+  if (pct >= 0.04) return "B+";
+  if (pct >= -0.04) return "B";
+  if (pct >= -0.1) return "B-";
+  if (pct >= -0.18) return "C";
+  if (pct >= -0.3) return "D";
+  return "F";
+}
+
+function gradeTint(grade: string): { tile: string; shadow: string; pill: string } {
+  if (grade.startsWith("A")) {
+    return {
+      tile: "from-emerald-400 to-emerald-600",
+      shadow: "shadow-emerald-500/40",
+      pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+    };
+  }
+  if (grade.startsWith("B")) {
+    return {
+      tile: "from-sky-400 to-sky-600",
+      shadow: "shadow-sky-500/30",
+      pill: "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300",
+    };
+  }
+  if (grade.startsWith("C")) {
+    return {
+      tile: "from-zinc-400 to-zinc-600",
+      shadow: "shadow-zinc-500/20",
+      pill: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+    };
+  }
+  if (grade.startsWith("D")) {
+    return {
+      tile: "from-amber-400 to-orange-500",
+      shadow: "shadow-amber-500/30",
+      pill: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+    };
+  }
+  return {
+    tile: "from-rose-400 to-rose-600",
+    shadow: "shadow-rose-500/30",
+    pill: "bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300",
+  };
+}
+
 function ordinal(n: number): string {
   const v = n % 100;
   if (v >= 11 && v <= 13) return `${n}th`;
@@ -355,6 +404,25 @@ export default async function DraftPage() {
 
   const startTime = formatStartTime(draft.start_time ?? null);
 
+  // Post-draft summary stats. Computed unconditionally; only rendered
+  // as a hero when draft.status === "complete".
+  const myDraftedPicks = picks
+    .filter((pk) => pk.picked_by === me.user_id)
+    .sort((a, b) => a.pick_no - b.pick_no);
+  const draftedSum = myDraftedPicks.reduce(
+    (s, pk) => s + (fcValues[pk.player_id]?.value ?? 0),
+    0,
+  );
+  const expectedSum = myDraftedPicks.reduce((s, pk) => {
+    const u = userPicks.find((up) => up.pickNo === pk.pick_no);
+    return s + (u?.value ?? 0);
+  }, 0);
+  const surplusSum = draftedSum - expectedSum;
+  const pctSurplus = expectedSum > 0 ? surplusSum / expectedSum : 0;
+  const myGrade = gradeFromPct(pctSurplus, myDraftedPicks.length);
+  const myGradeTint = gradeTint(myGrade);
+  const draftComplete = draft.status === "complete";
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8">
@@ -367,7 +435,7 @@ export default async function DraftPage() {
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">
-              Draft helper
+              {draftComplete ? "Draft recap" : "Draft helper"}
             </h1>
             <div className="flex items-center gap-2">
               <RefreshButton />
@@ -375,7 +443,7 @@ export default async function DraftPage() {
                 href="/dynasty/draft/board"
                 className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
               >
-                League board →
+                {draftComplete ? "League grades →" : "League board →"}
               </Link>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
@@ -400,20 +468,78 @@ export default async function DraftPage() {
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {league.name} · {draft.season} · {totalRounds}-round {draft.type}{" "}
             draft
-            {startTime && ` · starts ${startTime}`}
+            {startTime && ` · ${draftComplete ? "completed" : "starts"} ${startTime}`}
           </p>
-          <AutoRefresh
-            intervalMs={
-              draft.status === "drafting" ? 60_000 : 5 * 60_000
-            }
-            label={
-              draft.status === "drafting"
-                ? "Live updates"
-                : "Refreshes"
-            }
-          />
+          {!draftComplete && (
+            <AutoRefresh
+              intervalMs={
+                draft.status === "drafting" ? 60_000 : 5 * 60_000
+              }
+              label={
+                draft.status === "drafting"
+                  ? "Live updates"
+                  : "Refreshes"
+              }
+            />
+          )}
         </div>
 
+        {draftComplete && myDraftedPicks.length > 0 && (
+          <section className="flex flex-col gap-4 rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:via-zinc-900 dark:to-emerald-950/15">
+            <div className="flex flex-wrap items-center gap-5">
+              <div
+                className={`grid size-24 place-items-center rounded-2xl bg-gradient-to-br ${myGradeTint.tile} text-4xl font-black text-white shadow-lg ${myGradeTint.shadow}`}
+              >
+                {myGrade}
+              </div>
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Your draft grade
+                </span>
+                <span className="text-2xl font-bold tracking-tight">
+                  {surplusSum >= 0 ? "Won " : "Lost "}
+                  <span
+                    className={`tabular-nums ${
+                      surplusSum >= 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {surplusSum >= 0 ? "+" : ""}
+                    {surplusSum.toLocaleString()}
+                  </span>{" "}
+                  value over expected
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {(pctSurplus * 100).toFixed(1)}% surplus across{" "}
+                  {myDraftedPicks.length} pick
+                  {myDraftedPicks.length === 1 ? "" : "s"}. See how you stack up
+                  on the league grades page.
+                </span>
+              </div>
+              <div className="ml-auto flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col rounded-xl border border-zinc-200/80 bg-white/60 px-3 py-2 dark:border-zinc-800/80 dark:bg-zinc-900/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Drafted value
+                  </span>
+                  <span className="text-lg font-bold tabular-nums">
+                    {draftedSum.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex flex-col rounded-xl border border-zinc-200/80 bg-white/60 px-3 py-2 dark:border-zinc-800/80 dark:bg-zinc-900/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Expected
+                  </span>
+                  <span className="text-lg font-bold tabular-nums text-zinc-500 dark:text-zinc-400">
+                    {expectedSum.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {!draftComplete && (
         <div className="grid gap-4 md:grid-cols-3">
           {/* Next pick card */}
           <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-sky-50/30 p-5 backdrop-blur dark:border-zinc-800/80 dark:from-zinc-900 dark:to-sky-950/10">
@@ -673,27 +799,32 @@ export default async function DraftPage() {
             </span>
           </div>
         </div>
+        )}
 
-        <Recommendations
-          recommendations={recommendations}
-          nextPickLabel={nextPickRef?.label ?? null}
-        />
-
-        <section className="flex flex-col gap-3">
-          <header className="flex items-baseline justify-between">
-            <h2 className="text-xl font-semibold tracking-tight">
-              Best available rookies
-            </h2>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              {available.length} remaining · {drafted.size} drafted
-            </span>
-          </header>
-          <RookieList
-            rookies={rookieRows}
-            weakestPositions={weakestPositions as string[]}
-            nextPick={nextPickRef}
+        {!draftComplete && (
+          <Recommendations
+            recommendations={recommendations}
+            nextPickLabel={nextPickRef?.label ?? null}
           />
-        </section>
+        )}
+
+        {!draftComplete && (
+          <section className="flex flex-col gap-3">
+            <header className="flex items-baseline justify-between">
+              <h2 className="text-xl font-semibold tracking-tight">
+                Best available rookies
+              </h2>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {available.length} remaining · {drafted.size} drafted
+              </span>
+            </header>
+            <RookieList
+              rookies={rookieRows}
+              weakestPositions={weakestPositions as string[]}
+              nextPick={nextPickRef}
+            />
+          </section>
+        )}
 
         {(() => {
           const myPicks = picks
@@ -716,7 +847,7 @@ export default async function DraftPage() {
             <section className="flex flex-col gap-3">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-semibold tracking-tight">
-                  Your draft so far
+                  {draftComplete ? "Your picks" : "Your draft so far"}
                 </h2>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
                   {myPicks.length} of {userPicks.length} picks
@@ -817,16 +948,18 @@ export default async function DraftPage() {
           );
         })()}
 
-        <RoundTargets
-          userPicks={userPicks}
-          rookies={rookieRows}
-          weakestPositions={weakestPositions as string[]}
-          draftedPickNos={picks
-            .filter((pk) => pk.picked_by === me.user_id)
-            .map((pk) => pk.pick_no)}
-        />
+        {!draftComplete && (
+          <RoundTargets
+            userPicks={userPicks}
+            rookies={rookieRows}
+            weakestPositions={weakestPositions as string[]}
+            draftedPickNos={picks
+              .filter((pk) => pk.picked_by === me.user_id)
+              .map((pk) => pk.pick_no)}
+          />
+        )}
 
-        {picks.length > 0 && (
+        {!draftComplete && picks.length > 0 && (
           <section className="flex flex-col gap-3">
             <header className="flex items-baseline justify-between">
               <h2 className="text-xl font-semibold tracking-tight">

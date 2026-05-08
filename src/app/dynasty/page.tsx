@@ -226,10 +226,10 @@ export default async function DynastyPage() {
               Season plan
             </Link>
             <Link
-              href="/dynasty/movers"
+              href="/dynasty/players"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
-              Movers
+              Players
             </Link>
             <Link
               href="/dynasty/draft"
