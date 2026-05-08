@@ -67,84 +67,87 @@ function PositionChip({ position }: { position: string }) {
   );
 }
 
-function MoverCard({ m, direction }: { m: RAMover; direction: "up" | "down" }) {
-  const trend30 = m.trend30Day;
+function MoverRow({
+  m,
+  direction,
+  rostered,
+  ownerName,
+}: {
+  m: RAMover;
+  direction: "up" | "down";
+  rostered: boolean;
+  ownerName: string | null;
+}) {
   const trend7 = m.trend7Day;
+  const trend30 = m.trend30Day;
+  const primaryTrend = trend7 !== 0 ? trend7 : trend30;
+  const primaryLabel = trend7 !== 0 ? "7d" : "30d";
+  const trendCls =
+    primaryTrend > 0
+      ? "text-emerald-600 dark:text-emerald-400"
+      : primaryTrend < 0
+        ? "text-rose-600 dark:text-rose-400"
+        : "text-zinc-400 dark:text-zinc-600";
   return (
-    <li className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <PlayerAvatar name={m.name} position={m.position} size="sm" />
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <PlayerLink
-              id={m.sleeperId}
-              name={m.name}
-              className="truncate text-sm font-medium"
-            />
-            <PositionChip position={m.position} />
-          </div>
-        </div>
-        <span className="shrink-0 text-sm font-semibold tabular-nums">
-          {m.valueSf.toLocaleString()}
-        </span>
-      </div>
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="text-zinc-500 dark:text-zinc-400">
-          {[m.team ?? "FA", m.age ? `age ${Math.round(m.age * 10) / 10}` : null]
-            .filter(Boolean)
-            .join(" · ")}
-        </span>
-        <div className="flex items-center gap-2 tabular-nums">
-          {trend7 !== 0 && (
-            <span
-              className={
-                trend7 > 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-rose-600 dark:text-rose-400"
-              }
-            >
-              7d {trend7 > 0 ? "+" : ""}
-              {trend7}
-            </span>
-          )}
-          {trend30 !== 0 && (
-            <span
-              className={
-                trend30 > 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-rose-600 dark:text-rose-400"
-              }
-            >
-              30d {trend30 > 0 ? "+" : ""}
-              {trend30}
-            </span>
-          )}
-          {trend7 === 0 && trend30 === 0 && (
-            <span className="text-zinc-400 dark:text-zinc-600">
-              {direction === "up" ? "rising" : "falling"}
-            </span>
-          )}
-        </div>
-      </div>
-      {(m.buyLow || m.sellHigh || m.breakout) && (
-        <div className="flex flex-wrap gap-1">
+    <li className="flex items-center gap-2.5 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+      <PlayerAvatar name={m.name} position={m.position} size="sm" />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <PlayerLink
+            id={m.sleeperId}
+            name={m.name}
+            className="truncate text-sm font-medium"
+          />
+          <PositionChip position={m.position} />
           {m.buyLow && (
             <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-              Buy low
+              Buy
             </span>
           )}
           {m.sellHigh && (
             <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-              Sell high
+              Sell
             </span>
           )}
           {m.breakout && (
             <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-              Breakout
+              Break
             </span>
           )}
         </div>
-      )}
+        <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+          {m.team ?? "FA"} ·{" "}
+          {rostered ? (
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              {ownerName ?? "rostered"}
+            </span>
+          ) : (
+            <span className="font-medium text-emerald-700 dark:text-emerald-400">
+              Available
+            </span>
+          )}
+          {primaryTrend !== 0 && (
+            <>
+              {" · "}
+              <span className={`font-medium tabular-nums ${trendCls}`}>
+                {primaryLabel} {primaryTrend > 0 ? "+" : ""}
+                {primaryTrend}
+              </span>
+            </>
+          )}
+          {primaryTrend === 0 && (
+            <>
+              {" · "}
+              <span className="text-zinc-400 dark:text-zinc-600">
+                {direction === "up" ? "rising" : "falling"}
+              </span>
+            </>
+          )}
+        </span>
+      </div>
+      <span className="shrink-0 text-sm font-semibold tabular-nums">
+        {m.valueSf.toLocaleString()}
+      </span>
     </li>
   );
 }
@@ -338,12 +341,18 @@ export default async function PlayersPage() {
                 {movers.risers.length} players
               </span>
             </header>
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
               {movers.risers.map((m) => (
-                <MoverCard key={m.sleeperId} m={m} direction="up" />
+                <MoverRow
+                  key={m.sleeperId}
+                  m={m}
+                  direction="up"
+                  rostered={rosteredIds.has(m.sleeperId)}
+                  ownerName={ownerByPlayerId.get(m.sleeperId) ?? null}
+                />
               ))}
               {movers.risers.length === 0 && (
-                <li className="text-sm text-zinc-500 dark:text-zinc-400">
+                <li className="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400">
                   No risers right now.
                 </li>
               )}
@@ -360,12 +369,18 @@ export default async function PlayersPage() {
                 {movers.fallers.length} players
               </span>
             </header>
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
               {movers.fallers.map((m) => (
-                <MoverCard key={m.sleeperId} m={m} direction="down" />
+                <MoverRow
+                  key={m.sleeperId}
+                  m={m}
+                  direction="down"
+                  rostered={rosteredIds.has(m.sleeperId)}
+                  ownerName={ownerByPlayerId.get(m.sleeperId) ?? null}
+                />
               ))}
               {movers.fallers.length === 0 && (
-                <li className="text-sm text-zinc-500 dark:text-zinc-400">
+                <li className="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400">
                   No fallers right now.
                 </li>
               )}
