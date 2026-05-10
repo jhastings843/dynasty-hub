@@ -577,6 +577,55 @@ export default function TradeBuilder({
     setTheirPickIds(new Set());
   }
 
+  // Apply a league-wide match AND tack on a leveler from my side so
+  // the resulting trade is closer to even, in one click. Used by the
+  // "level it out" buttons on Steal/Edge tier cards in Anyone mode.
+  function applyMatchWithLeveler(
+    match: LeagueWideMatch,
+    leveler: LevelerOption,
+  ) {
+    setPartnerId(match.partnerRosterId);
+    setTheirSel(new Set(match.receivePlayers.map((p) => p.id)));
+    setTheirPickIds(new Set());
+    if (leveler.type === "add_my_player" && leveler.player) {
+      const next = new Set(mySel);
+      next.add(leveler.player.id);
+      setMySel(next);
+    } else if (leveler.type === "add_my_pick" && leveler.pickId !== undefined) {
+      const next = new Set(myPickIds);
+      next.add(leveler.pickId);
+      setMyPickIds(next);
+    }
+  }
+
+  // Compute leveler options for a specific Anyone-mode match. The
+  // trade is already in your favor by match.delta, so the levelers
+  // come from your roster and your unselected picks; sized to bring
+  // the delta closest to zero. Limited to player/pick adds from the
+  // user side, since asking the partner to drop something in this
+  // mode would defeat the purpose of the match.
+  function getMatchLevelers(match: LeagueWideMatch): LevelerOption[] {
+    if (!myTeam || match.delta < 100) return [];
+    const partner = teams.find((t) => t.rosterId === match.partnerRosterId);
+    if (!partner) return [];
+    const theirSelectedForMatch = new Set(
+      match.receivePlayers.map((p) => p.id),
+    );
+    return suggestLevelers({
+      myTeam,
+      partnerTeam: partner,
+      mySelectedIds: mySel,
+      theirSelectedIds: theirSelectedForMatch,
+      delta: match.delta,
+      picks,
+      selectedPickIds: new Set([...myPickIds]),
+      isSuperflex,
+      myWeakPositions,
+    })
+      .filter((opt) => opt.type === "add_my_player" || opt.type === "add_my_pick")
+      .slice(0, 3);
+  }
+
   function applyLeveler(opt: LevelerOption) {
     switch (opt.type) {
       case "add_my_player":
@@ -1396,6 +1445,72 @@ export default function TradeBuilder({
                                 ))}
                               </ul>
                             )}
+                            {(meta.key === "steal" || meta.key === "edge") &&
+                              (() => {
+                                const levelers = getMatchLevelers(m);
+                                if (levelers.length === 0) return null;
+                                return (
+                                  <details className="group flex flex-col gap-1.5 rounded-lg border border-sky-200/70 bg-sky-50/40 px-2.5 py-1.5 dark:border-sky-900/50 dark:bg-sky-950/20">
+                                    <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
+                                      <span className="text-[11px] font-bold text-sky-900 dark:text-sky-200">
+                                        Level it out
+                                      </span>
+                                      <span className="text-[10px] text-sky-700 dark:text-sky-300">
+                                        add to your side to keep partner honest
+                                      </span>
+                                    </summary>
+                                    <ul className="flex flex-col gap-1 pt-0.5">
+                                      {levelers.map((opt, oi) => {
+                                        const label =
+                                          opt.type === "add_my_player"
+                                            ? opt.player?.name
+                                            : opt.pickLabel;
+                                        const v =
+                                          opt.type === "add_my_player"
+                                            ? opt.player?.value
+                                            : opt.pickValue;
+                                        return (
+                                          <li
+                                            key={`${opt.type}-${opt.player?.id ?? opt.pickId ?? oi}`}
+                                            className="flex items-center gap-2 rounded-md bg-white/70 px-2 py-1 dark:bg-zinc-900/60"
+                                          >
+                                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                              <span className="truncate text-xs font-medium">
+                                                + {label}{" "}
+                                                <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                                                  ({(v ?? 0).toLocaleString()})
+                                                </span>
+                                              </span>
+                                              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                                                gap{" "}
+                                                <span
+                                                  className={
+                                                    Math.abs(opt.resultingDelta) <= 100
+                                                      ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                                                      : ""
+                                                  }
+                                                >
+                                                  {opt.resultingDelta > 0 ? "+" : ""}
+                                                  {opt.resultingDelta.toLocaleString()}
+                                                </span>
+                                              </span>
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                applyMatchWithLeveler(m, opt)
+                                              }
+                                              className="shrink-0 rounded-md border border-sky-300 bg-sky-500 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-sky-600 dark:border-sky-700"
+                                            >
+                                              Add & apply
+                                            </button>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  </details>
+                                );
+                              })()}
                           </li>
                         ))}
                       </ul>
