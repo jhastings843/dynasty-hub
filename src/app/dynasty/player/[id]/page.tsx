@@ -5,6 +5,7 @@ import {
   getPlayerStats,
   getValuesForLeague,
 } from "@/lib/rosteraudit/client";
+import { getPlayerNews } from "@/lib/news/espn";
 import {
   getKTCValues,
   ktcFormatFromLeague,
@@ -61,6 +62,8 @@ export default async function PlayerPage({
   ]);
 
   if (!profile) return <NotFound id={id} />;
+
+  const news = await getPlayerNews(profile.player.name, 3).catch(() => []);
 
   const raFormat = league ? formatKeyFromLeague(league) : null;
   const ktcFormat = league ? ktcFormatFromLeague(league) : null;
@@ -346,6 +349,76 @@ export default async function PlayerPage({
               );
             })()}
           </div>
+        )}
+
+        {/* Recent news */}
+        {news.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-xl font-semibold tracking-tight">
+                Recent news
+              </h2>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                via ESPN
+              </span>
+            </div>
+            <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+              {news.map((n) => {
+                const pubDate = n.publishedAt
+                  ? new Date(n.publishedAt)
+                  : null;
+                const ageMs = pubDate ? Date.now() - pubDate.getTime() : null;
+                const relTime = ageMs
+                  ? ageMs < 60 * 60 * 1000
+                    ? `${Math.max(1, Math.round(ageMs / (60 * 1000)))}m ago`
+                    : ageMs < 24 * 60 * 60 * 1000
+                      ? `${Math.round(ageMs / (60 * 60 * 1000))}h ago`
+                      : ageMs < 7 * 24 * 60 * 60 * 1000
+                        ? `${Math.round(ageMs / (24 * 60 * 60 * 1000))}d ago`
+                        : pubDate?.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })
+                  : null;
+                const Content = (
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="text-sm font-semibold leading-snug">
+                      {n.headline}
+                    </span>
+                    {n.description && (
+                      <span className="line-clamp-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                        {n.description}
+                      </span>
+                    )}
+                    {relTime && (
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-500">
+                        {relTime}
+                      </span>
+                    )}
+                  </div>
+                );
+                return (
+                  <li
+                    key={n.id}
+                    className="px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
+                  >
+                    {n.url ? (
+                      <a
+                        href={n.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        {Content}
+                      </a>
+                    ) : (
+                      Content
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         )}
 
         {/* Value history */}
