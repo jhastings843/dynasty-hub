@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 import {
   formatKeyFromLeague,
-  getPicks,
+  getAllPicks,
   getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
@@ -149,7 +149,7 @@ export default async function DraftBoardPage() {
       getLeagueUsers(leagueId),
       getAllPlayers(),
       getValuesForLeague(league),
-      getPicks(),
+      getAllPicks(),
     ]);
 
   if (drafts.length === 0) {

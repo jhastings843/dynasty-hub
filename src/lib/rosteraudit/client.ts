@@ -260,16 +260,31 @@ function slimPicks(rows: RawPick[]): RAPick[] {
   return out;
 }
 
-export function getPicks(): Promise<RAPick[]> {
-  return cached(PICKS_KEY, PICKS_TTL, async () => {
+const ALL_PICKS_KEY = "rosteraudit:v3:picks-all";
+
+// Underlying fetch: every pick in RA's rolling 4-year window,
+// unfiltered. Cached once and shared by both the trade builder
+// (which then filters to future seasons) and the draft board (which
+// needs the just-completed season's pick values to compute team
+// grades).
+export function getAllPicks(): Promise<RAPick[]> {
+  return cached(ALL_PICKS_KEY, PICKS_TTL, async () => {
     const res = await raFetch<PicksResponse>("/picks");
-    const min = minPickSeason();
-    return slimPicks(res.picks ?? []).filter((p) => p.season >= min);
+    return slimPicks(res.picks ?? []);
   });
 }
 
+// Tradeable picks: only seasons whose draft hasn't completed yet.
+// The trade page calls this; draft pages must call getAllPicks so
+// they can still value picks from the just-finished draft.
+export async function getPicks(): Promise<RAPick[]> {
+  const all = await getAllPicks();
+  const min = minPickSeason();
+  return all.filter((p) => p.season >= min);
+}
+
 export async function revalidatePicks(): Promise<void> {
-  await invalidate(PICKS_KEY);
+  await invalidate(ALL_PICKS_KEY, PICKS_KEY);
 }
 
 // --- Movers ---

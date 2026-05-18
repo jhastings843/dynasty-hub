@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Clock, Trophy } from "lucide-react";
 import {
   formatKeyFromLeague,
-  getPicks,
+  getAllPicks,
   getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
@@ -185,7 +185,7 @@ export default async function DraftPage() {
       getLeagueRosters(leagueId),
       getAllPlayers(),
       getValuesForLeague(league),
-      getPicks(),
+      getAllPicks(),
       getKTCValues(ktcFormat).catch((): KTCByName => ({})),
       getTradedPicks(leagueId).catch(() => []),
     ]);
