@@ -44,7 +44,7 @@ function BrandMark() {
 function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-950/80">
-      <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex min-h-16 w-full max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-0 lg:px-8">
         <Link
           href="/"
           className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
@@ -54,7 +54,9 @@ function SiteHeader() {
             Dynasty Hub
           </span>
         </Link>
-        <div className="flex items-center gap-0 overflow-x-auto">
+        {/* Wrap on phones instead of a cramped horizontal scroll; stays a
+            single row on sm+ where there is room. */}
+        <div className="-mx-1 flex flex-wrap items-center gap-x-1 gap-y-1 sm:mx-0">
           {NAV_LINKS.map((l) => (
             <NavLink key={l.href} href={l.href} label={l.label} />
           ))}
