@@ -1,7 +1,6 @@
 // Logic for the season plan page. Pure functions; safe for client and
 // server.
 
-import type { TeamSummary } from "./power-rankings";
 import type { RATeamGrade } from "@/lib/rosteraudit/types";
 
 // ---------------------------------------------------------------
@@ -60,7 +59,7 @@ const GRADE_RANK: Record<string, number> = {
   F: 0,
 };
 
-function gradeScore(g: string): number {
+export function gradeScore(g: string): number {
   return GRADE_RANK[g] ?? 5;
 }
 
@@ -188,132 +187,6 @@ export function currentPhase(now: Date, draftStart?: Date | null): SeasonPhase {
     blurb:
       "Recap, plan rookie draft, identify trade targets to address weaknesses.",
   };
-}
-
-// ---------------------------------------------------------------
-// Auto goals from data.
-// ---------------------------------------------------------------
-
-export type GoalCategory =
-  | "roster"
-  | "trade"
-  | "draft"
-  | "standings"
-  | "other";
-
-export interface AutoGoal {
-  id: string;
-  text: string;
-  category: GoalCategory;
-  current?: string;
-  target?: string;
-  status: "todo" | "in_progress" | "done";
-}
-
-interface AutoGoalContext {
-  myTeam: TeamSummary;
-  totalTeams: number;
-  grade: RATeamGrade | null;
-  trajectory: Trajectory;
-  draftSlot: number | null;
-  draftRounds: number;
-  weakestPositions: string[]; // bottom-2 by local positional value
-  strongestPositions: string[]; // top-2 by local positional value
-}
-
-export function buildAutoGoals(ctx: AutoGoalContext): AutoGoal[] {
-  const goals: AutoGoal[] = [];
-  const { myTeam, totalTeams, trajectory, draftSlot, draftRounds, weakestPositions, strongestPositions } = ctx;
-
-  // Roster construction
-  if (weakestPositions.length > 0) {
-    const pos = weakestPositions[0];
-    const currentRank = myTeam.positionRanks[pos] ?? 99;
-    const target = Math.max(1, Math.ceil(totalTeams / 2));
-    goals.push({
-      id: "improve_weakest",
-      text: `Improve ${pos} room from #${currentRank} to top ${target}`,
-      category: "roster",
-      current: `#${currentRank} of ${totalTeams}`,
-      target: `top ${target}`,
-      status: currentRank <= target ? "done" : "todo",
-    });
-  }
-
-  // Trade strategy
-  const tradeText =
-    trajectory === "rebuild"
-      ? "Sell 1-2 aging vets for future picks (target 2027 1sts)"
-      : trajectory === "contender" || trajectory === "compete"
-        ? "Make 1-2 win-now trades fixing weak positions"
-        : "Make 1-2 trades shifting roster toward your direction";
-  goals.push({
-    id: "trades",
-    text: tradeText,
-    category: "trade",
-    target: "1-2 completed",
-    status: "todo",
-  });
-
-  // Sell-high on surplus
-  if (strongestPositions.length > 0) {
-    const pos = strongestPositions[0];
-    goals.push({
-      id: "sell_high",
-      text: `Use ${pos} surplus (you're #${myTeam.positionRanks[pos]}) as trade currency`,
-      category: "trade",
-      status: "todo",
-    });
-  }
-
-  // Draft
-  if (draftSlot && draftRounds > 0) {
-    const targetCount = Math.min(2, draftRounds);
-    goals.push({
-      id: "draft_starters",
-      text: `Land ${targetCount} starting-caliber rookies in tonight's draft`,
-      category: "draft",
-      target: `${targetCount} hits`,
-      status: "todo",
-    });
-  }
-
-  // Standings
-  const playoffSpots = Math.floor(totalTeams / 2);
-  const w = myTeam.players.length > 0 ? 0 : 0; // placeholder
-  goals.push({
-    id: "playoffs",
-    text: `Make playoffs (top ${playoffSpots} of ${totalTeams})`,
-    category: "standings",
-    target: `top ${playoffSpots}`,
-    status: w > 0 ? "in_progress" : "todo",
-  });
-
-  // Long-term value
-  if (trajectory === "rebuild" || trajectory === "reload") {
-    goals.push({
-      id: "youth",
-      text: "Get younger: target avg starter age below 25",
-      category: "roster",
-      current: ctx.grade
-        ? `${ctx.grade.avgStarterAge.toFixed(1)} yrs`
-        : "—",
-      target: "<25 yrs",
-      status: ctx.grade && ctx.grade.avgStarterAge < 25 ? "done" : "todo",
-    });
-  } else if (trajectory === "contender" || trajectory === "compete") {
-    goals.push({
-      id: "win_now",
-      text: "Hold or improve dynasty grade; don't sell future cheap",
-      category: "roster",
-      current: ctx.grade?.dynastyGrade ?? "—",
-      target: "B+ or better",
-      status:
-        ctx.grade && gradeScore(ctx.grade.dynastyGrade) >= 9 ? "done" : "todo",
-    });
-  }
-
-  return goals;
 }
 
 // ---------------------------------------------------------------

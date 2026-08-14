@@ -14,19 +14,18 @@ import {
 } from "@/lib/sleeper/client";
 import { computeTeamSummaries } from "@/lib/dynasty/power-rankings";
 import {
-  buildAutoGoals,
   currentPhase,
   inferTrajectory,
   keyDates,
   trajectoryBlurb,
   trajectoryLabel,
-  type AutoGoal,
   type Trajectory,
 } from "@/lib/dynasty/season-plan";
 import { CustomGoals } from "./CustomGoals";
 import { RefreshButton } from "@/components/RefreshButton";
 import { getValuesForProfile } from "@/lib/values";
 import { profileFromSleeper } from "@/lib/league/detect";
+import { buildGoals, STRATEGY_SUMMARY, type AutoGoal } from "@/lib/strategy";
 
 export const dynamic = "force-dynamic";
 
@@ -174,7 +173,38 @@ export default async function SeasonPlanPage({
   const weakestPositions = sortedByRank.slice(0, 2);
   const strongestPositions = sortedByRank.slice(-2).reverse();
 
-  const autoGoals = buildAutoGoals({
+  const profile = profileFromSleeper(league);
+
+  const settings = myRoster.settings ?? {};
+  const record = {
+    wins: settings.wins ?? 0,
+    losses: settings.losses ?? 0,
+    ties: settings.ties ?? 0,
+    pointsFor: (settings.fpts ?? 0) + (settings.fpts_decimal ?? 0) / 100,
+    pointsAgainst:
+      (settings.fpts_against ?? 0) + (settings.fpts_against_decimal ?? 0) / 100,
+  };
+
+  // Standings rank by wins, then points for, matching how the league itself
+  // breaks ties.
+  const standingRank =
+    [...rosters]
+      .sort((a, b) => {
+        const w = (b.settings?.wins ?? 0) - (a.settings?.wins ?? 0);
+        if (w !== 0) return w;
+        return (b.settings?.fpts ?? 0) - (a.settings?.fpts ?? 0);
+      })
+      .findIndex((r) => r.roster_id === myRoster.roster_id) + 1;
+
+  const faabBudget =
+    typeof league.settings?.waiver_budget === "number"
+      ? league.settings.waiver_budget
+      : null;
+  const faabRemaining =
+    faabBudget != null ? faabBudget - (settings.waiver_budget_used ?? 0) : null;
+
+  const autoGoals = buildGoals({
+    profile,
     myTeam,
     totalTeams: rosters.length,
     grade,
@@ -183,6 +213,22 @@ export default async function SeasonPlanPage({
     draftRounds: draft?.settings?.rounds ?? 0,
     weakestPositions,
     strongestPositions,
+    record,
+    standingRank,
+    scoringRank: null,
+    week: null,
+    faabRemaining,
+    faabBudget,
+    playoffTeams:
+      typeof league.settings?.playoff_teams === "number"
+        ? league.settings.playoff_teams
+        : Math.floor(rosters.length / 2),
+    // Playoffs start at playoff_week_start, so the regular season is the week
+    // before it.
+    regularSeasonWeeks:
+      typeof league.settings?.playoff_week_start === "number"
+        ? league.settings.playoff_week_start - 1
+        : 14,
   });
 
   const season = Number(league.season ?? new Date().getFullYear());
@@ -216,8 +262,16 @@ export default async function SeasonPlanPage({
           </p>
         </div>
 
-        {/* Trajectory + phase hero */}
+        {/* How this format is played. The goals below follow from it. */}
+        <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          {STRATEGY_SUMMARY[profile.type]}
+        </p>
+
+        {/* Trajectory + phase hero. Trajectory is a dynasty concept: it reads
+            RosterAudit's dynasty grades and age curves, neither of which means
+            anything in a league that resets each year. */}
         <div className="grid gap-4 lg:grid-cols-2">
+          {profile.type === "dynasty" && (
           <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex items-center gap-3">
               <Compass
@@ -247,6 +301,7 @@ export default async function SeasonPlanPage({
               {trajectoryBlurb(trajectory)}
             </p>
           </div>
+          )}
 
           <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex items-center gap-3">

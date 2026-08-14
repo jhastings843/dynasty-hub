@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 // in the league layout at /l/[leagueId].
 const NAV_LINKS: { href: string; label: string; exact?: boolean }[] = [
   { href: "/", label: "Leagues", exact: true },
+  { href: "/strategy", label: "Strategy" },
   { href: "/survivor", label: "Survivor" },
   { href: "/resources", label: "Resources" },
 ];

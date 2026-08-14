@@ -1,10 +1,33 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LeagueSwitcher } from "@/components/LeagueSwitcher";
 import { NavLink } from "@/components/NavLink";
 import { getMyLeagues, resolveLeague } from "@/lib/league/discover";
 import { leaguePath, toolsFor } from "@/lib/league/tools";
 import { valueSourceFor } from "@/lib/values";
-import type { LeagueProfile } from "@/lib/league/types";
+import { LEAGUE_TYPE_LABEL, type LeagueProfile } from "@/lib/league/types";
+
+function ManualLeagueNotice({ name }: { name: string }) {
+  return (
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex max-w-2xl flex-col gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">{name}</h1>
+        <p className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+          This league is declared manually, so there is no live roster, scoring,
+          or waiver data behind it. The tools here need a connected league to
+          compute anything. The written playbook for this format is on the{" "}
+          <Link
+            href="/strategy"
+            className="font-medium text-amber-700 hover:underline dark:text-amber-400"
+          >
+            strategy page
+          </Link>
+          .
+        </p>
+      </div>
+    </main>
+  );
+}
 
 export default async function LeagueLayout({
   children,
@@ -54,7 +77,7 @@ export default async function LeagueLayout({
             title={valueSource.note}
             className="text-xs text-zinc-500 sm:ml-auto dark:text-zinc-400"
           >
-            {valueSource.key === "rosteraudit" ? "Dynasty" : "Redraft"} values via{" "}
+            {LEAGUE_TYPE_LABEL[league.type]} values via{" "}
             <a
               href={valueSource.url}
               target="_blank"
@@ -66,7 +89,11 @@ export default async function LeagueLayout({
           </span>
         </div>
       </div>
-      {children}
+      {league.source === "manual" ? (
+        <ManualLeagueNotice name={league.name} />
+      ) : (
+        children
+      )}
     </>
   );
 }

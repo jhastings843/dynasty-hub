@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, ShieldCheck } from "lucide-react";
+import { BookOpen, Compass, ShieldCheck } from "lucide-react";
 import { getMyLeagues } from "@/lib/league/discover";
 import { leaguePath } from "@/lib/league/tools";
 import {
@@ -27,6 +27,13 @@ const STATUS_LABEL: Record<LeagueProfile["status"], string> = {
 };
 
 const OTHER_TOOLS = [
+  {
+    href: "/strategy",
+    title: "Strategy playbooks",
+    blurb:
+      "How dynasty, redraft, and guillotine are actually played, with sources.",
+    icon: Compass,
+  },
   {
     href: "/survivor",
     title: "Survivor pool",
