@@ -80,7 +80,7 @@ function SiteFooter() {
               Fantasy Hub
             </span>
             <span className="text-zinc-500 dark:text-zinc-400">
-              Built for Dah Dynasty League
+              Dynasty, redraft, and survivor tools
             </span>
           </div>
         </div>
@@ -94,6 +94,15 @@ function SiteFooter() {
               className="font-medium text-amber-700 hover:underline dark:text-amber-400"
             >
               RosterAudit
+            </a>{" "}
+            and{" "}
+            <a
+              href="https://fantasycalc.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-700 hover:underline dark:text-amber-400"
+            >
+              FantasyCalc
             </a>
           </span>
           <span aria-hidden>·</span>

@@ -3,6 +3,7 @@ import { LeagueSwitcher } from "@/components/LeagueSwitcher";
 import { NavLink } from "@/components/NavLink";
 import { getMyLeagues, resolveLeague } from "@/lib/league/discover";
 import { leaguePath, toolsFor } from "@/lib/league/tools";
+import { valueSourceFor } from "@/lib/values";
 import type { LeagueProfile } from "@/lib/league/types";
 
 export default async function LeagueLayout({
@@ -30,6 +31,7 @@ export default async function LeagueLayout({
   }
 
   const tools = toolsFor(league.type);
+  const valueSource = valueSourceFor(league);
 
   return (
     <>
@@ -46,6 +48,22 @@ export default async function LeagueLayout({
               />
             ))}
           </div>
+          {/* Dynasty and redraft values are genuinely different sets, so name
+              which one is on screen rather than leaving it implied. */}
+          <span
+            title={valueSource.note}
+            className="text-xs text-zinc-500 sm:ml-auto dark:text-zinc-400"
+          >
+            {valueSource.key === "rosteraudit" ? "Dynasty" : "Redraft"} values via{" "}
+            <a
+              href={valueSource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-700 hover:underline dark:text-amber-400"
+            >
+              {valueSource.label}
+            </a>
+          </span>
         </div>
       </div>
       {children}

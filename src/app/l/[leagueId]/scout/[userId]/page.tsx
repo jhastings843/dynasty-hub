@@ -3,7 +3,6 @@ import { Compass, Trophy } from "lucide-react";
 import {
   getManagerHistory,
   getRosterGrades,
-  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import {
@@ -17,6 +16,8 @@ import type { SleeperPlayer, SleeperRoster } from "@/lib/sleeper/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +117,7 @@ export default async function ScoutPage({
 
   const [allPlayers, raValues, grades] = await Promise.all([
     getAllPlayers(),
-    getValuesForLeague(homeLeague),
+    getValuesForProfile(profileFromSleeper(homeLeague), homeLeague).then((r) => r.values),
     getRosterGrades(homeLeagueId, userId).catch(
       (): RAGradesByRosterId => ({}),
     ),

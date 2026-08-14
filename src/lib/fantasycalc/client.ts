@@ -1,6 +1,6 @@
 import "server-only";
 import { cached, invalidate } from "@/lib/redis/cached";
-import type { SleeperLeague } from "@/lib/sleeper/types";
+import type { LeagueProfile } from "@/lib/league/types";
 import type { FCFormat, FCValue, FCValuesBySleeperId } from "./types";
 
 const FC_BASE = "https://api.fantasycalc.com";
@@ -55,7 +55,7 @@ function slim(rows: RawValue[]): FCValuesBySleeperId {
   return out;
 }
 
-export function getDynastyValues(fmt: FCFormat): Promise<FCValuesBySleeperId> {
+export function getFCValues(fmt: FCFormat): Promise<FCValuesBySleeperId> {
   return cached(key(fmt), TTL, async () => {
     const res = await fetch(urlFor(fmt), { cache: "no-store" });
     if (!res.ok) {
@@ -66,29 +66,20 @@ export function getDynastyValues(fmt: FCFormat): Promise<FCValuesBySleeperId> {
   });
 }
 
-export async function revalidateDynastyValues(fmt: FCFormat): Promise<void> {
+export async function revalidateFCValues(fmt: FCFormat): Promise<void> {
   await invalidate(key(fmt));
 }
 
-// Derive the FantasyCalc format from a Sleeper league. Defaults to dynasty
-// since the dynasty section is the main consumer; flip isDynasty manually for redraft work.
-export function fcFormatFromLeague(league: SleeperLeague): FCFormat {
-  const positions = league.roster_positions ?? [];
-  const qbCount = positions.filter((p) => p === "QB").length;
-  const isSuperflex = positions.includes("SUPER_FLEX") || qbCount >= 2;
-
-  const rec = league.scoring_settings?.rec;
-  let ppr: 0 | 0.5 | 1 = 1;
-  if (rec === 0) ppr = 0;
-  else if (rec === 0.5) ppr = 0.5;
-
-  const numTeams = league.total_rosters ?? 12;
-
+// Derive the FantasyCalc format from a league profile. isDynasty follows the
+// league's actual format rather than being assumed: FantasyCalc publishes two
+// genuinely different value sets, and using the wrong one misprices roughly
+// half the player pool by 20 or more ranks.
+export function fcFormatFromProfile(profile: LeagueProfile): FCFormat {
   return {
-    isDynasty: true,
-    numQbs: isSuperflex ? 2 : 1,
-    numTeams,
-    ppr,
+    isDynasty: profile.type === "dynasty",
+    numQbs: profile.superflex ? 2 : 1,
+    numTeams: profile.teams,
+    ppr: profile.ppr,
   };
 }
 
@@ -126,9 +117,4 @@ export function applyTePremium(
   const out: FCValuesBySleeperId = {};
   for (const v of adjusted) out[v.sleeperId] = v;
   return out;
-}
-
-export function tePremiumFromLeague(league: SleeperLeague): number {
-  const bonus = league.scoring_settings?.bonus_rec_te;
-  return typeof bonus === "number" ? bonus : 0;
 }

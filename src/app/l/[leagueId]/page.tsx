@@ -14,7 +14,6 @@ import type {
 } from "@/lib/sleeper/types";
 import {
   getRosterGrades,
-  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import {
@@ -27,6 +26,8 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
 import { AlertTriangle } from "lucide-react";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 
 export const dynamic = "force-dynamic";
 
@@ -139,7 +140,7 @@ export default async function LeaguePage({
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
-    getValuesForLeague(league),
+    getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
     getRosterGrades(leagueId, me.user_id).catch(
       (): RAGradesByRosterId => ({}),
     ),
@@ -633,18 +634,6 @@ export default async function LeaguePage({
           </section>
         )}
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Player values via{" "}
-          <a
-            href="https://rosteraudit.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-700 hover:underline dark:text-amber-400"
-          >
-            RosterAudit
-          </a>
-          .
-        </p>
       </div>
     </main>
   );

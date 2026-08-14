@@ -3,7 +3,6 @@ import { Trophy } from "lucide-react";
 import {
   formatKeyFromLeague,
   getAllPicks,
-  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
 import {
@@ -20,6 +19,8 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 
 export const dynamic = "force-dynamic";
 
@@ -146,7 +147,7 @@ export default async function DraftBoardPage({
       getLeagueRosters(leagueId),
       getLeagueUsers(leagueId),
       getAllPlayers(),
-      getValuesForLeague(league),
+      getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
       getAllPicks(),
     ]);
 
@@ -401,16 +402,7 @@ export default async function DraftBoardPage({
 
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Grades update each refresh. Surplus = sum of (player value - pick
-          value) for picks made. Player values via{" "}
-          <a
-            href="https://rosteraudit.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-700 hover:underline dark:text-amber-400"
-          >
-            RosterAudit
-          </a>
-          .
+          value) for picks made.
         </p>
       </div>
     </main>

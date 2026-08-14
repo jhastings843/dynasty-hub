@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Calendar, CheckCircle2, Circle, Compass, Target } from "lucide-react";
 import {
   getRosterGrades,
-  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
 import {
@@ -26,6 +25,8 @@ import {
 } from "@/lib/dynasty/season-plan";
 import { CustomGoals } from "./CustomGoals";
 import { RefreshButton } from "@/components/RefreshButton";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 
 export const dynamic = "force-dynamic";
 
@@ -133,7 +134,7 @@ export default async function SeasonPlanPage({
       getLeagueRosters(leagueId),
       getLeagueUsers(leagueId),
       getAllPlayers(),
-      getValuesForLeague(league),
+      getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
       getRosterGrades(leagueId, me.user_id).catch(
         (): RAGradesByRosterId => ({}),
       ),
@@ -381,18 +382,6 @@ export default async function SeasonPlanPage({
           </ol>
         </section>
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Player values via{" "}
-          <a
-            href="https://rosteraudit.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-700 hover:underline dark:text-amber-400"
-          >
-            RosterAudit
-          </a>
-          . League data via Sleeper.
-        </p>
       </div>
     </main>
   );

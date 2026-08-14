@@ -3,7 +3,6 @@ import {
   formatKeyFromLeague,
   getPlayerProfile,
   getPlayerStats,
-  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import { getPlayerNews } from "@/lib/news/espn";
 import {
@@ -12,6 +11,8 @@ import {
   normalizeName,
 } from "@/lib/ktc/client";
 import type { KTCByName } from "@/lib/ktc/types";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 import type { RAValuesBySleeperId } from "@/lib/rosteraudit/types";
 import {
   getAllPlayers,
@@ -73,7 +74,7 @@ export default async function PlayerPage({
     leagueId ? getLeagueUsers(leagueId) : Promise.resolve([]),
     getAllPlayers().catch(() => ({})),
     league
-      ? getValuesForLeague(league).catch(
+      ? getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values).catch(
           (): RAValuesBySleeperId => ({}),
         )
       : Promise.resolve({} as RAValuesBySleeperId),

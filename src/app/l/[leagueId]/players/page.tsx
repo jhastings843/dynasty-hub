@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import {
-  getValuesForLeague,
   getMovers,
 } from "@/lib/rosteraudit/client";
 import type { RAMover } from "@/lib/rosteraudit/types";
@@ -18,6 +17,8 @@ import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
 import { computeTeamSummaries } from "@/lib/dynasty/power-rankings";
 import { PlayerSearch, type SearchablePlayer } from "./PlayerSearch";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 
 export const dynamic = "force-dynamic";
 
@@ -170,7 +171,7 @@ export default async function PlayersPage({
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
-    getValuesForLeague(league),
+    getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
     getMovers(30),
   ]);
 
@@ -392,18 +393,6 @@ export default async function PlayersPage({
         {/* Search */}
         <PlayerSearch players={searchablePlayers} />
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Player values via{" "}
-          <a
-            href="https://rosteraudit.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-700 hover:underline dark:text-amber-400"
-          >
-            RosterAudit
-          </a>
-          .
-        </p>
       </div>
     </main>
   );

@@ -3,7 +3,6 @@ import { Clock, Trophy } from "lucide-react";
 import {
   formatKeyFromLeague,
   getAllPicks,
-  getValuesForLeague,
 } from "@/lib/rosteraudit/client";
 import type { PickSlot, RAPick } from "@/lib/rosteraudit/types";
 import {
@@ -26,6 +25,8 @@ import { Recommendations } from "./Recommendations";
 import { buildRecommendations } from "@/lib/dynasty/draft-recommender";
 import { getKTCValues, ktcFormatFromLeague } from "@/lib/ktc/client";
 import type { KTCByName } from "@/lib/ktc/types";
+import { getValuesForProfile } from "@/lib/values";
+import { profileFromSleeper } from "@/lib/league/detect";
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +186,7 @@ export default async function DraftPage({
       getLeagueDrafts(leagueId),
       getLeagueRosters(leagueId),
       getAllPlayers(),
-      getValuesForLeague(league),
+      getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
       getAllPicks(),
       getKTCValues(ktcFormat).catch((): KTCByName => ({})),
       getTradedPicks(leagueId).catch(() => []),
@@ -1030,18 +1031,6 @@ export default async function DraftPage({
           </section>
         )}
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Player values via{" "}
-          <a
-            href="https://rosteraudit.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-700 hover:underline dark:text-amber-400"
-          >
-            RosterAudit
-          </a>
-          .
-        </p>
       </div>
     </main>
   );
