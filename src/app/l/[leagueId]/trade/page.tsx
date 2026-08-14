@@ -22,10 +22,10 @@ function ConfigError({ message }: { message: string }) {
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex max-w-2xl flex-col gap-3">
         <Link
-          href="/dynasty"
+          href="/"
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ Leagues
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">
           Trade analyzer
@@ -38,14 +38,15 @@ function ConfigError({ message }: { message: string }) {
   );
 }
 
-export default async function TradePage() {
+export default async function TradePage({
+  params,
+}: {
+  params: Promise<{ leagueId: string }>;
+}) {
+  const { leagueId } = await params;
   const username = process.env.SLEEPER_USERNAME;
-  const leagueId = process.env.SLEEPER_LEAGUE_ID;
   if (!username) {
     return <ConfigError message="Missing SLEEPER_USERNAME in .env.local" />;
-  }
-  if (!leagueId) {
-    return <ConfigError message="Missing SLEEPER_LEAGUE_ID in .env.local" />;
   }
 
   const league = await getLeague(leagueId);
@@ -77,10 +78,10 @@ export default async function TradePage() {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1">
           <Link
-            href="/dynasty"
+            href={`/l/${leagueId}`}
             className="text-sm text-zinc-500 dark:text-zinc-400"
           >
-            ‹ Dynasty
+            ‹ League
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">

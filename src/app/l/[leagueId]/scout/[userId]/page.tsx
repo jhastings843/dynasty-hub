@@ -21,6 +21,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 export const dynamic = "force-dynamic";
 
 interface RouteParams {
+  leagueId: string;
   userId: string;
 }
 
@@ -34,10 +35,10 @@ function NotFound({ message }: { message: string }) {
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex max-w-2xl flex-col gap-3">
         <Link
-          href="/dynasty"
+          href="/"
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ Leagues
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">GM Scout</h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
@@ -53,11 +54,10 @@ export default async function ScoutPage({
 }: {
   params: Promise<RouteParams>;
 }) {
-  const { userId } = await params;
-  const homeLeagueId = process.env.SLEEPER_LEAGUE_ID;
-  if (!homeLeagueId) {
-    return <NotFound message="Missing SLEEPER_LEAGUE_ID in .env.local" />;
-  }
+  const { leagueId, userId } = await params;
+  // "Home" is the league you're scouting from: this manager's roster and
+  // record are read out of it, while their other leagues come from Sleeper.
+  const homeLeagueId = leagueId;
 
   // Step 1: their leagues for the current season + our home league context
   const homeLeague = await getLeague(homeLeagueId);
@@ -156,10 +156,10 @@ export default async function ScoutPage({
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-6">
         <Link
-          href="/dynasty"
+          href={`/l/${leagueId}`}
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ League
         </Link>
 
         {/* Header */}

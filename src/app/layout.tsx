@@ -20,12 +20,10 @@ export const metadata: Metadata = {
   description: "Fantasy football tools: dynasty leagues, survivor pools, and more.",
 };
 
-const NAV_LINKS = [
-  { href: "/dynasty", label: "Dynasty" },
-  { href: "/dynasty/plan", label: "Plan" },
-  { href: "/dynasty/draft", label: "Draft" },
-  { href: "/dynasty/trade", label: "Trade" },
-  { href: "/dynasty/players", label: "Players" },
+// Tools that belong to no single league. Per-league tools live one bar down,
+// in the league layout at /l/[leagueId].
+const NAV_LINKS: { href: string; label: string; exact?: boolean }[] = [
+  { href: "/", label: "Leagues", exact: true },
   { href: "/survivor", label: "Survivor" },
   { href: "/resources", label: "Resources" },
 ];
@@ -58,7 +56,12 @@ function SiteHeader() {
             single row on sm+ where there is room. */}
         <div className="-mx-1 flex flex-wrap items-center gap-x-1 gap-y-1 sm:mx-0">
           {NAV_LINKS.map((l) => (
-            <NavLink key={l.href} href={l.href} label={l.label} />
+            <NavLink
+              key={l.href}
+              href={l.href}
+              label={l.label}
+              exact={l.exact}
+            />
           ))}
         </div>
       </nav>

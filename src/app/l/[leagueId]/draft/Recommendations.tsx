@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 import type { Recommendation } from "@/lib/dynasty/draft-recommender";
 
 const RANK_TINTS: Record<
@@ -71,12 +71,11 @@ export function Recommendations({
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/dynasty/player/${rec.player.id}`}
-                      className="truncate text-base font-bold hover:text-amber-700 hover:underline dark:hover:text-amber-400"
-                    >
-                      {rec.player.name}
-                    </Link>
+                    <PlayerLink
+                      id={rec.player.id}
+                      name={rec.player.name}
+                      className="truncate text-base font-bold"
+                    />
                     {rec.isFit && (
                       <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
                         Fit

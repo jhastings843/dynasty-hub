@@ -36,10 +36,10 @@ function ConfigError({ message }: { message: string }) {
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex max-w-2xl flex-col gap-3">
         <Link
-          href="/dynasty"
+          href="/"
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ Leagues
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Draft helper</h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
@@ -164,14 +164,15 @@ function buildUserPicks(
   });
 }
 
-export default async function DraftPage() {
+export default async function DraftPage({
+  params,
+}: {
+  params: Promise<{ leagueId: string }>;
+}) {
+  const { leagueId } = await params;
   const username = process.env.SLEEPER_USERNAME;
-  const leagueId = process.env.SLEEPER_LEAGUE_ID;
   if (!username) {
     return <ConfigError message="Missing SLEEPER_USERNAME in .env.local" />;
-  }
-  if (!leagueId) {
-    return <ConfigError message="Missing SLEEPER_LEAGUE_ID in .env.local" />;
   }
 
   const me = await getUser(username);
@@ -428,10 +429,10 @@ export default async function DraftPage() {
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           <Link
-            href="/dynasty"
+            href={`/l/${leagueId}`}
             className="text-sm text-zinc-500 dark:text-zinc-400"
           >
-            ‹ Dynasty
+            ‹ League
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">
@@ -440,7 +441,7 @@ export default async function DraftPage() {
             <div className="flex items-center gap-2">
               <RefreshButton />
               <Link
-                href="/dynasty/draft/board"
+                href={`/l/${leagueId}/draft/board`}
                 className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
               >
                 {draftComplete ? "League grades →" : "League board →"}

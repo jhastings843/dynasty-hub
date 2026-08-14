@@ -20,6 +20,8 @@ export interface NewsArticle {
   publishedAt: string; // ISO
   url: string | null;
   imageUrl: string | null;
+  /** Human-readable age, resolved at fetch time. Null when undated. */
+  relativeTime?: string | null;
 }
 
 interface RawArticle {
@@ -107,5 +109,32 @@ export async function getPlayerNews(
     );
   });
 
-  return matches.slice(0, limit).map((m) => m.a);
+  // Stamp the relative age here rather than in the page. Reading the clock
+  // during a component's render is impure; this function is data fetching, so
+  // it is the right place to resolve "how long ago".
+  const now = Date.now();
+  return matches
+    .slice(0, limit)
+    .map((m) => ({ ...m.a, relativeTime: relativeTime(m.a.publishedAt, now) }));
+}
+
+function relativeTime(publishedAt: string, now: number): string | null {
+  if (!publishedAt) return null;
+  const then = new Date(publishedAt).getTime();
+  if (Number.isNaN(then)) return null;
+
+  const ageMs = now - then;
+  if (ageMs < 60 * 60 * 1000) {
+    return `${Math.max(1, Math.round(ageMs / (60 * 1000)))}m ago`;
+  }
+  if (ageMs < 24 * 60 * 60 * 1000) {
+    return `${Math.round(ageMs / (60 * 60 * 1000))}h ago`;
+  }
+  if (ageMs < 7 * 24 * 60 * 60 * 1000) {
+    return `${Math.round(ageMs / (24 * 60 * 60 * 1000))}d ago`;
+  }
+  return new Date(publishedAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }

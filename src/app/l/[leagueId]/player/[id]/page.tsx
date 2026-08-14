@@ -29,10 +29,10 @@ function NotFound({ id }: { id: string }) {
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex max-w-2xl flex-col gap-3">
         <Link
-          href="/dynasty"
+          href="/"
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ Leagues
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Player profile</h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
@@ -44,6 +44,7 @@ function NotFound({ id }: { id: string }) {
 }
 
 interface RouteParams {
+  leagueId: string;
   id: string;
 }
 
@@ -52,13 +53,12 @@ export default async function PlayerPage({
 }: {
   params: Promise<RouteParams>;
 }) {
-  const { id } = await params;
-  const leagueId = process.env.SLEEPER_LEAGUE_ID;
+  const { leagueId, id } = await params;
 
   const [profile, stats, league] = await Promise.all([
     getPlayerProfile(id),
     getPlayerStats(id),
-    leagueId ? getLeague(leagueId) : Promise.resolve(null),
+    getLeague(leagueId).catch(() => null),
   ]);
 
   if (!profile) return <NotFound id={id} />;
@@ -128,10 +128,10 @@ export default async function PlayerPage({
       <div className="flex flex-col gap-6">
         {/* Breadcrumb */}
         <Link
-          href="/dynasty"
+          href={`/l/${leagueId}`}
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ League
         </Link>
 
         {/* Header */}
@@ -364,22 +364,7 @@ export default async function PlayerPage({
             </div>
             <ul className="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
               {news.map((n) => {
-                const pubDate = n.publishedAt
-                  ? new Date(n.publishedAt)
-                  : null;
-                const ageMs = pubDate ? Date.now() - pubDate.getTime() : null;
-                const relTime = ageMs
-                  ? ageMs < 60 * 60 * 1000
-                    ? `${Math.max(1, Math.round(ageMs / (60 * 1000)))}m ago`
-                    : ageMs < 24 * 60 * 60 * 1000
-                      ? `${Math.round(ageMs / (60 * 60 * 1000))}h ago`
-                      : ageMs < 7 * 24 * 60 * 60 * 1000
-                        ? `${Math.round(ageMs / (24 * 60 * 60 * 1000))}d ago`
-                        : pubDate?.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                  : null;
+                const relTime = n.relativeTime ?? null;
                 const Content = (
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="text-sm font-semibold leading-snug">
@@ -522,7 +507,7 @@ export default async function PlayerPage({
                 return (
                   <li key={s.sleeperId}>
                     <Link
-                      href={`/dynasty/player/${s.sleeperId}`}
+                      href={`/l/${leagueId}/player/${s.sleeperId}`}
                       className="group flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-3 backdrop-blur transition-colors hover:border-amber-300 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:hover:border-amber-800"
                     >
                       <PlayerAvatar

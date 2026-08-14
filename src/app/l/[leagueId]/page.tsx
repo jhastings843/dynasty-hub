@@ -113,7 +113,7 @@ function ConfigError({ message }: { message: string }) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex max-w-2xl flex-col gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Dynasty</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">League</h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
           {message}
         </p>
@@ -122,14 +122,15 @@ function ConfigError({ message }: { message: string }) {
   );
 }
 
-export default async function DynastyPage() {
+export default async function LeaguePage({
+  params,
+}: {
+  params: Promise<{ leagueId: string }>;
+}) {
+  const { leagueId } = await params;
   const username = process.env.SLEEPER_USERNAME;
-  const leagueId = process.env.SLEEPER_LEAGUE_ID;
   if (!username) {
     return <ConfigError message="Missing SLEEPER_USERNAME in .env.local" />;
-  }
-  if (!leagueId) {
-    return <ConfigError message="Missing SLEEPER_LEAGUE_ID in .env.local" />;
   }
 
   const league = await getLeague(leagueId);
@@ -220,25 +221,25 @@ export default async function DynastyPage() {
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <RefreshButton />
             <Link
-              href="/dynasty/plan"
+              href={`/l/${leagueId}/plan`}
               className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               Season plan
             </Link>
             <Link
-              href="/dynasty/players"
+              href={`/l/${leagueId}/players`}
               className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               Players
             </Link>
             <Link
-              href="/dynasty/draft"
+              href={`/l/${leagueId}/draft`}
               className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               Draft
             </Link>
             <Link
-              href="/dynasty/trade"
+              href={`/l/${leagueId}/trade`}
               className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400"
             >
               Trade analyzer →
@@ -530,7 +531,7 @@ export default async function DynastyPage() {
                     </span>
                     {r.owner_id ? (
                       <Link
-                        href={`/dynasty/scout/${r.owner_id}`}
+                        href={`/l/${leagueId}/scout/${r.owner_id}`}
                         className="truncate text-base font-medium hover:text-amber-700 hover:underline dark:hover:text-amber-400"
                       >
                         {ownerName(r, usersById)}

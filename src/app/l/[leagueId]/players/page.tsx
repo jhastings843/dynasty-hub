@@ -35,10 +35,10 @@ function ConfigError({ message }: { message: string }) {
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex max-w-2xl flex-col gap-3">
         <Link
-          href="/dynasty"
+          href="/"
           className="text-sm text-zinc-500 dark:text-zinc-400"
         >
-          ‹ Dynasty
+          ‹ Leagues
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Players</h1>
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-300">
@@ -152,14 +152,15 @@ function MoverRow({
   );
 }
 
-export default async function PlayersPage() {
+export default async function PlayersPage({
+  params,
+}: {
+  params: Promise<{ leagueId: string }>;
+}) {
+  const { leagueId } = await params;
   const username = process.env.SLEEPER_USERNAME;
-  const leagueId = process.env.SLEEPER_LEAGUE_ID;
   if (!username) {
     return <ConfigError message="Missing SLEEPER_USERNAME in .env.local" />;
-  }
-  if (!leagueId) {
-    return <ConfigError message="Missing SLEEPER_LEAGUE_ID in .env.local" />;
   }
 
   const me = await getUser(username);
@@ -251,10 +252,10 @@ export default async function PlayersPage() {
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-1">
           <Link
-            href="/dynasty"
+            href={`/l/${leagueId}`}
             className="text-sm text-zinc-500 dark:text-zinc-400"
           >
-            ‹ Dynasty
+            ‹ League
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">Players</h1>
