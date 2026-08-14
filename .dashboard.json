@@ -3,18 +3,23 @@
   "path": "/Users/jackh/Projects/fantasy-hub",
   "github_url": "https://github.com/jhastings843/fantasy-hub",
   "status": "active",
-  "status_detail": "Fantasy football tools (dynasty trade analyzer, draft helper, players hub, season plan, survivor pool). Renamed from Dynasty Hub 2026-08-14 to make room for redraft and guillotine league sections. Survivor phase 1 shipped 2026-05-08; phase 2 awaits 2026 NFL schedule release and Vegas lines integration.",
+  "status_detail": "Multi-league fantasy football tools. Renamed from Dynasty Hub 2026-08-14. Every tool now lives under /l/[leagueId] with leagues auto-discovered from Sleeper and format detected from settings.type. Two live leagues: Dah Dynasty League (dynasty, in season) and 2026 Half PPR (redraft, pre-draft). Values switch source by format: RosterAudit for dynasty, FantasyCalc redraft otherwise. Jingles Labs research curated in as an annotation layer.",
   "next_steps": [
-    "Scope redraft league tools (new /redraft section alongside /dynasty)",
-    "Scope guillotine league tools (new /guillotine section, survival-oriented roster analysis)",
+    "Add the Lab 300 (Jingles Labs top-300 half-PPR) when it publishes, due 2026-08-16",
+    "Phase 2: split season-plan into per-format strategy rule sets (redraft playoff odds, buy/sell windows, bye coverage)",
+    "Redraft-specific draft board: ADP tiers and roster construction, before the 2026 Half PPR draft (not yet scheduled)",
+    "Phase 3: guillotine support once a league exists; no Sleeper representation so it needs a manual source",
     "Wire 2026 NFL schedule into survivor future-scarcity grid",
-    "Integrate Vegas lines via the-odds-api before Week 1 (August)",
-    "Add Sleeper survivor pool integration to pull pick distribution and entries alive automatically"
+    "Integrate Vegas lines via the-odds-api before Week 1"
   ],
-  "blockers": [],
+  "blockers": [
+    "Guillotine league not joined yet and host platform unknown, so Phase 3 cannot be designed against real rules",
+    "FantasyCalc redraft returns only 200 players (dynasty returns 475) and the limit param is ignored, thin for a 14-round 12-team draft"
+  ],
   "last_worked": "2026-08-14",
   "notes": [
-    "2026-08-14: Renamed Dynasty Hub to Fantasy Hub across code, GitHub repo, Vercel project, and local folder. New live URL fantasy-hub-tan.vercel.app; dynasty-hub-nine.vercel.app still resolves. /dynasty routes left in place as the dynasty-format section.",
+    "2026-08-14: Phase 1 multi-league shipped. Routes moved from /dynasty to /l/[leagueId] with permanent redirects, league switcher in the header, nav renders only format-appropriate tools. Values now format-aware: 87 of 200 shared players move 20+ ranks between dynasty and redraft. Jingles Labs added (21 calls, 30 tiered backup RBs). Design spec at docs/superpowers/specs/2026-08-14-multi-league-design.md.",
+    "2026-08-14: Renamed Dynasty Hub to Fantasy Hub across code, GitHub repo, Vercel project, and local folder. Live at fantasy-hub-tan.vercel.app; dynasty-hub-nine.vercel.app still resolves.",
     "2026-05-17: Dashboard registration. Last work was survivor Phase 1 (pool config, team matrix, baseline ratings, strategy library) committed 2026-05-10."
   ],
   "tags": [
@@ -25,5 +30,5 @@
     "vercel"
   ],
   "phase": "in-progress",
-  "live_url": "https://fantasy-hub-tan.vercel.app/dynasty"
+  "live_url": "https://fantasy-hub-tan.vercel.app"
 }
