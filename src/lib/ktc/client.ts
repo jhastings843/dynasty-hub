@@ -70,7 +70,7 @@ async function fetchAndSlim(formatKey: KTCFormatKey): Promise<KTCByName> {
     cache: "no-store",
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (compatible; DynastyHubBot/1.0; +https://dynasty-hub-nine.vercel.app)",
+        "Mozilla/5.0 (compatible; FantasyHubBot/1.0; +https://github.com/jhastings843/fantasy-hub)",
     },
   });
   if (!res.ok) {

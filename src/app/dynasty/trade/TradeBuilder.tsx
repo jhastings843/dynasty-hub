@@ -124,7 +124,7 @@ const ANYONE = -1;
 // sessionStorage key for trade-builder state. sessionStorage so the
 // state survives navigation within the tab (e.g. clicking a player to
 // view their profile and coming back) but resets in a new tab.
-const STORAGE_KEY = "dynasty-hub:trade-builder:v1";
+const STORAGE_KEY = "fantasy-hub:trade-builder:v1";
 
 interface PersistedState {
   partnerId: number;

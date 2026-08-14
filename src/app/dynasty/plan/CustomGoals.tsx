@@ -10,7 +10,10 @@ interface CustomGoal {
   done: boolean;
 }
 
-const STORAGE_KEY = "dynasty-hub:season-plan:custom-goals";
+const STORAGE_KEY = "fantasy-hub:season-plan:custom-goals";
+// Goals saved before the Dynasty Hub -> Fantasy Hub rename live under the old
+// key; read it as a fallback so nothing is lost. The next save writes the new key.
+const LEGACY_STORAGE_KEY = "dynasty-hub:season-plan:custom-goals";
 const CATEGORIES = ["roster", "trade", "draft", "standings", "other"] as const;
 
 function uid(): string {
@@ -25,7 +28,9 @@ export function CustomGoals() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw =
+        localStorage.getItem(STORAGE_KEY) ??
+        localStorage.getItem(LEGACY_STORAGE_KEY);
       if (raw) {
         // Hydrating from localStorage on client mount is the documented
         // pattern; this rule overfires for it.

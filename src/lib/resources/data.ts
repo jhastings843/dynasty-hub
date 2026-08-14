@@ -3,7 +3,7 @@
 // RESOURCES, REDDITORS, and CATEGORIES below.
 //
 // Status flags are advisory and shown as colored badges:
-//   "integrated"      = dynasty-hub already pulls data from this source
+//   "integrated"      = Fantasy Hub already pulls data from this source
 //   "free"            = freely accessible, no scraping required
 //   "free_tier"       = has a useful free tier alongside paid
 //   "paid"            = paid only
@@ -68,7 +68,7 @@ export const CATEGORIES: ResourceCategory[] = [
     key: "league_power_rankings",
     title: "League power rankings",
     blurb:
-      "Useful for spotting trade fits. Dynasty-hub computes this locally on the trade analyzer.",
+      "Useful for spotting trade fits. Fantasy Hub computes this locally on the trade analyzer.",
   },
   { key: "rookie_draft_prep", title: "Rookie draft prep" },
   { key: "adp", title: "ADP" },
@@ -87,7 +87,7 @@ export const RESOURCES: Resource[] = [
     category: "trade_calculators",
     status: ["integrated", "free"],
     featured: true,
-    note: "Primary data source for dynasty-hub. Trade calculator, rankings, league hub, and free public API. Values include native TE-premium support matching this league's scoring.",
+    note: "Primary data source for Fantasy Hub. Trade calculator, rankings, league hub, and free public API. Values include native TE-premium support matching this league's scoring.",
   },
 
   // --- Trade calculators ---
@@ -96,7 +96,7 @@ export const RESOURCES: Resource[] = [
     url: "https://fantasycalc.com/trade-calculator",
     category: "trade_calculators",
     status: ["free"],
-    note: "Secondary value source kept in dynasty-hub for cross-reference on close trades.",
+    note: "Secondary value source kept in Fantasy Hub for cross-reference on close trades.",
   },
   {
     name: "KeepTradeCut",

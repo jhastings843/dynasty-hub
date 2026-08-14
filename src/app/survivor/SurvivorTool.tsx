@@ -12,7 +12,10 @@ import {
   type NFLTeam,
 } from "@/lib/survivor/teams";
 
-const STORAGE_KEY = "dynasty-hub:survivor:v1";
+const STORAGE_KEY = "fantasy-hub:survivor:v1";
+// Pools saved before the Dynasty Hub -> Fantasy Hub rename live under the old
+// key; read it as a fallback so nothing is lost. The next save writes the new key.
+const LEGACY_STORAGE_KEY = "dynasty-hub:survivor:v1";
 
 interface PoolConfig {
   poolSize: number | "";
@@ -44,7 +47,9 @@ function saveConfig(c: PoolConfig) {
 function loadConfig(): PoolConfig {
   if (typeof window === "undefined") return DEFAULT_CONFIG;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return DEFAULT_CONFIG;
     const parsed = JSON.parse(raw) as Partial<PoolConfig>;
     return { ...DEFAULT_CONFIG, ...parsed };

@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fantasy Hub
 
-## Getting Started
+Fantasy football tools built on Sleeper league data plus RosterAudit, FantasyCalc,
+and KeepTradeCut player values.
 
-First, run the development server:
+## Sections
+
+| Route | What it does |
+| --- | --- |
+| `/dynasty` | Roster with live values, league standings, team-value rankings |
+| `/dynasty/plan` | Season trajectory, auto goals from league data, custom goals, key dates |
+| `/dynasty/draft` | Live rookie board, draft slot and picks, weakest-position fits |
+| `/dynasty/trade` | Trade analyzer with positional fit and 2026-2029 pick values |
+| `/dynasty/players` | League search, waiver scouting, risers and fallers |
+| `/survivor` | NFL survivor pool strategy tools |
+| `/resources` | Curated calculators, ranking sites, draft prep, writers |
+
+## Stack
+
+Next.js 16 (App Router), React 19, Tailwind CSS 4, TypeScript, Upstash Redis for
+caching external API responses.
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.local.example .env.local   # then fill in the values
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+| --- | --- |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis endpoint for the response cache |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token |
+| `SLEEPER_LEAGUE_ID` | Sleeper league to load |
+| `SLEEPER_USERNAME` | Sleeper user whose roster is treated as "yours" |
+| `ROSTERAUDIT_API_KEY` | RosterAudit API key for player values |
 
-## Learn More
+## Deploy
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on Vercel. `pnpm build` runs the production build locally.

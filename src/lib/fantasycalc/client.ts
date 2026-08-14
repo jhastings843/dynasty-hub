@@ -71,7 +71,7 @@ export async function revalidateDynastyValues(fmt: FCFormat): Promise<void> {
 }
 
 // Derive the FantasyCalc format from a Sleeper league. Defaults to dynasty
-// since this app is the dynasty hub; flip isDynasty manually for redraft work.
+// since the dynasty section is the main consumer; flip isDynasty manually for redraft work.
 export function fcFormatFromLeague(league: SleeperLeague): FCFormat {
   const positions = league.roster_positions ?? [];
   const qbCount = positions.filter((p) => p === "QB").length;

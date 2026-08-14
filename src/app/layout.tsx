@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dynasty Hub",
-  description: "Dynasty fantasy football tools.",
+  title: "Fantasy Hub",
+  description: "Fantasy football tools: dynasty leagues, survivor pools, and more.",
 };
 
 const NAV_LINKS = [
@@ -51,7 +51,7 @@ function SiteHeader() {
         >
           <BrandMark />
           <span className="text-base font-bold tracking-tight">
-            Dynasty Hub
+            Fantasy Hub
           </span>
         </Link>
         {/* Wrap on phones instead of a cramped horizontal scroll; stays a
@@ -74,7 +74,7 @@ function SiteFooter() {
           <BrandMark />
           <div className="flex flex-col gap-0.5">
             <span className="font-semibold text-zinc-900 dark:text-zinc-50">
-              Dynasty Hub
+              Fantasy Hub
             </span>
             <span className="text-zinc-500 dark:text-zinc-400">
               Built for Dah Dynasty League
