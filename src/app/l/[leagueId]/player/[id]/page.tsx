@@ -21,6 +21,7 @@ import {
   getLeagueUsers,
 } from "@/lib/sleeper/client";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { JinglesCallCard } from "@/components/JinglesBadge";
 import { ValueChart } from "./ValueChart";
 
 export const dynamic = "force-dynamic";
@@ -298,6 +299,9 @@ export default async function PlayerPage({
             )}
           </div>
         </section>
+
+        {/* Jingles Labs call, when he has one on this player */}
+        <JinglesCallCard sleeperId={id} />
 
         {/* KTC consensus */}
         {ktcMatch && (
