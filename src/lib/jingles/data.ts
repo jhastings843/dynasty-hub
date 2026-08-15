@@ -4,6 +4,12 @@
 // also @JinglesLabs on TikTok, X, and Instagram. Half-PPR redraft focus, which
 // matches the "2026 Half PPR" league exactly.
 //
+// What he actually publishes: players he is high on and low on relative to
+// ADP, single-player deep dives that end in a league-winner verdict ("Lab
+// Certified"), and occasional tier lists. He is NOT a rankings service. The
+// Lab 300 is announced but has not been published, so nothing here depends on
+// it. He posts frequently, so this file is a snapshot, not a feed.
+//
 // This file is maintained by hand, on purpose. There is no production path to
 // Reddit (the API blocks unauthenticated reads), and his posts are prose with
 // inconsistent formats: some calls give exact ranks ("ADP WR23 / 51 Overall ->
@@ -16,7 +22,7 @@
 // His research is his. It is credited and linked wherever it renders, and it
 // annotates values rather than overriding them.
 
-export type JinglesVerdict = "target" | "fade";
+export type JinglesVerdict = "target" | "fade" | "league_winner";
 
 export interface JinglesCall {
   /** Sleeper player id, resolved at curation time. */
@@ -24,10 +30,14 @@ export interface JinglesCall {
   player: string;
   position: string;
   team: string | null;
-  /** His stated ADP for the player, verbatim. */
-  adp: string;
-  /** His own ranking, verbatim. Sometimes a range rather than a number. */
-  jinglesRank: string;
+  /** His stated ADP for the player, verbatim. Absent on deep dives. */
+  adp?: string;
+  /**
+   * His own rank for this player, verbatim, and only for players he has
+   * explicitly ranked against ADP. Sometimes a range rather than a number.
+   * Deep dives carry a verdict instead of a rank.
+   */
+  jinglesRank?: string;
   verdict: JinglesVerdict;
   /** One line of his reasoning. */
   note: string;
@@ -44,14 +54,25 @@ export interface JinglesTier {
 export const LAST_UPDATED = "2026-08-14";
 
 /**
- * The Lab 300, his 2026 top-300 half-PPR ranking, was announced for Sunday
- * 2026-08-16 and is not published yet. When it lands it belongs here as a full
- * ranking source rather than a set of individual calls.
+ * The Lab 300 is a top-300 half-PPR ranking he has announced but not shipped.
+ * He referred to "building The Lab 300" in Lab Notes #002 and said it would
+ * drop on a Sunday, but as of LAST_UPDATED nothing has been posted. Treat it
+ * as unreleased: nothing in the app should imply he publishes rankings today.
  */
-export const LAB_300_EXPECTED = "2026-08-16";
 export const LAB_300: null = null;
 
 export const JINGLES_CALLS: JinglesCall[] = [
+  {
+    sleeperId: "8138",
+    player: "James Cook",
+    position: "RB",
+    team: "BUF",
+    verdict: "league_winner",
+    note: "Lab Certified. Expected to fade him on unsustainable TDs and instead came away calling him a league winner: RB6 in explosive plays, tied 3rd in games with 18+ PPR points, and poised for the biggest receiving workload of his career.",
+    sourceUrl:
+      "https://www.reddit.com/r/JoeInglesOfficial/comments/1vjzz4j/lab_notes_002_the_cook/",
+    postedAt: "2026-08-09",
+  },
   {
     sleeperId: "7523",
     player: "Trevor Lawrence",
@@ -61,7 +82,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "QB7",
     verdict: "target",
     note: "Yes I’m a tad biased because he’s from my hometown, but TLaw had a YEAR last season.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -73,7 +94,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "QB10",
     verdict: "target",
     note: "When he actually played he averaged 20.8 fantasy points per game, QB2 pace.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -85,7 +106,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "RB7",
     verdict: "target",
     note: "This might be my favorite talent + situation value.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -97,7 +118,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "Top 35 RB / Top 100 overall",
     verdict: "target",
     note: "Top 5 among backs in YPC, explosive run rate, and YAC per attempt.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -109,7 +130,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "Top 20 WR / Top 35 overall",
     verdict: "target",
     note: "Ranked before he strained his groin; the injury should push his ADP down further. Buy the dip.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -121,7 +142,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "Top 25 WR / Top 50 overall",
     verdict: "target",
     note: "Availability is the only knock. On the field he was WR4 in YPRR and WR5 in fantasy points per route run.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -133,7 +154,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "Top 30 WR / Top 65 overall",
     verdict: "target",
     note: "This might be the most underrated breakout in the entire group.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -145,7 +166,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "Top 40 WR / Top 80 overall",
     verdict: "target",
     note: "Downs is the definition of target earning > market price.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -157,7 +178,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "Top 30 overall",
     verdict: "target",
     note: "The late season breakout was beautiful to watch.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {
@@ -169,7 +190,7 @@ export const JINGLES_CALLS: JinglesCall[] = [
     jinglesRank: "TE6 / Top 60 overall",
     verdict: "target",
     note: "LaPorta is another player where I think the market has forgotten how good he actually is.",
-    sourceUrl: "https://www.reddit.com/r/fantasyfootballadvice/comments/1vl02ub/10_guys_im_taking_everywhere/",
+    sourceUrl: "https://www.reddit.com/r/JoeInglesOfficial/comments/1vl072x/lab_notes_003_black_labs/",
     postedAt: "2026-08-10",
   },
   {

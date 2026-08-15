@@ -123,7 +123,7 @@ export const RESOURCES: Resource[] = [
     formats: ["redraft"],
     status: ["integrated", "free"],
     featured: true,
-    note: "Half-PPR redraft research: rank-vs-ADP targets and fades, tier lists, and the Lab 300 top-300 ranking. Fantasy Hub pulls his calls onto the players list and player pages. Also @JinglesLabs on TikTok, X, and Instagram.",
+    note: "Half-PPR redraft research. Not a rankings service: he posts players he is high and low on versus ADP, single-player deep dives ending in a league-winner verdict, and occasional tier lists. Updates often, so check the sub directly for anything newer than what Fantasy Hub has pulled in. Also @JinglesLabs on TikTok, X, and Instagram.",
   },
   {
     name: "FantasyPros weekly half-PPR rankings",
