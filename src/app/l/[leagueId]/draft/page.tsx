@@ -27,6 +27,7 @@ import { getKTCValues, ktcFormatFromLeague } from "@/lib/ktc/client";
 import type { KTCByName } from "@/lib/ktc/types";
 import { getValuesForProfile } from "@/lib/values";
 import { profileFromSleeper } from "@/lib/league/detect";
+import { RedraftDraft } from "./RedraftDraft";
 
 export const dynamic = "force-dynamic";
 
@@ -178,6 +179,24 @@ export default async function DraftPage({
 
   const me = await getUser(username);
   const league = await getLeague(leagueId);
+  const profile = profileFromSleeper(league);
+
+  // Everything below this point is the rookie draft: it filters to first-year
+  // players and reasons about age and long-term runway. That is the wrong tool
+  // for a redraft or guillotine draft, where the whole pool is on the board and
+  // nothing carries past this season.
+  if (profile.type !== "dynasty") {
+    const { values } = await getValuesForProfile(profile, league);
+    return (
+      <RedraftDraft
+        leagueId={leagueId}
+        profile={profile}
+        myUserId={me.user_id}
+        values={values}
+      />
+    );
+  }
+
   const raFormat = formatKeyFromLeague(league);
 
   const ktcFormat = ktcFormatFromLeague(league);

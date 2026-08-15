@@ -51,7 +51,7 @@ export interface JinglesTier {
   players: { rank: number; name: string; sleeperId: string | null }[];
 }
 
-export const LAST_UPDATED = "2026-08-14";
+export const LAST_UPDATED = "2026-08-15";
 
 /**
  * The Lab 300 is a top-300 half-PPR ranking he has announced but not shipped.
