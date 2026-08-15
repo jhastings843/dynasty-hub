@@ -5,19 +5,21 @@
   "status": "active",
   "status_detail": "Multi-league fantasy football tools. Every tool lives under /l/[leagueId] with leagues auto-discovered from Sleeper and format detected from settings.type. Two live leagues: Dah Dynasty League (dynasty, in season) and 2026 Half PPR (redraft, pre-draft). Values, player pages, season goals, and resources all split by league format. Written playbooks with sources at /strategy. Jingles Labs curated in as a redraft annotation layer.",
   "next_steps": [
-    "Pull in new Jingles Labs posts as he publishes (see docs/refreshing-jingles.md); the Lab 300 is announced but unshipped",
-    "Redraft-specific draft board: ADP tiers and roster construction, before the 2026 Half PPR draft (not yet scheduled)",
-    "Find a real ADP source; FantasyCalc redraft caps at 200 players and has no DEF",
+    "Redraft draft is Mon Sep 7 6:00 PM; once Sleeper sets the draft order, factor pick slot and snake turns into the board",
+    "Pull in new Jingles Labs posts as he publishes (docs/refreshing-jingles.md); the Lab 300 is announced but unshipped",
+    "Find a DEF/K source: FantasyCalc redraft is QB/RB/WR/TE only and the league starts a DEF",
     "Connect a guillotine league when joined: declare it in src/lib/league/manual.ts, then wire weekly scores",
     "Wire 2026 NFL schedule into survivor future-scarcity grid",
     "Integrate Vegas lines via the-odds-api before Week 1"
   ],
   "blockers": [
-    "Guillotine league not joined and host platform unknown. Strategy rules and playbook are built and verified, but no live data source exists",
-    "FantasyCalc redraft returns only 200 players (dynasty returns 475), limit param ignored, and no DEF. Thin for a 14-round draft in a league that starts a DEF"
+    "Guillotine league not joined and host platform unknown. Strategy rules and playbook are built, but no live data source exists",
+    "No free ADP API found. Jingles Labs' 21 ADP-relative calls are the only ADP data in the app",
+    "FantasyCalc redraft covers QB/RB/WR/TE only (200 players, limit param ignored), so DEF cannot be ranked"
   ],
   "last_worked": "2026-08-15",
   "notes": [
+    "2026-08-15: Redraft draft board shipped. The draft page had been running rookie logic for every format, recommending a rookie at #1 with 'max dynasty runway' in the redraft league. Non-dynasty leagues now rank the whole pool on FantasyCalc redraft value with starting-slot awareness, plus a Jingles-vs-ADP section. DEF marked 'not valued' since FantasyCalc has no defenses. Redraft draft scheduled for Mon Sep 7 6:00 PM.",
     "2026-08-15: Split rankings and resources by format. Player pages had contradicted themselves, showing RosterAudit dynasty tiers and a KeepTradeCut cross-check under a 'Redraft values' label; those are now dynasty-only and the headline value/rank/trend follow the format's source. Resources tagged and filterable (51 dynasty, 39 redraft, 26 guillotine), with 30 researched redraft entries, all URLs verified. Corrected how Jingles Labs is described: he posts high/low-vs-ADP calls and league-winner deep dives, not rankings. Added his James Cook deep dive and a 'pulled <date>' staleness marker.",
     "2026-08-14: Phase 2 shipped. season-plan split into src/lib/strategy with per-format rule sets; playoff berths and season length now read from league settings. New /strategy page carries researched playbooks for all three formats with 12 external sources. Guillotine numbers sourced from Fantasy Life, RotoWire, DraftSharks, Fantasy Index, Footballguys. Verified guillotine rules via a temporary route across September-danger and December-endgame states, which caught three contradictions in the endgame goals.",
     "2026-08-14: Phase 1 multi-league shipped. Routes moved from /dynasty to /l/[leagueId] with permanent redirects, league switcher in the header, nav renders only format-appropriate tools. Values now format-aware: 87 of 200 shared players move 20+ ranks between dynasty and redraft. Jingles Labs added (21 calls, 30 tiered backup RBs). Design spec at docs/superpowers/specs/2026-08-14-multi-league-design.md.",
