@@ -1,7 +1,15 @@
 import { CALLS_BY_SLEEPER_ID } from "@/lib/jingles/data";
+import type { LeagueType } from "@/lib/league/types";
 
 // Jingles Labs annotates values, it does not replace them. The badge shows his
 // call and links back to the post it came from.
+//
+// His research is half-PPR redraft. A redraft fade says nothing about a
+// player's dynasty value, so these render only in non-dynasty leagues.
+
+function appliesTo(type: LeagueType | undefined): boolean {
+  return type !== undefined && type !== "dynasty";
+}
 
 const STYLE = {
   target:
@@ -12,9 +20,15 @@ const STYLE = {
 const LABEL = { target: "Jingles target", fade: "Jingles fade" } as const;
 
 /** Compact chip for dense lists. Renders nothing when he has no call. */
-export function JinglesBadge({ sleeperId }: { sleeperId: string }) {
+export function JinglesBadge({
+  sleeperId,
+  leagueType,
+}: {
+  sleeperId: string;
+  leagueType?: LeagueType;
+}) {
   const call = CALLS_BY_SLEEPER_ID[sleeperId];
-  if (!call) return null;
+  if (!call || !appliesTo(leagueType)) return null;
 
   return (
     <a
@@ -30,9 +44,15 @@ export function JinglesBadge({ sleeperId }: { sleeperId: string }) {
 }
 
 /** Full call with reasoning, for a player's own page. */
-export function JinglesCallCard({ sleeperId }: { sleeperId: string }) {
+export function JinglesCallCard({
+  sleeperId,
+  leagueType,
+}: {
+  sleeperId: string;
+  leagueType?: LeagueType;
+}) {
   const call = CALLS_BY_SLEEPER_ID[sleeperId];
-  if (!call) return null;
+  if (!call || !appliesTo(leagueType)) return null;
 
   return (
     <section className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">

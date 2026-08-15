@@ -15,6 +15,7 @@ import type { SleeperPlayer, SleeperUser } from "@/lib/sleeper/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { JinglesBadge } from "@/components/JinglesBadge";
+import type { LeagueType } from "@/lib/league/types";
 import { RefreshButton } from "@/components/RefreshButton";
 import { computeTeamSummaries } from "@/lib/dynasty/power-rankings";
 import { PlayerSearch, type SearchablePlayer } from "./PlayerSearch";
@@ -74,11 +75,13 @@ function MoverRow({
   direction,
   rostered,
   ownerName,
+  leagueType,
 }: {
   m: RAMover;
   direction: "up" | "down";
   rostered: boolean;
   ownerName: string | null;
+  leagueType: LeagueType;
 }) {
   const trend7 = m.trend7Day;
   const trend30 = m.trend30Day;
@@ -101,7 +104,7 @@ function MoverRow({
             className="truncate text-sm font-medium"
           />
           <PositionChip position={m.position} />
-          <JinglesBadge sleeperId={m.sleeperId} />
+          <JinglesBadge sleeperId={m.sleeperId} leagueType={leagueType} />
           {m.buyLow && (
             <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
               Buy
@@ -168,6 +171,7 @@ export default async function PlayersPage({
 
   const me = await getUser(username);
   const league = await getLeague(leagueId);
+  const leagueType = profileFromSleeper(league).type;
 
   const [rosters, users, allPlayers, raValues, movers] = await Promise.all([
     getLeagueRosters(leagueId),
@@ -353,6 +357,7 @@ export default async function PlayersPage({
                   direction="up"
                   rostered={rosteredIds.has(m.sleeperId)}
                   ownerName={ownerByPlayerId.get(m.sleeperId) ?? null}
+                  leagueType={leagueType}
                 />
               ))}
               {movers.risers.length === 0 && (
@@ -381,6 +386,7 @@ export default async function PlayersPage({
                   direction="down"
                   rostered={rosteredIds.has(m.sleeperId)}
                   ownerName={ownerByPlayerId.get(m.sleeperId) ?? null}
+                  leagueType={leagueType}
                 />
               ))}
               {movers.fallers.length === 0 && (

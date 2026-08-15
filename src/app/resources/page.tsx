@@ -1,3 +1,6 @@
+import Link from "next/link";
+import type { LeagueType } from "@/lib/league/types";
+import { LEAGUE_TYPE_LABEL } from "@/lib/league/types";
 import {
   CATEGORIES,
   REDDITORS,
@@ -80,20 +83,72 @@ function ResourceCard({ r }: { r: Resource }) {
   );
 }
 
-export default function ResourcesPage() {
-  const featured = RESOURCES.filter((r) => r.featured);
+const FORMAT_TABS: { key: string; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "dynasty", label: LEAGUE_TYPE_LABEL.dynasty },
+  { key: "redraft", label: LEAGUE_TYPE_LABEL.redraft },
+  { key: "guillotine", label: LEAGUE_TYPE_LABEL.guillotine },
+];
+
+function isFormat(v: string | undefined): v is LeagueType {
+  return v === "dynasty" || v === "redraft" || v === "guillotine";
+}
+
+export default async function ResourcesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ format?: string }>;
+}) {
+  const { format } = await searchParams;
+  const active = isFormat(format) ? format : null;
+
+  // An empty formats array means the resource is not tied to a league format
+  // (survivor tools). Those show only under All.
+  const matches = (formats: LeagueType[]) =>
+    active === null ? true : formats.includes(active);
+
+  const visible = RESOURCES.filter((r) => matches(r.formats));
+  const visibleRedditors = REDDITORS.filter((u) => matches(u.formats));
+  const featured = visible.filter((r) => r.featured);
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold tracking-tight">Resources</h1>
           <p className="max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
-            Curated dynasty FF tools and references. Edit{" "}
-            <code className="rounded bg-zinc-200 px-1 py-0.5 text-xs dark:bg-zinc-800">
-              src/lib/resources/data.ts
-            </code>{" "}
-            to add, remove, or update entries.
+            Rankings and strategy diverge sharply between formats, so a dynasty
+            trade value chart is actively wrong in a redraft league. Filter to
+            the format you are playing.
           </p>
+          <div className="-mx-1 flex flex-wrap items-center gap-1 pt-1">
+            {FORMAT_TABS.map((t) => {
+              const on =
+                t.key === "all" ? active === null : active === t.key;
+              const count =
+                t.key === "all"
+                  ? RESOURCES.length + REDDITORS.length
+                  : RESOURCES.filter((r) =>
+                      r.formats.includes(t.key as LeagueType),
+                    ).length +
+                    REDDITORS.filter((u) =>
+                      u.formats.includes(t.key as LeagueType),
+                    ).length;
+              return (
+                <Link
+                  key={t.key}
+                  href={t.key === "all" ? "/resources" : `/resources?format=${t.key}`}
+                  className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                    on
+                      ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700"
+                  }`}
+                >
+                  {t.label}
+                  <span className="text-xs tabular-nums opacity-60">{count}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {featured.length > 0 && (
@@ -140,7 +195,9 @@ export default function ResourcesPage() {
         )}
 
         <nav className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
-          {CATEGORIES.map((c) => (
+          {CATEGORIES.filter((c) =>
+            visible.some((r) => r.category === c.key && !r.featured),
+          ).map((c) => (
             <a
               key={c.key}
               href={`#${c.key}`}
@@ -158,7 +215,7 @@ export default function ResourcesPage() {
         </nav>
 
         {CATEGORIES.map((cat) => {
-          const items = RESOURCES.filter(
+          const items = visible.filter(
             (r) => r.category === cat.key && !r.featured,
           );
           if (items.length === 0) return null;
@@ -185,6 +242,7 @@ export default function ResourcesPage() {
           );
         })}
 
+        {visibleRedditors.length > 0 && (
         <section id="redditors" className="flex scroll-mt-20 flex-col gap-3">
           <header className="flex flex-col gap-0.5">
             <h2 className="text-xl font-semibold">Redditors</h2>
@@ -193,7 +251,7 @@ export default function ResourcesPage() {
             </p>
           </header>
           <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {REDDITORS.map((u) => (
+            {visibleRedditors.map((u) => (
               <li
                 key={u.handle}
                 className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
@@ -225,6 +283,7 @@ export default function ResourcesPage() {
             ))}
           </ul>
         </section>
+        )}
       </div>
     </main>
   );

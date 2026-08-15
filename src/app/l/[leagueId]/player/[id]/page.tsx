@@ -67,15 +67,21 @@ export default async function PlayerPage({
 
   const news = await getPlayerNews(profile.player.name, 3).catch(() => []);
 
+  const leagueProfile = league ? profileFromSleeper(league) : null;
+  // RosterAudit tiers and buy/sell flags, and KeepTradeCut entirely, are
+  // dynasty products. Showing them in a redraft league contradicts the
+  // "Redraft values" label in the league bar with dynasty numbers.
+  const isDynasty = leagueProfile?.type === "dynasty";
+
   const raFormat = league ? formatKeyFromLeague(league) : null;
-  const ktcFormat = league ? ktcFormatFromLeague(league) : null;
+  const ktcFormat = league && isDynasty ? ktcFormatFromLeague(league) : null;
 
   const [rosters, users, allPlayers, raValues, ktc] = await Promise.all([
     leagueId ? getLeagueRosters(leagueId) : Promise.resolve([]),
     leagueId ? getLeagueUsers(leagueId) : Promise.resolve([]),
     getAllPlayers().catch(() => ({})),
     league
-      ? getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values).catch(
+      ? getValuesForProfile(leagueProfile!, league).then((r) => r.values).catch(
           (): RAValuesBySleeperId => ({}),
         )
       : Promise.resolve({} as RAValuesBySleeperId),
@@ -96,6 +102,32 @@ export default async function PlayerPage({
     null;
 
   const ktcMatch = ktc[normalizeName(profile.player.name)] ?? null;
+
+  // Headline value comes from whichever source matches the format. RosterAudit
+  // (dynasty) publishes superflex and 1QB splits; the redraft set does not, so
+  // fall back to the adapted FantasyCalc row for this player.
+  const fcRow = raValues[id] ?? null;
+  const formatValue = isDynasty
+    ? {
+        value: isSuperflex ? profile.value.sf : profile.value.oneQb,
+        overallRank: isSuperflex ? profile.value.rankSf : profile.value.rank1qb,
+        positionRank: isSuperflex
+          ? profile.value.rankPosSf
+          : profile.value.rankPos1qb,
+      }
+    : {
+        value: fcRow?.value ?? 0,
+        overallRank: fcRow?.overallRank ?? 0,
+        positionRank: fcRow?.positionRank ?? 0,
+      };
+
+  // RosterAudit publishes 7-day and 30-day trends. The redraft set only has a
+  // 30-day figure, so showing a 7-day number there would be dynasty data
+  // wearing a redraft label.
+  const trend7d: number | null = isDynasty ? profile.value.trend7d : null;
+  const trend30d: number = isDynasty
+    ? profile.value.trend30d
+    : (fcRow?.trend30Day ?? 0);
 
   // Similar players: same position, ±15% value, top 6
   const targetVal = isSuperflex ? profile.value.sf : profile.value.oneQb;
@@ -154,7 +186,7 @@ export default async function PlayerPage({
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              {profile.value.tierLabel && (
+              {isDynasty && profile.value.tierLabel && (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
                   Tier {profile.value.tier}: {profile.value.tierLabel}
                 </span>
@@ -164,17 +196,17 @@ export default async function PlayerPage({
                   {profile.player.injuryStatus}
                 </span>
               )}
-              {profile.value.buyLow && (
+              {isDynasty && profile.value.buyLow && (
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                   Buy low
                 </span>
               )}
-              {profile.value.sellHigh && (
+              {isDynasty && profile.value.sellHigh && (
                 <span className="rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                   Sell high
                 </span>
               )}
-              {profile.value.breakout && (
+              {isDynasty && profile.value.breakout && (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
                   Breakout
                 </span>
@@ -211,18 +243,11 @@ export default async function PlayerPage({
               Value (your league)
             </span>
             <span className="text-3xl font-bold tabular-nums">
-              {(isSuperflex
-                ? profile.value.sf
-                : profile.value.oneQb
-              ).toLocaleString()}
+              {formatValue.value.toLocaleString()}
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              #
-              {isSuperflex ? profile.value.rankSf : profile.value.rank1qb}{" "}
-              overall · {profile.player.position}
-              {isSuperflex
-                ? profile.value.rankPosSf
-                : profile.value.rankPos1qb}
+              #{formatValue.overallRank} overall · {profile.player.position}
+              {formatValue.positionRank}
             </span>
           </div>
           <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
@@ -232,33 +257,34 @@ export default async function PlayerPage({
             <div className="flex items-baseline gap-3">
               <span
                 className={`text-2xl font-bold tabular-nums ${
-                  profile.value.trend7d > 0
+                  (trend7d ?? trend30d) > 0
                     ? "text-emerald-600 dark:text-emerald-400"
-                    : profile.value.trend7d < 0
+                    : (trend7d ?? trend30d) < 0
                       ? "text-rose-600 dark:text-rose-400"
                       : "text-zinc-500 dark:text-zinc-400"
                 }`}
               >
-                {profile.value.trend7d > 0 ? "+" : ""}
-                {profile.value.trend7d.toLocaleString()}
+                {(trend7d ?? trend30d) > 0 ? "+" : ""}
+                {(trend7d ?? trend30d).toLocaleString()}
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                7d
+                {trend7d === null ? "30d" : "7d"}
               </span>
             </div>
+            {isDynasty && (
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
               30d:{" "}
               <span
                 className={
-                  profile.value.trend30d > 0
+                  trend30d > 0
                     ? "text-emerald-600 dark:text-emerald-400"
-                    : profile.value.trend30d < 0
+                    : trend30d < 0
                       ? "text-rose-600 dark:text-rose-400"
                       : ""
                 }
               >
-                {profile.value.trend30d > 0 ? "+" : ""}
-                {profile.value.trend30d.toLocaleString()}
+                {trend30d > 0 ? "+" : ""}
+                {trend30d.toLocaleString()}
               </span>
               {" · "}
               90d:{" "}
@@ -275,6 +301,7 @@ export default async function PlayerPage({
                 {profile.value.trend90d.toLocaleString()}
               </span>
             </span>
+            )}
           </div>
           <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -301,10 +328,11 @@ export default async function PlayerPage({
         </section>
 
         {/* Jingles Labs call, when he has one on this player */}
-        <JinglesCallCard sleeperId={id} />
+        <JinglesCallCard sleeperId={id} leagueType={leagueProfile?.type} />
 
-        {/* KTC consensus */}
-        {ktcMatch && (
+        {/* KTC consensus. Dynasty only: KeepTradeCut publishes dynasty
+            rankings, so this is not a cross-check in a redraft league. */}
+        {isDynasty && ktcMatch && (
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Cross-source check
@@ -411,11 +439,14 @@ export default async function PlayerPage({
           </section>
         )}
 
-        {/* Value history */}
-        <ValueChart
-          history={profile.valueHistory}
-          format={isSuperflex ? "sf" : "oneQb"}
-        />
+        {/* Value history. RosterAudit's series is dynasty value over time, so
+            it does not describe a redraft league. */}
+        {isDynasty && (
+          <ValueChart
+            history={profile.valueHistory}
+            format={isSuperflex ? "sf" : "oneQb"}
+          />
+        )}
 
         {/* Recent stats */}
         {stats && stats.weekly.length > 0 && (
