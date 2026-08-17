@@ -3,12 +3,21 @@ import { ListOrdered, Sparkles, Target, TriangleAlert } from "lucide-react";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
-import { JINGLES_CALLS, LAST_UPDATED } from "@/lib/jingles/data";
+import {
+  JINGLES_CALLS,
+  LAB_300,
+  LAB_300_POSTED,
+  LAB_300_URL,
+  LAB_300_VERSION,
+  LAST_UPDATED,
+} from "@/lib/jingles/data";
 import type { LeagueProfile } from "@/lib/league/types";
 import {
+  attachRankings,
+  boardRank,
   buildBoard,
+  displayPositionRank,
   openSlots,
-  withJingles,
   type BoardPlayer,
 } from "@/lib/redraft/draft-board";
 import type { RAValuesBySleeperId } from "@/lib/rosteraudit/types";
@@ -74,19 +83,47 @@ export async function RedraftDraft({
 
   const needs = openSlots(profile.rosterPositions, myPositions);
 
-  // The whole pool, not rookies. Anyone with a redraft value and not yet taken.
-  const pool: BoardPlayer[] = Object.values(values)
-    .filter((v) => v.value > 0 && !drafted.has(v.sleeperId) && !mine.has(v.sleeperId))
-    .map((v) => ({
-      id: v.sleeperId,
-      name: v.name,
-      position: v.position,
-      team: v.team,
-      value: v.value,
-      overallRank: v.overallRank,
-      positionRank: v.positionRank,
-      jingles: withJingles(v.sleeperId),
-    }));
+  // The whole pool, not rookies. Two sources, unioned: FantasyCalc for values,
+  // and his Lab 300 for the ranking plus the defenses and kickers FantasyCalc
+  // does not cover at all.
+  const taken = (id: string) => drafted.has(id) || mine.has(id);
+
+  const byId = new Map<string, BoardPlayer>();
+
+  for (const v of Object.values(values)) {
+    if (v.value <= 0 || taken(v.sleeperId)) continue;
+    byId.set(
+      v.sleeperId,
+      attachRankings({
+        id: v.sleeperId,
+        name: v.name,
+        position: v.position,
+        team: v.team,
+        value: v.value,
+        overallRank: v.overallRank,
+        positionRank: v.positionRank,
+      }),
+    );
+  }
+
+  for (const e of LAB_300) {
+    if (taken(e.sleeperId) || byId.has(e.sleeperId)) continue;
+    byId.set(
+      e.sleeperId,
+      attachRankings({
+        id: e.sleeperId,
+        name: e.name,
+        // He writes DST where Sleeper's roster slot is DEF.
+        position: e.position === "DST" ? "DEF" : e.position,
+        team: e.team,
+        value: 0,
+        overallRank: 0,
+        positionRank: e.positionRank,
+      }),
+    );
+  }
+
+  const pool: BoardPlayer[] = [...byId.values()];
 
   // FantasyCalc's redraft set covers QB, RB, WR, and TE only. A league that
   // starts a DEF or K has slots this board can never fill, so say so instead
@@ -97,7 +134,9 @@ export async function RedraftDraft({
   );
 
   const board = buildBoard(pool, needs, 5);
-  const bestAvailable = [...pool].sort((a, b) => b.value - a.value).slice(0, 25);
+  const bestAvailable = [...pool]
+    .sort((a, b) => boardRank(a) - boardRank(b))
+    .slice(0, 25);
 
   // His calls are ADP-relative, which is exactly what a draft board wants.
   // Split into who is still on the table and who to let someone else take.
@@ -141,8 +180,18 @@ export async function RedraftDraft({
               : " · not scheduled"}
           </p>
           <p className="max-w-2xl text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Ranked on this-season value only. Age and long-term upside are
-            ignored on purpose: the roster resets in January.
+            Ordered by{" "}
+            <a
+              href={LAB_300_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-700 hover:underline dark:text-amber-400"
+            >
+              the Lab 300 v{LAB_300_VERSION}
+            </a>{" "}
+            ({LAB_300_POSTED}), his tiered half-PPR ranking, with FantasyCalc
+            value alongside and for anyone he has not ranked. Age and long-term
+            upside are ignored on purpose: the roster resets in January.
           </p>
         </div>
 
@@ -204,8 +253,8 @@ export async function RedraftDraft({
             </h2>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Redraft value from FantasyCalc, weighted toward filling an open
-            starting slot, with Jingles Labs calls factored in.
+            His Lab 300 rank first, weighted toward filling an open starting
+            slot, with his individual calls factored in.
           </p>
           {board.length === 0 ? (
             <p className="rounded-2xl border border-zinc-200 bg-white px-4 py-6 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
@@ -248,8 +297,22 @@ export async function RedraftDraft({
                         </span>
                       </span>
                     </div>
-                    <span className="shrink-0 text-lg font-bold tabular-nums">
-                      {rec.player.value.toLocaleString()}
+                    <span className="flex shrink-0 flex-col items-end">
+                      {rec.player.labRank !== null && (
+                        <span className="text-lg font-bold tabular-nums">
+                          #{rec.player.labRank}
+                        </span>
+                      )}
+                      {rec.player.labTier && (
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                          {rec.player.labTier}
+                        </span>
+                      )}
+                      {rec.player.labRank === null && (
+                        <span className="text-lg font-bold tabular-nums">
+                          {rec.player.value.toLocaleString()}
+                        </span>
+                      )}
                     </span>
                   </div>
                   <ul className="flex flex-col gap-1.5 border-t border-zinc-200/60 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800/60 dark:bg-zinc-950/40">
@@ -284,9 +347,9 @@ export async function RedraftDraft({
               </span>
             </div>
             <p className="max-w-2xl text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-              His half-PPR calls on players still available, his ADP against his
-              own rank. He is not a rankings service, so this covers only players
-              he has written about.
+              His individual calls on players still available, showing the ADP he
+              quoted against his own rank. Separate from the Lab 300: these are
+              players he has written about specifically.
             </p>
             <div className="grid gap-4 lg:grid-cols-2">
               <CallList
@@ -334,7 +397,7 @@ export async function RedraftDraft({
                   <PosChip position={p.position} />
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">
                     {p.team ?? "FA"} · {p.position}
-                    {p.positionRank}
+                    {displayPositionRank(p)}
                   </span>
                   {p.jingles && (
                     <span
@@ -348,8 +411,19 @@ export async function RedraftDraft({
                     </span>
                   )}
                 </div>
-                <span className="shrink-0 text-sm font-semibold tabular-nums">
-                  {p.value.toLocaleString()}
+                <span className="shrink-0 text-right text-xs tabular-nums">
+                  {p.labRank !== null ? (
+                    <span className="font-semibold">#{p.labRank}</span>
+                  ) : (
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      {p.value.toLocaleString()}
+                    </span>
+                  )}
+                  {p.labTier && (
+                    <span className="block text-[10px] text-zinc-400 dark:text-zinc-500">
+                      {p.labTier}
+                    </span>
+                  )}
                 </span>
               </li>
             ))}

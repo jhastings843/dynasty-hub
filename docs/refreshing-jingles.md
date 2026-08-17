@@ -59,11 +59,35 @@ Lab Notes that are pure narrative with no player call do not go in.
 
 ## The Lab 300
 
-He announced a top-300 half-PPR ranking and referred to building it in Lab
-Notes #002, but it has not been published. `LAB_300` is `null` and nothing in
-the app assumes he publishes rankings. If it ships, it belongs here as a
-ranking source rather than a set of individual calls, and the `/resources`
-entry for him should be updated to say so.
+Shipped 2026-08-16 as Version 1.0. He publishes it as a Google Drive PDF linked
+from the post, not as text, and has said it will be updated through the
+preseason as depth charts and camp battles resolve. The redraft draft board is
+ordered by it.
+
+To re-pull a new version:
+
+1. Get the Drive file id from the post link, then download and extract:
+
+   ```
+   curl -sL "https://drive.google.com/uc?export=download&id=<FILE_ID>" -o lab300.pdf
+   pdftotext -layout lab300.pdf lab300.txt
+   ```
+
+2. Lines look like `12: Chase Brown | RB8 | CIN`, grouped under tier headers
+   like `Tier 4: 3rd Round`. Two caveats seen in v1.0: he occasionally drops
+   the colon after the rank (`42 Terry McLaurin`), so make it optional, and he
+   writes `DST` where Sleeper's roster slot is `DEF`.
+
+3. Resolve names to Sleeper ids. v1.0 had five spelling variants worth knowing
+   about: Tajh/Tahj Brooks, Semaj/Samaje Perine, Skylar/Skyler Bell, Jake/Jack
+   Bech, and Josh/Joshua Palmer. Team defenses use the team abbreviation as the
+   Sleeper id.
+
+4. Regenerate `LAB_300_RAW`, and bump `LAB_300_VERSION` and `LAB_300_POSTED`.
+   The board shows the version, so a stale ranking is visible.
+
+Unlike FantasyCalc's redraft set, the Lab 300 covers team defenses and kickers,
+which is why the board can rank a DEF slot at all.
 
 ## Attribution
 

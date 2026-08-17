@@ -123,7 +123,7 @@ export const RESOURCES: Resource[] = [
     formats: ["redraft"],
     status: ["integrated", "free"],
     featured: true,
-    note: "Half-PPR redraft research. Not a rankings service: he posts players he is high and low on versus ADP, single-player deep dives ending in a league-winner verdict, and occasional tier lists. Updates often, so check the sub directly for anything newer than what Fantasy Hub has pulled in. Also @JinglesLabs on TikTok, X, and Instagram.",
+    note: "Half-PPR redraft research. The Lab 300 is his tiered top-300 ranking, shipped 2026-08-16 and updated through the preseason; Fantasy Hub orders the redraft draft board by it. He also posts players he is high and low on versus ADP and single-player deep dives ending in a league-winner verdict. Updates often, so check the sub for anything newer than what Fantasy Hub has pulled in. Also @JinglesLabs on TikTok, X, and Instagram.",
   },
   {
     name: "FantasyPros weekly half-PPR rankings",

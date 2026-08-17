@@ -1,4 +1,9 @@
-import { CALLS_BY_SLEEPER_ID, type JinglesCall } from "@/lib/jingles/data";
+import {
+  CALLS_BY_SLEEPER_ID,
+  LAB_300_BY_SLEEPER_ID,
+  lab300Tier,
+  type JinglesCall,
+} from "@/lib/jingles/data";
 
 // Redraft draft board.
 //
@@ -26,10 +31,51 @@ export interface BoardPlayer {
   name: string;
   position: string;
   team: string | null;
+  /** FantasyCalc redraft value. 0 for players it does not cover (DEF, K). */
   value: number;
+  /** FantasyCalc overall rank. 0 when unvalued. */
   overallRank: number;
   positionRank: number;
   jingles: JinglesCall | null;
+  /** His Lab 300 rank, when ranked. */
+  labRank: number | null;
+  /** His position rank, when ranked. Prefer this over FantasyCalc's when set. */
+  labPositionRank: number | null;
+  /** The draft round he expects, e.g. "3rd Round". */
+  labTier: string | null;
+}
+
+/**
+ * Board ordering. His Lab 300 leads where it covers a player: it is built for
+ * half-PPR specifically, it is hand-tiered by expected draft round, and it
+ * includes defenses and kickers that FantasyCalc omits entirely. Players he has
+ * not ranked fall in behind, ordered by FantasyCalc value.
+ */
+export function boardRank(p: BoardPlayer): number {
+  if (p.labRank !== null) return p.labRank;
+  // Unranked players sort after the 300, best FantasyCalc value first.
+  return 300 + (p.overallRank || 9999);
+}
+
+export function attachRankings(
+  base: Omit<BoardPlayer, "jingles" | "labRank" | "labPositionRank" | "labTier">,
+): BoardPlayer {
+  const lab = LAB_300_BY_SLEEPER_ID[base.id] ?? null;
+  return {
+    ...base,
+    jingles: CALLS_BY_SLEEPER_ID[base.id] ?? null,
+    labRank: lab?.rank ?? null,
+    labPositionRank: lab?.positionRank ?? null,
+    labTier: lab300Tier(base.id),
+  };
+}
+
+/**
+ * Position rank to display. Showing his overall rank beside FantasyCalc's
+ * position rank would mix two rankings in one line.
+ */
+export function displayPositionRank(p: BoardPlayer): number {
+  return p.labPositionRank ?? p.positionRank;
 }
 
 export interface SlotNeed {
@@ -126,21 +172,22 @@ export function buildBoard(
   limit = 5,
 ): RedraftRecommendation[] {
   const wanted = neededPositions(needs);
-  const byValue = [...players].sort((a, b) => b.value - a.value);
-  if (byValue.length === 0) return [];
+  const ordered = [...players].sort((a, b) => boardRank(a) - boardRank(b));
+  if (ordered.length === 0) return [];
 
-  const best = byValue[0].value || 1;
-
-  const scored = byValue.slice(0, 60).map((p) => {
+  const scored = ordered.slice(0, 60).map((p) => {
     const fillsNeed = wanted.has(p.position);
-    // Value is the dominant term. Need is a tiebreak worth roughly a round,
-    // not a reason to reach past a clearly better player.
-    let score = p.value / best;
-    if (fillsNeed) score += 0.08;
+    // Rank dominates. One rank is worth 1/400, so the bonuses below are sized
+    // in picks deliberately: filling a starting slot is worth about a round
+    // (12 picks), an individual call about a third of a round. Anything larger
+    // would let a bonus leapfrog players he has ranked well above.
+    const PICK = 1 / 400;
+    let score = 1 - boardRank(p) * PICK;
+    if (fillsNeed) score += 12 * PICK;
     if (p.jingles?.verdict === "target" || p.jingles?.verdict === "league_winner") {
-      score += 0.04;
+      score += 4 * PICK;
     }
-    if (p.jingles?.verdict === "fade") score -= 0.04;
+    if (p.jingles?.verdict === "fade") score -= 8 * PICK;
     return { p, score, fillsNeed };
   });
 
@@ -148,10 +195,28 @@ export function buildBoard(
 
   return scored.slice(0, limit).map((s, i) => {
     const reasoning: string[] = [];
-    reasoning.push(
-      `Redraft value ${s.p.value.toLocaleString()}, #${s.p.overallRank} overall`,
-    );
-    reasoning.push(`${s.p.position}${s.p.positionRank} among all players`);
+    if (s.p.labRank !== null) {
+      reasoning.push(
+        `Lab 300 #${s.p.labRank}${s.p.labTier ? `, his ${s.p.labTier} tier` : ""}`,
+      );
+    }
+    if (s.p.value > 0) {
+      reasoning.push(
+        `FantasyCalc value ${s.p.value.toLocaleString()}, #${s.p.overallRank} overall`,
+      );
+    }
+    // Where the two sources disagree by more than a couple of rounds, that gap
+    // is itself the signal.
+    if (s.p.labRank !== null && s.p.overallRank > 0) {
+      const gap = s.p.overallRank - s.p.labRank;
+      if (Math.abs(gap) >= 24) {
+        reasoning.push(
+          gap > 0
+            ? `He is ${gap} spots higher on him than FantasyCalc`
+            : `He is ${-gap} spots lower on him than FantasyCalc`,
+        );
+      }
+    }
 
     if (s.fillsNeed) {
       const slot = needs.find(
