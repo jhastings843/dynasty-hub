@@ -5,20 +5,20 @@
   "status": "active",
   "status_detail": "Multi-league fantasy football tools. Every tool lives under /l/[leagueId] with leagues auto-discovered from Sleeper and format detected from settings.type. Two live leagues: Dah Dynasty League (dynasty, in season) and 2026 Half PPR (redraft, pre-draft). Values, player pages, season goals, and resources all split by league format. Written playbooks with sources at /strategy. Jingles Labs curated in as a redraft annotation layer.",
   "next_steps": [
+    "Re-pull the Lab 300 when he posts a new version (v1.0 is current; docs/refreshing-jingles.md has the steps)",
     "Redraft draft is Mon Sep 7 6:00 PM; once Sleeper sets the draft order, factor pick slot and snake turns into the board",
-    "Pull in new Jingles Labs posts as he publishes (docs/refreshing-jingles.md); the Lab 300 is announced but unshipped",
-    "Find a DEF/K source: FantasyCalc redraft is QB/RB/WR/TE only and the league starts a DEF",
+    "Watch for his promised draft strategy guides, cleaner rankings format, and Discord",
     "Connect a guillotine league when joined: declare it in src/lib/league/manual.ts, then wire weekly scores",
     "Wire 2026 NFL schedule into survivor future-scarcity grid",
     "Integrate Vegas lines via the-odds-api before Week 1"
   ],
   "blockers": [
     "Guillotine league not joined and host platform unknown. Strategy rules and playbook are built, but no live data source exists",
-    "No free ADP API found. Jingles Labs' 21 ADP-relative calls are the only ADP data in the app",
-    "FantasyCalc redraft covers QB/RB/WR/TE only (200 players, limit param ignored), so DEF cannot be ranked"
+    "One git push (2026-08-17) did not trigger a Vercel build despite the repo still being connected; deployed manually. Watch whether it recurs"
   ],
-  "last_worked": "2026-08-15",
+  "last_worked": "2026-08-17",
   "notes": [
+    "2026-08-17: The Lab 300 shipped (his tiered top-300 half-PPR ranking, v1.0, a Google Drive PDF). All 300 parsed and resolved to Sleeper ids; redraft draft board is now ordered by it, with FantasyCalc value alongside. Fills the DEF gap since he ranks 14 defenses and 15 kickers. Also fixed a recommendation miscalibration (need bonus was worth 32 picks, not the documented ~12) and a display bug mixing his overall rank with FantasyCalc's position rank.",
     "2026-08-15: Redraft draft board shipped. The draft page had been running rookie logic for every format, recommending a rookie at #1 with 'max dynasty runway' in the redraft league. Non-dynasty leagues now rank the whole pool on FantasyCalc redraft value with starting-slot awareness, plus a Jingles-vs-ADP section. DEF marked 'not valued' since FantasyCalc has no defenses. Redraft draft scheduled for Mon Sep 7 6:00 PM.",
     "2026-08-15: Split rankings and resources by format. Player pages had contradicted themselves, showing RosterAudit dynasty tiers and a KeepTradeCut cross-check under a 'Redraft values' label; those are now dynasty-only and the headline value/rank/trend follow the format's source. Resources tagged and filterable (51 dynasty, 39 redraft, 26 guillotine), with 30 researched redraft entries, all URLs verified. Corrected how Jingles Labs is described: he posts high/low-vs-ADP calls and league-winner deep dives, not rankings. Added his James Cook deep dive and a 'pulled <date>' staleness marker.",
     "2026-08-14: Phase 2 shipped. season-plan split into src/lib/strategy with per-format rule sets; playoff berths and season length now read from league settings. New /strategy page carries researched playbooks for all three formats with 12 external sources. Guillotine numbers sourced from Fantasy Life, RotoWire, DraftSharks, Fantasy Index, Footballguys. Verified guillotine rules via a temporary route across September-danger and December-endgame states, which caught three contradictions in the endgame goals.",
