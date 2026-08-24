@@ -16,6 +16,7 @@ import {
   getRosterGrades,
 } from "@/lib/rosteraudit/client";
 import type { RAGradesByRosterId } from "@/lib/rosteraudit/types";
+import type { GradeSnapshot } from "@/lib/history/grades";
 import {
   detectRosterConflicts,
   conflictedPlayerIds,
@@ -25,9 +26,17 @@ import {
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp } from "lucide-react";
 import { getValuesForProfile } from "@/lib/values";
 import { profileFromSleeper } from "@/lib/league/detect";
+import {
+  formatSnapshotDate,
+  getGradeHistory,
+  rankMove,
+  recordGradeSnapshot,
+  withCurrent,
+} from "@/lib/history/grades";
+import { after } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -136,15 +145,31 @@ export default async function LeaguePage({
 
   const league = await getLeague(leagueId);
   const me = await getUser(username);
-  const [rosters, users, players, fcValues, grades] = await Promise.all([
-    getLeagueRosters(leagueId),
-    getLeagueUsers(leagueId),
-    getAllPlayers(),
-    getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
-    getRosterGrades(leagueId, me.user_id).catch(
-      (): RAGradesByRosterId => ({}),
-    ),
-  ]);
+  const [rosters, users, players, fcValues, grades, gradeHistory] =
+    await Promise.all([
+      getLeagueRosters(leagueId),
+      getLeagueUsers(leagueId),
+      getAllPlayers(),
+      getValuesForProfile(profileFromSleeper(league), league).then(
+        (r) => r.values,
+      ),
+      getRosterGrades(leagueId, me.user_id).catch(
+        (): RAGradesByRosterId => ({}),
+      ),
+      getGradeHistory(leagueId).catch((): GradeSnapshot[] => []),
+    ]);
+
+  // Log today's grades once the page has been sent, so tomorrow's visit can
+  // say what moved. Never let a logging failure surface as a page error.
+  after(async () => {
+    try {
+      await recordGradeSnapshot(leagueId, grades);
+    } catch (e) {
+      console.warn(
+        `[history] snapshot failed for ${leagueId}: ${e instanceof Error ? e.message : e}`,
+      );
+    }
+  });
 
   const usersById = new Map(users.map((u) => [u.user_id, u]));
   const myRoster = rosters.find((r) => r.owner_id === me.user_id) ?? null;
@@ -268,6 +293,14 @@ export default async function LeaguePage({
           {myRoster && grades[myRoster.roster_id] && (() => {
             const g = grades[myRoster.roster_id];
             const gradeKey = (g.dynastyGrade || "C")[0].toUpperCase();
+            const move = rankMove(
+              withCurrent(gradeHistory, grades),
+              myRoster.roster_id,
+            );
+            const movedPast = (move?.passedBy ?? [])
+              .map((id) => rosters.find((r) => String(r.roster_id) === id))
+              .filter((r): r is SleeperRoster => Boolean(r))
+              .map((r) => ownerName(r, usersById));
             const tileTint =
               gradeKey === "A"
                 ? {
@@ -320,8 +353,28 @@ export default async function LeaguePage({
                       >
                         Dynasty grade
                       </span>
-                      <span className="text-2xl font-bold tracking-tight">
-                        #{g.dynastyRank} of {rosters.length}
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-2xl font-bold tracking-tight">
+                          #{g.dynastyRank} of {rosters.length}
+                        </span>
+                        {move && (
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                              move.delta < 0
+                                ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
+                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                            }`}
+                            title={`Was #${move.previous} on ${formatSnapshotDate(move.previousDate)}`}
+                          >
+                            {move.delta < 0 ? (
+                              <ArrowDown className="size-3" />
+                            ) : (
+                              <ArrowUp className="size-3" />
+                            )}
+                            {Math.abs(move.delta)} since{" "}
+                            {formatSnapshotDate(move.previousDate)}
+                          </span>
+                        )}
                       </span>
                       <span className="text-xs text-zinc-600 dark:text-zinc-400">
                         Contender{" "}
@@ -335,6 +388,15 @@ export default async function LeaguePage({
                         </span>{" "}
                         ppg
                       </span>
+                      {move && move.delta < 0 && movedPast.length > 0 && (
+                        <span className="text-xs text-zinc-500 dark:text-zinc-500">
+                          {movedPast.slice(0, 2).join(", ")}
+                          {movedPast.length > 2
+                            ? ` and ${movedPast.length - 2} more`
+                            : ""}{" "}
+                          moved past you
+                        </span>
+                      )}
                     </div>
                   </div>
                   {g.weakness && (
