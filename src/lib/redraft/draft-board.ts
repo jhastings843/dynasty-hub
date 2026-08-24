@@ -320,6 +320,27 @@ export interface PickProjection {
   projected: BoardPlayer[];
   /** True when the board runs out of ranked players before this pick. */
   beyondBoard: boolean;
+  /**
+   * Players projected to come off the board between this pick and your next
+   * one, excluding the one you take here. This is the real decision at a turn
+   * slot: not who is best, but who will not be there when you come back.
+   */
+  goneBefore: BoardPlayer[];
+  /** How many picks the room makes before you are up again. */
+  picksUntilNext: number | null;
+  /** Your next pick, for labelling the cliff. */
+  nextLabel: string | null;
+  /** His Lab 300 tier at this pick, when he has ranked the player. */
+  tier: string | null;
+  /** How many players in that tier are still on the board at this pick. */
+  tierRemaining: number;
+  /**
+   * True when the tier cannot survive the wait: fewer players left in it than
+   * picks before you are back up. Comparing the tier at this pick to the tier
+   * at the next one is the obvious test and a useless one, since his tiers are
+   * a round wide and almost any gap crosses a boundary.
+   */
+  tierEndsHere: boolean;
 }
 
 /**
@@ -339,12 +360,37 @@ export function projectPicks(
 ): PickProjection[] {
   const ordered = [...pool].sort((a, b) => boardRank(a) - boardRank(b));
 
-  return picks.map((pick) => {
+  return picks.map((pick, i) => {
     const gone = Math.max(0, pick.pickNo - nextPickNo);
+    const projected = ordered.slice(gone, gone + depth);
+
+    const next = picks[i + 1] ?? null;
+    const goneByNext = next ? Math.max(0, next.pickNo - nextPickNo) : null;
+
+    // The player you take here is index `gone`, so the ones at risk start just
+    // after it and run to whoever is still there when you are back up.
+    const goneBefore =
+      goneByNext === null ? [] : ordered.slice(gone + 1, goneByNext);
+
+    const tier = projected[0]?.labTier ?? null;
+    const tierRemaining = tier
+      ? ordered.slice(gone).filter((p) => p.labTier === tier).length
+      : 0;
+    const picksUntilNext = next ? next.pickNo - pick.pickNo : null;
+
     return {
       pick,
-      projected: ordered.slice(gone, gone + depth),
+      projected,
       beyondBoard: gone >= ordered.length,
+      goneBefore,
+      picksUntilNext,
+      nextLabel: next?.label ?? null,
+      tier,
+      tierRemaining,
+      tierEndsHere:
+        tier !== null &&
+        picksUntilNext !== null &&
+        tierRemaining <= picksUntilNext,
     };
   });
 }

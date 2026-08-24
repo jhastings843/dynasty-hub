@@ -184,7 +184,9 @@ export async function RedraftDraft({
   // Picks already made, so a live draft projects from where the room is now.
   const nextPickNo = picks.length + 1;
   const remainingPicks = myPicks.filter((p) => p.pickNo >= nextPickNo);
-  const projections = projectPicks(pool, remainingPicks.slice(0, 6), nextPickNo);
+  // Project every remaining pick, since each one's cliff is defined by the pick
+  // after it, then show the first six.
+  const projections = projectPicks(pool, remainingPicks, nextPickNo).slice(0, 6);
   const laterPicks = remainingPicks.slice(6);
   const turnGap =
     remainingPicks.length >= 2
@@ -264,7 +266,9 @@ export async function RedraftDraft({
                   {remainingPicks[1].pickNo}, {turnGap} picks apart
                 </>
               ) : null}
-              . Projections assume the room drafts straight down the Lab 300,
+              . Each card also names who is projected to go before you are back
+              on the clock, which is the actual decision at a turn slot.
+              Projections assume the room drafts straight down the Lab 300,
               which no room actually does. Treat them as the middle of a range,
               not a promise.
             </p>
@@ -287,8 +291,18 @@ export async function RedraftDraft({
                       }`}
                     >
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-lg font-bold tabular-nums tracking-tight">
-                          {proj.pick.label}
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-lg font-bold tabular-nums tracking-tight">
+                            {proj.pick.label}
+                          </span>
+                          {proj.tierEndsHere && proj.tier && (
+                            <span
+                              className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
+                              title={`${proj.tierRemaining} left in his ${proj.tier} tier, and ${proj.picksUntilNext} picks before you are back up`}
+                            >
+                              {proj.tierRemaining} left in tier
+                            </span>
+                          )}
                         </span>
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                           #{proj.pick.pickNo} overall
@@ -320,6 +334,20 @@ export async function RedraftDraft({
                           {alts.length > 0 && (
                             <span className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                               or {alts.map((a) => a.name).join(", ")}
+                            </span>
+                          )}
+                          {proj.goneBefore.length > 0 && proj.nextLabel && (
+                            <span className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-400">
+                              <span className="font-semibold">
+                                Gone by {proj.nextLabel}:
+                              </span>{" "}
+                              {proj.goneBefore
+                                .slice(0, 3)
+                                .map((p) => p.name)
+                                .join(", ")}
+                              {proj.goneBefore.length > 3
+                                ? `, and ${proj.goneBefore.length - 3} more`
+                                : ""}
                             </span>
                           )}
                         </>
