@@ -5,7 +5,7 @@
   "status": "active",
   "status_detail": "Multi-league fantasy football tools. Every tool lives under /l/[leagueId] with leagues auto-discovered from Sleeper and format detected from settings.type. Two live leagues: Dah Dynasty League (dynasty, in season) and 2026 Half PPR (redraft, pre-draft). Values, player pages, season goals, and resources all split by league format. Written playbooks with sources at /strategy. Jingles Labs curated in as a redraft annotation layer.",
   "next_steps": [
-    "Rank history has one entry (2026-08-24). Deltas start showing once the cron has run a few days; confirm the Vercel cron fires at 12:00 UTC",
+    "Confirm the daily cron actually records: check that history has a 2026-08-25 entry after the 12:00 UTC run",
     "Re-pull the Lab 300 when he posts a new version (v1.0 is current; docs/refreshing-jingles.md has the steps)",
     "Redraft draft is Mon Sep 7 6:00 PM. Slot 11 of 12, pick projections, and tier cliffs are wired in; revisit after the Lab 300 next version lands",
     "Watch for his promised draft strategy guides, cleaner rankings format, and Discord",
@@ -14,12 +14,11 @@
     "Integrate Vegas lines via the-odds-api before Week 1"
   ],
   "blockers": [
-    "Guillotine league not joined and host platform unknown. Strategy rules and playbook are built, but no live data source exists",
-    "Vercel auto-deploy is dead: the GitHub repo has zero webhooks, so pushes never reach Vercel and every deploy must be run by hand (npx vercel --prod). Fix is vercel git disconnect then connect. Both blocked by the permission classifier in-session, so Jack has to run them",
-    "CRON_SECRET is not set in Vercel, so /api/snapshot is publicly reachable. Low stakes (worst case a duplicate same-day write) but should be set"
+    "Guillotine league not joined and host platform unknown. Strategy rules and playbook are built, but no live data source exists"
   ],
   "last_worked": "2026-08-24",
   "notes": [
+    "2026-08-24: Auto-deploy fixed. The Aug 17 diagnosis (missing GitHub webhooks) was wrong: GitHub App integrations do not create per-repo webhooks, so an empty /hooks list proved nothing. The real fault was that the Vercel project had no Git repository connected at all, which vercel git disconnect reported plainly. One vercel git connect restored it; a test push built and deployed in 22s with no manual step. CRON_SECRET is also set in Production, and /api/snapshot now returns 401 without the bearer token.",
     "2026-08-24: Tier cliff added to the redraft board. Each pick card names who is projected to go before you are back on the clock, plus a chip when his Lab 300 tier cannot last the wait (players left in tier vs picks until your next). First version compared this pick tier to next pick tier and fired on every card, since his tiers run about a round wide.",
     "2026-08-24: Two things shipped. (1) Rank history: roster grades are now logged to Upstash once a day (cron at /api/snapshot plus an opportunistic write on dashboard render), and the dynasty tile shows a chip like \"down 4 since Aug 14\" with the names who moved past you. Built after a #6 to #10 slide could not be explained, since RosterAudit publishes a live grade and no history. (2) Redraft draft board reads the Sleeper draft order: Pick 11 of 12 chip in the header, plus a Your picks section projecting who is on the board at each of the next six picks if the room drafts straight down the Lab 300. (3) Diagnosis of the slide itself: no code or roster cause, team value flat since May, the model reweighted trajectory. Superflex QB room is the real problem: Dart 4,453 plus Geno 217 against a league range of 7.8k to 17.3k, traced to the May 8 Hurts trade.",
     "2026-08-17: The Lab 300 shipped (his tiered top-300 half-PPR ranking, v1.0, a Google Drive PDF). All 300 parsed and resolved to Sleeper ids; redraft draft board is now ordered by it, with FantasyCalc value alongside. Fills the DEF gap since he ranks 14 defenses and 15 kickers. Also fixed a recommendation miscalibration (need bonus was worth 32 picks, not the documented ~12) and a display bug mixing his overall rank with FantasyCalc's position rank.",
