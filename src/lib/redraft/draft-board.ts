@@ -262,3 +262,89 @@ export function buildBoard(
 export function withJingles(id: string): JinglesCall | null {
   return CALLS_BY_SLEEPER_ID[id] ?? null;
 }
+
+// --- Your picks ---
+//
+// Sleeper knows the draft order before the draft starts, so the board can say
+// where you are in it and, if the room drafts to the ranking, who is likely to
+// be sitting there when you are up.
+
+export interface UpcomingPick {
+  round: number;
+  /** Overall pick number, 1-based. */
+  pickNo: number;
+  /** Position within the round, which flips each round in a snake. */
+  slotInRound: number;
+  /** "1.11" */
+  label: string;
+}
+
+/**
+ * Every pick belonging to one draft slot.
+ *
+ * Snake drafts reverse each round. Sleeper's `reversal_round` setting (third
+ * round reversal and friends) delays the flip: from that round on, the order
+ * repeats the previous round instead of alternating, so parity inverts.
+ */
+export function picksForSlot(
+  slot: number,
+  teams: number,
+  rounds: number,
+  type: string | null | undefined,
+  reversalRound = 0,
+): UpcomingPick[] {
+  if (!slot || slot < 1 || teams < 1 || rounds < 1) return [];
+
+  const out: UpcomingPick[] = [];
+  for (let round = 1; round <= rounds; round++) {
+    let slotInRound = slot;
+    if (type === "snake") {
+      const flipped = reversalRound > 0 && round >= reversalRound;
+      const reversed = round % 2 === 0 ? !flipped : flipped;
+      if (reversed) slotInRound = teams - slot + 1;
+    }
+    const pickNo = (round - 1) * teams + slotInRound;
+    out.push({
+      round,
+      pickNo,
+      slotInRound,
+      label: `${round}.${slotInRound.toString().padStart(2, "0")}`,
+    });
+  }
+  return out;
+}
+
+export interface PickProjection {
+  pick: UpcomingPick;
+  /** Best available at that pick if every pick before it goes to the board. */
+  projected: BoardPlayer[];
+  /** True when the board runs out of ranked players before this pick. */
+  beyondBoard: boolean;
+}
+
+/**
+ * Who is left at each of your picks if the room drafts straight down the
+ * ranking. That is a deliberately dumb model: it assumes no reaches, no runs,
+ * and no one else's roster needs. It is still the useful question the night
+ * before a draft, as long as the page says out loud that it is chalk.
+ *
+ * `nextPickNo` is the next pick the room will make overall, so a live draft
+ * projects from where it actually is rather than from the top of the board.
+ */
+export function projectPicks(
+  pool: BoardPlayer[],
+  picks: UpcomingPick[],
+  nextPickNo: number,
+  depth = 3,
+): PickProjection[] {
+  const ordered = [...pool].sort((a, b) => boardRank(a) - boardRank(b));
+
+  return picks.map((pick) => {
+    const gone = Math.max(0, pick.pickNo - nextPickNo);
+    return {
+      pick,
+      projected: ordered.slice(gone, gone + depth),
+      beyondBoard: gone >= ordered.length,
+    };
+  });
+}

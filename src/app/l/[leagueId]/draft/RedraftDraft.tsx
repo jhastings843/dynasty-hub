@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ListOrdered, Sparkles, Target, TriangleAlert } from "lucide-react";
+import {
+  ListOrdered,
+  Sparkles,
+  Target,
+  TriangleAlert,
+  Users,
+} from "lucide-react";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
@@ -18,6 +24,8 @@ import {
   buildBoard,
   displayPositionRank,
   openSlots,
+  picksForSlot,
+  projectPicks,
   type BoardPlayer,
 } from "@/lib/redraft/draft-board";
 import type { RAValuesBySleeperId } from "@/lib/rosteraudit/types";
@@ -36,6 +44,14 @@ const POS_CHIP: Record<string, string> = {
   DEF: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
   K: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
 };
+
+/** 11 -> "11th". Draft slots read better as an ordinal. */
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  const suffix = { 1: "st", 2: "nd", 3: "rd" }[n % 10] ?? "th";
+  return `${n}${suffix}`;
+}
 
 function PosChip({ position }: { position: string }) {
   return (
@@ -150,6 +166,31 @@ export async function RedraftDraft({
 
   const draftStart = draft?.start_time ? new Date(draft.start_time) : null;
 
+  // Where you sit in the order, and who is likely to be there when you are up.
+  // Sleeper publishes draft_order as soon as the commissioner sets it, which is
+  // usually well before the draft, so this fills in the moment it exists.
+  const mySlot = draft?.draft_order?.[myUserId] ?? null;
+  const totalTeams = draft?.settings?.teams ?? rosters.length ?? 12;
+  const totalRounds = draft?.settings?.rounds ?? 0;
+  const myPicks = mySlot
+    ? picksForSlot(
+        mySlot,
+        totalTeams,
+        totalRounds,
+        draft?.type,
+        draft?.settings?.reversal_round ?? 0,
+      )
+    : [];
+  // Picks already made, so a live draft projects from where the room is now.
+  const nextPickNo = picks.length + 1;
+  const remainingPicks = myPicks.filter((p) => p.pickNo >= nextPickNo);
+  const projections = projectPicks(pool, remainingPicks.slice(0, 6), nextPickNo);
+  const laterPicks = remainingPicks.slice(6);
+  const turnGap =
+    remainingPicks.length >= 2
+      ? remainingPicks[1].pickNo - remainingPicks[0].pickNo
+      : null;
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8">
@@ -161,9 +202,16 @@ export async function RedraftDraft({
             ‹ League
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              Draft board
-            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                Draft board
+              </h1>
+              {mySlot && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                  Pick {mySlot} of {totalTeams}
+                </span>
+              )}
+            </div>
             <RefreshButton />
           </div>
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -194,6 +242,108 @@ export async function RedraftDraft({
             upside are ignored on purpose: the roster resets in January.
           </p>
         </div>
+
+        {/* Where you pick, and who should be there */}
+        {myPicks.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Users
+                size={18}
+                className="text-amber-600 dark:text-amber-400"
+                aria-hidden
+              />
+              <h2 className="text-xl font-semibold tracking-tight">
+                Your picks
+              </h2>
+            </div>
+            <p className="max-w-2xl text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              You draft {ordinal(mySlot ?? 0)} of {totalTeams}
+              {turnGap !== null && remainingPicks.length >= 2 ? (
+                <>
+                  , so you are up at #{remainingPicks[0].pickNo} and #
+                  {remainingPicks[1].pickNo}, {turnGap} picks apart
+                </>
+              ) : null}
+              . Projections assume the room drafts straight down the Lab 300,
+              which no room actually does. Treat them as the middle of a range,
+              not a promise.
+            </p>
+            {projections.length === 0 ? (
+              <p className="rounded-2xl border border-zinc-200 bg-white px-4 py-6 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+                Your picks are all in. Nothing left to project.
+              </p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {projections.map((proj, i) => {
+                  const top = proj.projected[0] ?? null;
+                  const alts = proj.projected.slice(1);
+                  return (
+                    <li
+                      key={proj.pick.pickNo}
+                      className={`flex flex-col gap-2 rounded-2xl border p-4 transition-colors ${
+                        i === 0
+                          ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30"
+                          : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+                      }`}
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-lg font-bold tabular-nums tracking-tight">
+                          {proj.pick.label}
+                        </span>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                          #{proj.pick.pickNo} overall
+                        </span>
+                      </div>
+                      {top ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <PlayerAvatar
+                              name={top.name}
+                              position={top.position}
+                              size="sm"
+                            />
+                            <div className="flex min-w-0 flex-col">
+                              <div className="flex items-center gap-1.5">
+                                <PlayerLink
+                                  id={top.id}
+                                  name={top.name}
+                                  className="truncate text-sm font-bold"
+                                />
+                                <PosChip position={top.position} />
+                              </div>
+                              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {top.team ?? "FA"}
+                                {top.labTier ? ` · ${top.labTier}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                          {alts.length > 0 && (
+                            <span className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                              or {alts.map((a) => a.name).join(", ")}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                          Past the ranked board. Stream it.
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {laterPicks.length > 0 && (
+              <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Then{" "}
+                {laterPicks
+                  .map((p) => `${p.label} (#${p.pickNo})`)
+                  .join(", ")}
+                .
+              </p>
+            )}
+          </section>
+        )}
 
         {/* Starting slots still open */}
         <section className="flex flex-col gap-3">

@@ -74,6 +74,8 @@ export interface SleeperDraft {
   settings?: {
     rounds?: number;
     teams?: number;
+    /** Round the snake stops alternating, e.g. 3 for a third round reversal. */
+    reversal_round?: number;
     [k: string]: unknown;
   };
 }
