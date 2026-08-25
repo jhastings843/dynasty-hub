@@ -109,6 +109,30 @@ export function startingSlots(rosterPositions: string[]): Record<string, number>
 }
 
 /**
+ * Positions a league can actually start, fixed slots plus whatever the flex
+ * slots accept.
+ *
+ * The board unions FantasyCalc with his Lab 300, and he ranks 14 defenses and
+ * 15 kickers. In a league with no DEF or K slot those are not draftable at all,
+ * so they have no business sitting in the pool: they would show up in best
+ * available and, worse, get projected as the player waiting at one of your
+ * picks.
+ */
+export function startablePositions(rosterPositions: string[]): Set<string> {
+  const out = new Set<string>();
+  for (const slot of rosterPositions) {
+    if (NON_STARTING.has(slot)) continue;
+    const flex = FLEX_ELIGIBLE[slot];
+    if (flex) {
+      for (const p of flex) out.add(p);
+    } else {
+      out.add(slot);
+    }
+  }
+  return out;
+}
+
+/**
  * Which starting slots are still open, given the positions already drafted.
  *
  * Fixed slots are filled first by their own position, then flex slots take

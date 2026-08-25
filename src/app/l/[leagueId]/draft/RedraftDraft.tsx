@@ -26,6 +26,7 @@ import {
   openSlots,
   picksForSlot,
   projectPicks,
+  startablePositions,
   type BoardPlayer,
 } from "@/lib/redraft/draft-board";
 import type { RAValuesBySleeperId } from "@/lib/rosteraudit/types";
@@ -98,6 +99,9 @@ export async function RedraftDraft({
     .filter((p): p is string => Boolean(p));
 
   const needs = openSlots(profile.rosterPositions, myPositions);
+  // Only positions this league starts. A defense or kicker in a league with no
+  // slot for one is not a pick, it is noise on the board.
+  const startable = startablePositions(profile.rosterPositions);
 
   // The whole pool, not rookies. Two sources, unioned: FantasyCalc for values,
   // and his Lab 300 for the ranking plus the defenses and kickers FantasyCalc
@@ -108,6 +112,7 @@ export async function RedraftDraft({
 
   for (const v of Object.values(values)) {
     if (v.value <= 0 || taken(v.sleeperId)) continue;
+    if (!startable.has(v.position)) continue;
     byId.set(
       v.sleeperId,
       attachRankings({
@@ -124,13 +129,15 @@ export async function RedraftDraft({
 
   for (const e of LAB_300) {
     if (taken(e.sleeperId) || byId.has(e.sleeperId)) continue;
+    // He writes DST where Sleeper's roster slot is DEF.
+    const position = e.position === "DST" ? "DEF" : e.position;
+    if (!startable.has(position)) continue;
     byId.set(
       e.sleeperId,
       attachRankings({
         id: e.sleeperId,
         name: e.name,
-        // He writes DST where Sleeper's roster slot is DEF.
-        position: e.position === "DST" ? "DEF" : e.position,
+        position,
         team: e.team,
         value: 0,
         overallRank: 0,
@@ -165,6 +172,20 @@ export async function RedraftDraft({
   );
 
   const draftStart = draft?.start_time ? new Date(draft.start_time) : null;
+
+  // His Lab 300 is built for half PPR specifically. In a league scored any
+  // other way the order is still the best ranking available, but it is priced
+  // for receptions this league does not pay the same way, and the reader should
+  // know which direction the error runs. FantasyCalc is pulled for this
+  // league's exact format, so it is the tiebreaker where the two disagree.
+  const scoringLabel =
+    profile.ppr === 1 ? "full PPR" : profile.ppr === 0 ? "standard" : "half PPR";
+  const pprSkew =
+    profile.ppr === 1
+      ? "Every catch is worth half a point more here than his ranking assumes, so pass-catching backs and high-volume slot receivers should go earlier than he has them, and touchdown-dependent runners later."
+      : profile.ppr === 0
+        ? "Receptions score nothing here, so the pass-catching backs and slot receivers his ranking pays up for should slide, and volume runners and touchdown scorers should climb."
+        : null;
 
   // Where you sit in the order, and who is likely to be there when you are up.
   // Sleeper publishes draft_order as soon as the commissioner sets it, which is
@@ -214,7 +235,7 @@ export async function RedraftDraft({
                 </span>
               )}
             </div>
-            <RefreshButton />
+            <RefreshButton leagueId={leagueId} />
           </div>
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
             {profile.name} · {draft?.settings?.rounds ?? "?"}-round{" "}
@@ -243,6 +264,25 @@ export async function RedraftDraft({
             value alongside and for anyone he has not ranked. Age and long-term
             upside are ignored on purpose: the roster resets in January.
           </p>
+          {pprSkew && (
+            <p className="flex max-w-2xl items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <TriangleAlert
+                size={14}
+                className="mt-0.5 shrink-0"
+                aria-hidden
+              />
+              <span>
+                <span className="font-semibold">
+                  This league is {scoringLabel}, his ranking is half PPR.
+                </span>{" "}
+                {pprSkew} The value beside each name is priced for this
+                league&rsquo;s exact format ({profile.teams} teams,{" "}
+                {profile.superflex ? "superflex" : "one QB"}, {scoringLabel}),
+                so trust it over the order where the two disagree on a
+                receiver.
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Where you pick, and who should be there */}

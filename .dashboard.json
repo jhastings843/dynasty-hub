@@ -3,11 +3,12 @@
   "path": "/Users/jackh/Projects/fantasy-hub",
   "github_url": "https://github.com/jhastings843/fantasy-hub",
   "status": "active",
-  "status_detail": "Multi-league fantasy football tools. Every tool lives under /l/[leagueId] with leagues auto-discovered from Sleeper and format detected from settings.type. Two live leagues: Dah Dynasty League (dynasty, in season) and 2026 Half PPR (redraft, pre-draft). Values, player pages, season goals, and resources all split by league format. Written playbooks with sources at /strategy. Jingles Labs curated in as a redraft annotation layer.",
+  "status_detail": "Multi-league fantasy football tools. Every tool lives under /l/[leagueId] with leagues auto-discovered from Sleeper and format detected from settings.type. Three live leagues: Dah Dynasty League (dynasty, in season), 2026 Half PPR (redraft, drafts Sep 7), and Sunday Scaries #2 (redraft, full PPR, drafts Aug 27). Values, player pages, season goals, and resources all split by league format. Written playbooks with sources at /strategy. Jingles Labs curated in as a redraft annotation layer.",
   "next_steps": [
-    "Confirm the daily cron actually records: check that history has a 2026-08-25 entry after the 12:00 UTC run",
+    "Sunday Scaries #2 drafts Thu Aug 27 6:00 PM CT (8:00 PM ET). Draft order is not set yet, so the Your picks section fills in once the commissioner sets it: hit Refresh league on the draft board that night",
+    "It is full PPR against a half-PPR Lab 300. The board flags the skew; lean on the FantasyCalc column for receiving backs and slot WRs",
     "Re-pull the Lab 300 when he posts a new version (v1.0 is current; docs/refreshing-jingles.md has the steps)",
-    "Redraft draft is Mon Sep 7 6:00 PM. Slot 11 of 12, pick projections, and tier cliffs are wired in; revisit after the Lab 300 next version lands",
+    "2026 Half PPR draft is Mon Sep 7 6:00 PM. Slot 11 of 12, pick projections, and tier cliffs are wired in",
     "Watch for his promised draft strategy guides, cleaner rankings format, and Discord",
     "Connect a guillotine league when joined: declare it in src/lib/league/manual.ts, then wire weekly scores",
     "Wire 2026 NFL schedule into survivor future-scarcity grid",
@@ -16,8 +17,9 @@
   "blockers": [
     "Guillotine league not joined and host platform unknown. Strategy rules and playbook are built, but no live data source exists"
   ],
-  "last_worked": "2026-08-24",
+  "last_worked": "2026-08-25",
   "notes": [
+    "2026-08-25: Sunday Scaries #2 joined (12-team, full PPR, single QB, no DEF or K slot, drafts Aug 27). Discovery is automatic but the league list is cached for 6 hours and /api/refresh never busted it, so a new league was invisible until the TTL lapsed; refresh now drops the list, takes the leagueId of the page you are on instead of always refreshing the dynasty league, and busts FantasyCalc values and the drafts list (which carries draft_order) rather than only RosterAudit. Draft board now filters the pool to positions the league actually starts: 15 kickers dropped everywhere, 15 defenses dropped in leagues with no DEF slot. Board carries a note when league scoring is not half PPR, since the Lab 300 is. Snapshot cron and the league dashboard no longer ask RosterAudit for redraft grades (it answers 400): the cron is now a clean single-league run. Season plan was dynasty-shaped for every format: hardcoded 'superflex with TE premium' header, 'Rookie draft window' phase, a permanent em dash Dynasty rank tile, and made-up ranks off empty pre-draft rosters. All four now follow the format.",
     "2026-08-24: Auto-deploy fixed. The Aug 17 diagnosis (missing GitHub webhooks) was wrong: GitHub App integrations do not create per-repo webhooks, so an empty /hooks list proved nothing. The real fault was that the Vercel project had no Git repository connected at all, which vercel git disconnect reported plainly. One vercel git connect restored it; a test push built and deployed in 22s with no manual step. CRON_SECRET is also set in Production, and /api/snapshot now returns 401 without the bearer token.",
     "2026-08-24: Tier cliff added to the redraft board. Each pick card names who is projected to go before you are back on the clock, plus a chip when his Lab 300 tier cannot last the wait (players left in tier vs picks until your next). First version compared this pick tier to next pick tier and fired on every card, since his tiers run about a round wide.",
     "2026-08-24: Two things shipped. (1) Rank history: roster grades are now logged to Upstash once a day (cron at /api/snapshot plus an opportunistic write on dashboard render), and the dynasty tile shows a chip like \"down 4 since Aug 14\" with the names who moved past you. Built after a #6 to #10 slide could not be explained, since RosterAudit publishes a live grade and no history. (2) Redraft draft board reads the Sleeper draft order: Pick 11 of 12 chip in the header, plus a Your picks section projecting who is on the board at each of the next six picks if the room drafts straight down the Lab 300. (3) Diagnosis of the slide itself: no code or roster cause, team value flat since May, the model reweighted trajectory. Superflex QB room is the real problem: Dart 4,453 plus Geno 217 against a league range of 7.8k to 17.3k, traced to the May 8 Hurts trade.",

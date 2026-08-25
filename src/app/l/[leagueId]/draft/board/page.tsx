@@ -247,7 +247,7 @@ export default async function DraftBoardPage({
               Draft board
             </h1>
             <div className="flex items-center gap-2">
-              <RefreshButton />
+              <RefreshButton leagueId={leagueId} />
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                   draft.status === "drafting"

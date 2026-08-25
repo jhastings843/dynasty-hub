@@ -33,8 +33,12 @@ export async function GET(request: Request) {
       getMyLeagues(),
     ]);
 
-    // Manual leagues have no Sleeper id and so no grades to read.
-    const sleeperLeagues = leagues.filter((l) => l.source !== "manual");
+    // Manual leagues have no Sleeper id and so no grades to read, and
+    // RosterAudit publishes dynasty grades only: asking it about a redraft
+    // league answers 400, which is a failure row every day for no reason.
+    const sleeperLeagues = leagues.filter(
+      (l) => l.source !== "manual" && l.type === "dynasty",
+    );
 
     const results = await Promise.all(
       sleeperLeagues.map(async (league) => {

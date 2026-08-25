@@ -145,31 +145,39 @@ export default async function LeaguePage({
 
   const league = await getLeague(leagueId);
   const me = await getUser(username);
+  const profile = profileFromSleeper(league);
+  // Grades and their history come from RosterAudit, which is dynasty-only.
+  // Asking for a redraft league answers 400, so don't ask.
+  const tracksGrades = profile.type === "dynasty";
   const [rosters, users, players, fcValues, grades, gradeHistory] =
     await Promise.all([
       getLeagueRosters(leagueId),
       getLeagueUsers(leagueId),
       getAllPlayers(),
-      getValuesForProfile(profileFromSleeper(league), league).then(
-        (r) => r.values,
-      ),
-      getRosterGrades(leagueId, me.user_id).catch(
-        (): RAGradesByRosterId => ({}),
-      ),
-      getGradeHistory(leagueId).catch((): GradeSnapshot[] => []),
+      getValuesForProfile(profile, league).then((r) => r.values),
+      tracksGrades
+        ? getRosterGrades(leagueId, me.user_id).catch(
+            (): RAGradesByRosterId => ({}),
+          )
+        : Promise.resolve<RAGradesByRosterId>({}),
+      tracksGrades
+        ? getGradeHistory(leagueId).catch((): GradeSnapshot[] => [])
+        : Promise.resolve<GradeSnapshot[]>([]),
     ]);
 
   // Log today's grades once the page has been sent, so tomorrow's visit can
   // say what moved. Never let a logging failure surface as a page error.
-  after(async () => {
-    try {
-      await recordGradeSnapshot(leagueId, grades);
-    } catch (e) {
-      console.warn(
-        `[history] snapshot failed for ${leagueId}: ${e instanceof Error ? e.message : e}`,
-      );
-    }
-  });
+  if (tracksGrades) {
+    after(async () => {
+      try {
+        await recordGradeSnapshot(leagueId, grades);
+      } catch (e) {
+        console.warn(
+          `[history] snapshot failed for ${leagueId}: ${e instanceof Error ? e.message : e}`,
+        );
+      }
+    });
+  }
 
   const usersById = new Map(users.map((u) => [u.user_id, u]));
   const myRoster = rosters.find((r) => r.owner_id === me.user_id) ?? null;
@@ -245,7 +253,7 @@ export default async function LeaguePage({
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <RefreshButton />
+            <RefreshButton leagueId={leagueId} />
             <Link
               href={`/l/${leagueId}/plan`}
               className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"

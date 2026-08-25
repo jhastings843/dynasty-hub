@@ -266,7 +266,7 @@ export default async function PlayersPage({
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">Players</h1>
-            <RefreshButton />
+            <RefreshButton leagueId={leagueId} />
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Search the league, scout the waiver wire, and track value momentum

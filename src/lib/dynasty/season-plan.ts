@@ -2,6 +2,7 @@
 // server.
 
 import type { RATeamGrade } from "@/lib/rosteraudit/types";
+import type { LeagueType } from "@/lib/league/types";
 
 // ---------------------------------------------------------------
 // Trajectory: where this team is in its dynasty cycle.
@@ -96,19 +97,27 @@ export interface SeasonPhase {
   blurb: string;
 }
 
-export function currentPhase(now: Date, draftStart?: Date | null): SeasonPhase {
+export function currentPhase(
+  now: Date,
+  draftStart?: Date | null,
+  type: LeagueType = "dynasty",
+): SeasonPhase {
   const month = now.getMonth(); // 0=Jan
   const day = now.getDate();
+  // Only a dynasty league drafts rookies. Everywhere else the draft is the
+  // whole pool, and calling it a rookie draft is just wrong on the page.
+  const isDynasty = type === "dynasty";
 
-  // If a draft start is in the next 14 days, we're in rookie draft window.
+  // If a draft start is in the next 14 days, we're in the draft window.
   if (draftStart) {
     const ms = draftStart.getTime() - now.getTime();
     if (ms > -3 * 24 * 60 * 60 * 1000 && ms < 14 * 24 * 60 * 60 * 1000) {
       return {
         key: "rookie_draft",
-        label: "Rookie draft window",
-        blurb:
-          "Land starting-caliber youth to attack your weakest positions. Don't reach for need over value.",
+        label: isDynasty ? "Rookie draft window" : "Draft window",
+        blurb: isDynasty
+          ? "Land starting-caliber youth to attack your weakest positions. Don't reach for need over value."
+          : "Build the board now. Every starting slot has to come out of this draft, and nothing carries past January.",
       };
     }
   }
@@ -184,8 +193,9 @@ export function currentPhase(now: Date, draftStart?: Date | null): SeasonPhase {
   return {
     key: "post_season",
     label: "Off-season planning",
-    blurb:
-      "Recap, plan rookie draft, identify trade targets to address weaknesses.",
+    blurb: isDynasty
+      ? "Recap, plan rookie draft, identify trade targets to address weaknesses."
+      : "Season's over and the roster is gone. Recap what worked and note it for next year's draft.",
   };
 }
 
@@ -199,13 +209,33 @@ export interface KeyDate {
   blurb?: string;
 }
 
-export function keyDates(season: number, draftStart?: Date | null): KeyDate[] {
+export function keyDates(
+  season: number,
+  draftStart?: Date | null,
+  type: LeagueType = "dynasty",
+  now: Date = new Date(),
+): KeyDate[] {
+  const isDynasty = type === "dynasty";
   const dates: KeyDate[] = [];
   if (draftStart) {
+    // "Tonight" is only true tonight. Any other day, count down to it, in
+    // calendar days rather than elapsed hours: a draft at 8pm two nights from
+    // now reads as two days out, not three.
+    const midnight = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const days = Math.round(
+      (midnight(draftStart) - midnight(now)) / (24 * 60 * 60 * 1000),
+    );
+    const blurb =
+      days <= 0
+        ? "Tonight's main event"
+        : days === 1
+          ? "Tomorrow"
+          : `${days} days out`;
     dates.push({
-      label: "Rookie draft",
+      label: isDynasty ? "Rookie draft" : "Draft",
       date: draftStart,
-      blurb: "Tonight's main event",
+      blurb,
     });
   }
   dates.push({
@@ -226,10 +256,14 @@ export function keyDates(season: number, draftStart?: Date | null): KeyDate[] {
     label: "Championship week",
     date: new Date(season, 11, 21), // approx Dec 21 (week 16)
   });
-  dates.push({
-    label: `${season + 1} rookie draft window`,
-    date: new Date(season + 1, 3, 25), // April 25 next year
-    blurb: "Plan rookie draft prep through off-season",
-  });
+  // A rookie draft is next spring's event and worth planning toward. In a
+  // league that resets, next April holds nothing: the season simply ends.
+  if (isDynasty) {
+    dates.push({
+      label: `${season + 1} rookie draft window`,
+      date: new Date(season + 1, 3, 25), // April 25 next year
+      blurb: "Plan rookie draft prep through off-season",
+    });
+  }
   return dates;
 }

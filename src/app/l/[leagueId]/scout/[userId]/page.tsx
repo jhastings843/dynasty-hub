@@ -181,7 +181,7 @@ export default async function ScoutPage({
             </p>
           </div>
           <div className="sm:ml-auto">
-            <RefreshButton />
+            <RefreshButton leagueId={leagueId} />
           </div>
         </header>
 

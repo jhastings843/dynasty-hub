@@ -8,10 +8,16 @@ import { RefreshCw } from "lucide-react";
 // then re-renders the page. Use after a draft completes, a trade
 // processes on Sleeper, or any other moment we know league state
 // has changed and we want immediate fresh data.
+//
+// Pass leagueId so the refresh lands on the league being viewed. Without it the
+// route falls back to SLEEPER_LEAGUE_ID, which is the dynasty league and almost
+// never what the button is sitting next to.
 export function RefreshButton({
   label = "Refresh league",
+  leagueId,
 }: {
   label?: string;
+  leagueId?: string;
 }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">(
@@ -21,7 +27,11 @@ export function RefreshButton({
   async function trigger() {
     setState("loading");
     try {
-      const res = await fetch("/api/refresh", { method: "POST" });
+      const res = await fetch("/api/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(leagueId ? { leagueId } : {}),
+      });
       if (!res.ok) throw new Error(await res.text());
       router.refresh();
       setState("done");

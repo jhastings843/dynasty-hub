@@ -161,7 +161,8 @@ export default async function SeasonPlanPage({
   const draftStart = draft?.start_time ? new Date(draft.start_time) : null;
   const draftSlot = draft?.draft_order?.[me.user_id] ?? null;
 
-  const phase = currentPhase(new Date(), draftStart);
+  const profile = profileFromSleeper(league);
+  const phase = currentPhase(new Date(), draftStart, profile.type);
 
   // Sort positions by league-relative rank (higher rank number = weaker)
   // rather than raw roster value, so what surfaces matches how power
@@ -172,8 +173,6 @@ export default async function SeasonPlanPage({
   );
   const weakestPositions = sortedByRank.slice(0, 2);
   const strongestPositions = sortedByRank.slice(-2).reverse();
-
-  const profile = profileFromSleeper(league);
 
   const settings = myRoster.settings ?? {};
   const record = {
@@ -232,8 +231,13 @@ export default async function SeasonPlanPage({
   });
 
   const season = Number(league.season ?? new Date().getFullYear());
-  const dates = keyDates(season, draftStart);
+  const dates = keyDates(season, draftStart, profile.type);
   const now = new Date();
+
+  // Before a redraft league's draft every roster is empty, so team value and
+  // position ranks are all zero and any ordering of them is noise. Say the
+  // roster is empty instead of publishing a made-up rank.
+  const rosterEmpty = myTeam.totalValue === 0;
 
   const myStandingRank =
     [...teams].sort((a, b) => b.totalValue - a.totalValue).findIndex(
@@ -254,11 +258,17 @@ export default async function SeasonPlanPage({
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Season plan
             </h1>
-            <RefreshButton />
+            <RefreshButton leagueId={leagueId} />
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {league.name} · {league.season} · {rosters.length}-team superflex
-            with TE premium
+            {league.name} · {league.season} · {rosters.length}-team{" "}
+            {profile.superflex ? "superflex" : "one QB"} ·{" "}
+            {profile.ppr === 1
+              ? "PPR"
+              : profile.ppr === 0.5
+                ? "half PPR"
+                : "standard"}
+            {profile.tePremium > 0 ? " with TE premium" : ""}
           </p>
         </div>
 
@@ -332,32 +342,73 @@ export default async function SeasonPlanPage({
                 Team value
               </span>
               <span className="text-2xl font-semibold tabular-nums">
-                {myTeam.totalValue.toLocaleString()}
+                {rosterEmpty ? "—" : myTeam.totalValue.toLocaleString()}
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                rank #{myStandingRank} of {rosters.length}
+                {rosterEmpty
+                  ? "empty until the draft"
+                  : `rank #${myStandingRank} of ${rosters.length}`}
               </span>
             </div>
-            <div className="flex flex-col gap-0.5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Dynasty rank
-              </span>
-              <span className="text-2xl font-semibold tabular-nums">
-                {grade ? `#${grade.dynastyRank}` : "—"}
-              </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                {grade ? grade.dynastyGrade : "via RosterAudit"}
-              </span>
-            </div>
+            {/* RosterAudit grades dynasty rosters only, so a redraft league
+                would show a permanent em dash here. Before its draft the
+                useful number is where you pick; after it, your record. */}
+            {profile.type === "dynasty" ? (
+              <div className="flex flex-col gap-0.5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Dynasty rank
+                </span>
+                <span className="text-2xl font-semibold tabular-nums">
+                  {grade ? `#${grade.dynastyRank}` : "—"}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {grade ? grade.dynastyGrade : "via RosterAudit"}
+                </span>
+              </div>
+            ) : profile.status === "pre_draft" ? (
+              <div className="flex flex-col gap-0.5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Draft slot
+                </span>
+                <span className="text-2xl font-semibold tabular-nums">
+                  {draftSlot ? `#${draftSlot}` : "TBD"}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {draftStart
+                    ? draftStart.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "not scheduled"}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-0.5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Record
+                </span>
+                <span className="text-2xl font-semibold tabular-nums">
+                  {record.wins}-{record.losses}
+                  {record.ties > 0 ? `-${record.ties}` : ""}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  #{standingRank} of {rosters.length} ·{" "}
+                  {record.pointsFor.toFixed(1)} PF
+                </span>
+              </div>
+            )}
             <div className="flex flex-col gap-0.5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Weakest spot
               </span>
               <span className="text-2xl font-semibold">
-                {weakestPositions[0]}
+                {rosterEmpty ? "—" : weakestPositions[0]}
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                #{myTeam.positionRanks[weakestPositions[0]] ?? "—"} of {rosters.length}
+                {rosterEmpty
+                  ? "nothing drafted yet"
+                  : `#${myTeam.positionRanks[weakestPositions[0]] ?? "—"} of ${rosters.length}`}
               </span>
             </div>
             <div className="flex flex-col gap-0.5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -365,10 +416,12 @@ export default async function SeasonPlanPage({
                 Strongest spot
               </span>
               <span className="text-2xl font-semibold">
-                {strongestPositions[0]}
+                {rosterEmpty ? "—" : strongestPositions[0]}
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                #{myTeam.positionRanks[strongestPositions[0]] ?? "—"} of {rosters.length}
+                {rosterEmpty
+                  ? "nothing drafted yet"
+                  : `#${myTeam.positionRanks[strongestPositions[0]] ?? "—"} of ${rosters.length}`}
               </span>
             </div>
           </div>
@@ -394,8 +447,9 @@ export default async function SeasonPlanPage({
             </ul>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Auto goals derive from your trajectory + RosterAudit data and
-            update every page load.
+            {profile.type === "dynasty"
+              ? "Auto goals derive from your trajectory + RosterAudit data and update every page load."
+              : "Auto goals derive from this league's standings, roster, and draft state, and update every page load."}
           </p>
         </section>
 

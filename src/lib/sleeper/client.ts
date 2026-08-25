@@ -126,11 +126,27 @@ export async function revalidateLeague(leagueId: string): Promise<void> {
     KEY.rosters(leagueId),
     KEY.users(leagueId),
     KEY.tradedPicks(leagueId),
+    // The drafts list carries draft_order and start time. A commissioner who
+    // sets the order an hour before the draft should show up on refresh, not
+    // whenever the list's own TTL happens to lapse.
+    KEY.drafts(leagueId),
   );
 }
 
 export async function revalidateAllPlayers(): Promise<void> {
   await invalidate(KEY.playersSlim());
+}
+
+/**
+ * Drops the cached league list for an account. Without this, joining a league
+ * leaves it invisible for up to the userLeagues TTL, since every page reads the
+ * list through the cache and Sleeper is never asked again.
+ */
+export async function revalidateUserLeagues(
+  userId: string,
+  season: string,
+): Promise<void> {
+  await invalidate(KEY.userLeagues(userId, season));
 }
 
 // --- Drafts ---

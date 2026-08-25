@@ -3,9 +3,11 @@ import {
   getLeagueDrafts,
   getLeagueRosters,
   getLeagueUsers,
+  getUser,
   revalidateAllPlayers,
   revalidateDraft,
   revalidateLeague,
+  revalidateUserLeagues,
 } from "@/lib/sleeper/client";
 import {
   formatKeyFromLeague,
@@ -14,6 +16,12 @@ import {
   revalidatePicks,
   revalidateValues,
 } from "@/lib/rosteraudit/client";
+import { currentSeason } from "@/lib/league/discover";
+import { profileFromSleeper } from "@/lib/league/detect";
+import {
+  fcFormatFromProfile,
+  revalidateFCValues,
+} from "@/lib/fantasycalc/client";
 
 export const dynamic = "force-dynamic";
 
@@ -21,22 +29,42 @@ export const dynamic = "force-dynamic";
 // any data that responds to live league activity, then triggers a
 // re-fetch on next page render. Covers:
 //
-//   Sleeper:  league, rosters, users, traded picks, all NFL players,
-//             every draft + its picks for the league.
+//   Sleeper:  the account's league list, plus the league, rosters, users,
+//             traded picks, all NFL players, every draft + its picks.
 //   RA:       values for the league's format, picks (rolling 4-year
 //             window), movers, roster grades for every league member.
 //
 // Player profile / stats and KTC keep their own TTLs since they
 // don't depend on league state. League history likewise.
-export async function POST() {
-  const leagueId = process.env.SLEEPER_LEAGUE_ID;
+//
+// The body may carry { leagueId } so the button refreshes the league you are
+// actually looking at. Falls back to SLEEPER_LEAGUE_ID, which predates the
+// multi-league layer and is now only a default.
+export async function POST(request: Request) {
+  const body = await request
+    .json()
+    .catch(() => ({}) as Record<string, unknown>);
+  const requested =
+    typeof body?.leagueId === "string" ? body.leagueId : null;
+  const leagueId = requested ?? process.env.SLEEPER_LEAGUE_ID;
   if (!leagueId) {
     return Response.json(
-      { ok: false, error: "Missing SLEEPER_LEAGUE_ID" },
+      { ok: false, error: "No leagueId given and no SLEEPER_LEAGUE_ID set" },
       { status: 400 },
     );
   }
+
   try {
+    // The league list is dropped first and independently: a newly joined
+    // league is exactly the case where the rest of this lookup has nothing
+    // cached to clear, and it should still show up.
+    const username = process.env.SLEEPER_USERNAME;
+    const listTask = username
+      ? getUser(username)
+          .then((u) => revalidateUserLeagues(u.user_id, currentSeason()))
+          .catch(() => undefined)
+      : Promise.resolve();
+
     // Run Sleeper invalidations + RA-format lookup in parallel where we can.
     const [league, drafts, rosters, users] = await Promise.all([
       getLeague(leagueId).catch(() => null),
@@ -54,6 +82,7 @@ export async function POST() {
     }
 
     const tasks: Promise<unknown>[] = [
+      listTask,
       revalidateLeague(leagueId),
       revalidateAllPlayers(),
       revalidatePicks(),
@@ -61,14 +90,22 @@ export async function POST() {
       revalidateGrades(leagueId, [...userIds]),
     ];
     if (league) {
-      tasks.push(revalidateValues(formatKeyFromLeague(league)));
+      // Values come from whichever source the format reads: RosterAudit for
+      // dynasty, FantasyCalc for everything else. Busting only the dynasty one
+      // left a redraft board serving stale values for the whole 6-hour TTL.
+      const profile = profileFromSleeper(league);
+      if (profile.type === "dynasty") {
+        tasks.push(revalidateValues(formatKeyFromLeague(league)));
+      } else {
+        tasks.push(revalidateFCValues(fcFormatFromProfile(profile)));
+      }
     }
     for (const d of drafts) {
       tasks.push(revalidateDraft(d.draft_id));
     }
 
     await Promise.all(tasks);
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, leagueId });
   } catch (e) {
     return Response.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },

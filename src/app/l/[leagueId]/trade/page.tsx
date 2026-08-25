@@ -88,7 +88,7 @@ export default async function TradePage({
             <h1 className="text-3xl font-semibold tracking-tight">
               Trade analyzer
             </h1>
-            <RefreshButton />
+            <RefreshButton leagueId={leagueId} />
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {league.name} · {league.season}
