@@ -18,6 +18,7 @@ import {
   type TradeVerdict,
 } from "@/lib/dynasty/trade-recommender";
 import type { RAPick } from "@/lib/rosteraudit/types";
+import type { LeagueType } from "@/lib/league/types";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerLink } from "@/components/PlayerLink";
 
@@ -290,12 +291,26 @@ export default function TradeBuilder({
   myRosterId,
   picks,
   isSuperflex,
+  leagueType,
+  faabBudget,
+  faabByRosterId,
 }: {
   teams: TeamSummary[];
   myRosterId: number;
   picks: RAPick[];
   isSuperflex: boolean;
+  /** Decides which assets exist at all. Redraft has no rookie picks to trade. */
+  leagueType: LeagueType;
+  /** The league's FAAB budget, or null when it does not use one. */
+  faabBudget: number | null;
+  /** What each roster has left to spend. */
+  faabByRosterId: Record<number, number>;
 }) {
+  // Only a dynasty league has future rookie picks. Offering them anywhere else
+  // was the bug: a redraft trade screen let you build an offer around assets
+  // that do not exist, and would have had Jack proposing one to a leaguemate.
+  const tradesPicks = leagueType === "dynasty";
+  const tradesFaab = faabBudget !== null && faabBudget > 0;
   const myTeam = teams.find((t) => t.rosterId === myRosterId);
   const otherTeams = useMemo(
     () =>
@@ -311,6 +326,8 @@ export default function TradeBuilder({
   const [theirSel, setTheirSel] = useState<Set<string>>(new Set());
   const [myPickIds, setMyPickIds] = useState<Set<number>>(new Set());
   const [theirPickIds, setTheirPickIds] = useState<Set<number>>(new Set());
+  const [myFaab, setMyFaab] = useState<number>(0);
+  const [theirFaab, setTheirFaab] = useState<number>(0);
   const [myPosFilter, setMyPosFilter] = useState<string>("all");
   const [theirPosFilter, setTheirPosFilter] = useState<string>("all");
   const [hydrated, setHydrated] = useState(false);
@@ -1219,13 +1236,24 @@ export default function TradeBuilder({
           <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             You give ({mySel.size + myPickIds.size})
           </h2>
-          <PicksPanel
-            picks={picks}
-            picksById={picksById}
-            selected={myPickIds}
-            onToggle={(id) => togglePick(myPickIds, setMyPickIds, id)}
-            isSuperflex={isSuperflex}
-          />
+          {tradesPicks && (
+            <PicksPanel
+              picks={picks}
+              picksById={picksById}
+              selected={myPickIds}
+              onToggle={(id) => togglePick(myPickIds, setMyPickIds, id)}
+              isSuperflex={isSuperflex}
+            />
+          )}
+          {tradesFaab && (
+            <FaabPanel
+              label="FAAB you send"
+              amount={myFaab}
+              setAmount={setMyFaab}
+              available={faabByRosterId[myRosterId] ?? 0}
+              budget={faabBudget!}
+            />
+          )}
           <PositionFilter
             filter={myPosFilter}
             setFilter={setMyPosFilter}
@@ -1253,13 +1281,24 @@ export default function TradeBuilder({
             <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               You get ({theirSel.size + theirPickIds.size})
             </h2>
-            <PicksPanel
-              picks={picks}
-              picksById={picksById}
-              selected={theirPickIds}
-              onToggle={(id) => togglePick(theirPickIds, setTheirPickIds, id)}
-              isSuperflex={isSuperflex}
-            />
+            {tradesPicks && (
+              <PicksPanel
+                picks={picks}
+                picksById={picksById}
+                selected={theirPickIds}
+                onToggle={(id) => togglePick(theirPickIds, setTheirPickIds, id)}
+                isSuperflex={isSuperflex}
+              />
+            )}
+            {tradesFaab && (
+              <FaabPanel
+                label="FAAB you get"
+                amount={theirFaab}
+                setAmount={setTheirFaab}
+                available={faabByRosterId[partnerTeam.rosterId] ?? 0}
+                budget={faabBudget!}
+              />
+            )}
             <PositionFilter
               filter={theirPosFilter}
               setFilter={setTheirPosFilter}
@@ -1621,6 +1660,78 @@ function PicksPanel({
             {total.toLocaleString()}
           </span>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * FAAB, as a tradeable asset.
+ *
+ * Every one of Jack's leagues has a waiver budget and none of them could put it
+ * in a trade, which is the other half of the redraft problem: the screen offered
+ * the one asset that does not exist and hid the one that does.
+ *
+ * It deliberately does NOT fold the dollars into the value totals. There is no
+ * defensible rate for converting FAAB into player value: what a budget is worth
+ * depends on who hits waivers this season, which nobody knows in August. A made
+ * up conversion would look precise and be fiction, which is exactly the failure
+ * this app is built to avoid. So the money is tracked, shown next to the player
+ * value, and left for Jack to weigh.
+ */
+function FaabPanel({
+  label,
+  amount,
+  setAmount,
+  available,
+  budget,
+}: {
+  label: string;
+  amount: number;
+  setAmount: (n: number) => void;
+  available: number;
+  budget: number;
+}) {
+  const tooMuch = amount > available;
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          {label}
+        </span>
+        <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
+          ${available} of ${budget} left
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-zinc-400">$</span>
+        <input
+          type="number"
+          min={0}
+          max={available}
+          step={1}
+          value={amount === 0 ? "" : amount}
+          placeholder="0"
+          onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
+          className="w-24 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-sm tabular-nums dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        {amount > 0 && (
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            {Math.round((amount / budget) * 100)}% of the budget
+          </span>
+        )}
+      </div>
+      {tooMuch && (
+        <p className="text-xs font-medium text-amber-600 dark:text-amber-500">
+          That is more than the ${available} they have left.
+        </p>
+      )}
+      {amount > 0 && !tooMuch && (
+        <p className="text-[11px] leading-snug text-zinc-400 dark:text-zinc-600">
+          Not counted in the value totals. What a budget is worth depends on who
+          hits waivers this season, and a made up rate would look precise and be
+          fiction.
+        </p>
       )}
     </div>
   );

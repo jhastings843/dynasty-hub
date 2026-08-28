@@ -54,14 +54,28 @@ export default async function TradePage({
   const raFormat = formatKeyFromLeague(league);
   const isSuperflex = raFormat.startsWith("sf");
 
+  const profile = profileFromSleeper(league);
+
   const [me, rosters, users, players, fcValues, picks] = await Promise.all([
     getUser(username),
     getLeagueRosters(leagueId),
     getLeagueUsers(leagueId),
     getAllPlayers(),
-    getValuesForProfile(profileFromSleeper(league), league).then((r) => r.values),
-    getPicks(),
+    getValuesForProfile(profile, league).then((r) => r.values),
+    // Rookie picks exist in dynasty and nowhere else. Fetching them for a
+    // redraft league was not just wasted work, it fed a UI that offered them.
+    profile.type === "dynasty" ? getPicks() : Promise.resolve([]),
   ]);
+
+  // What each roster has left to spend, which is the budget minus what they have
+  // already used. Sleeper reports the spend, not the remainder.
+  const faabByRosterId: Record<number, number> = {};
+  if (profile.faab !== null) {
+    for (const r of rosters) {
+      const used = typeof r.settings?.waiver_budget_used === "number" ? r.settings.waiver_budget_used : 0;
+      faabByRosterId[r.roster_id] = Math.max(0, profile.faab - used);
+    }
+  }
 
   const myRoster = rosters.find((r) => r.owner_id === me.user_id);
   if (!myRoster) {
@@ -99,6 +113,9 @@ export default async function TradePage({
           myRosterId={myRoster.roster_id}
           picks={picks}
           isSuperflex={isSuperflex}
+          leagueType={profile.type}
+          faabBudget={profile.faab}
+          faabByRosterId={faabByRosterId}
         />
 
       </div>
