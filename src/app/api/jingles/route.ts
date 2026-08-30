@@ -30,6 +30,16 @@ export const dynamic = "force-dynamic";
 const MAX_LIMIT = 300;
 const DEFAULT_LIMIT = 25;
 
+// Normalised for name matching: case, punctuation and the generational suffixes
+// that the same player carries in one source and not the other.
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z ]/g, "")
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
 
@@ -44,11 +54,33 @@ export async function GET(request: Request) {
   const position = (params.get("position") ?? "").trim().toUpperCase();
   const wanted = position === "DEF" ? "DST" : position;
 
-  const matching = wanted
+  // Look a player up by name.
+  //
+  // Without this the only way to reach rank 93 was to pull 93 players, so on
+  // 2026-08-30 Jack asked Atlas "Tony Pollard or Josh Jacobs in redraft" and got
+  // "both sit somewhere below rank 57 and I cannot see their exact spots". The
+  // answer was in the list the whole time. Comma-separated so a comparison is
+  // one call rather than one per player.
+  const namesParam = (params.get("player") ?? params.get("q") ?? "").trim();
+  const names = namesParam
+    ? namesParam.split(",").map((n) => norm(n)).filter(Boolean)
+    : [];
+
+  const byPosition = wanted
     ? LAB_300.filter((e) => e.position.toUpperCase() === wanted)
     : LAB_300;
 
-  const players = matching.slice(0, limit).map((e) => {
+  // A name search returns everyone asked for, in rank order, and ignores the
+  // limit: asking for three players and being handed two because of a default
+  // page size is the kind of quiet truncation that started this.
+  const matching = names.length
+    ? byPosition.filter((e) => {
+        const n = norm(e.name);
+        return names.some((want) => n === want || n.includes(want) || want.includes(n));
+      })
+    : byPosition;
+
+  const players = (names.length ? matching : matching.slice(0, limit)).map((e) => {
     const call = CALLS_BY_SLEEPER_ID[e.sleeperId];
     return {
       rank: e.rank,
@@ -80,6 +112,14 @@ export async function GET(request: Request) {
     labUrl: LAB_300_URL,
     count: players.length,
     total: matching.length,
+    // Say when a name found nothing, rather than returning an empty list that
+    // reads like "he is not ranked" when it might be a spelling difference.
+    notFound: names.length
+      ? namesParam
+          .split(",")
+          .map((n) => n.trim())
+          .filter((n) => n && !players.some((p) => norm(p.name) === norm(n) || norm(p.name).includes(norm(n))))
+      : [],
     players,
   });
 }

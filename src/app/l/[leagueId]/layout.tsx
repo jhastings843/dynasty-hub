@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LeagueSwitcher } from "@/components/LeagueSwitcher";
+import { LeagueTypeProvider } from "@/components/LeagueTypeProvider";
 import { NavLink } from "@/components/NavLink";
 import { getMyLeagues, resolveLeague } from "@/lib/league/discover";
 import { leaguePath, toolsFor } from "@/lib/league/tools";
@@ -92,7 +93,7 @@ export default async function LeagueLayout({
       {league.source === "manual" ? (
         <ManualLeagueNotice name={league.name} />
       ) : (
-        children
+        <LeagueTypeProvider type={league.type}>{children}</LeagueTypeProvider>
       )}
     </>
   );
