@@ -11,23 +11,17 @@ import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
 import {
   JINGLES_CALLS,
-  LAB_300,
   LAB_300_POSTED,
   LAB_300_URL,
   LAB_300_VERSION,
   LAST_UPDATED,
 } from "@/lib/jingles/data";
 import type { LeagueProfile } from "@/lib/league/types";
+import { buildLiveBoard } from "@/lib/redraft/live-board";
 import {
-  attachRankings,
-  boardRank,
-  buildBoard,
   displayPositionRank,
-  openSlots,
   picksForSlot,
   projectPicks,
-  startablePositions,
-  type BoardPlayer,
 } from "@/lib/redraft/draft-board";
 import type { RAValuesBySleeperId } from "@/lib/rosteraudit/types";
 import {
@@ -94,72 +88,18 @@ export async function RedraftDraft({
 
   // Everything on the roster plus anything taken in this draft, de-duped.
   const mine = new Set<string>([...(myRoster?.players ?? []), ...myPickIds]);
-  const myPositions = [...mine]
-    .map((id) => players[id]?.position)
-    .filter((p): p is string => Boolean(p));
-
-  const needs = openSlots(profile.rosterPositions, myPositions);
-  // Only positions this league starts. A defense or kicker in a league with no
-  // slot for one is not a pick, it is noise on the board.
-  const startable = startablePositions(profile.rosterPositions);
-
-  // The whole pool, not rookies. Two sources, unioned: FantasyCalc for values,
-  // and his Lab 300 for the ranking plus the defenses and kickers FantasyCalc
-  // does not cover at all.
-  const taken = (id: string) => drafted.has(id) || mine.has(id);
-
-  const byId = new Map<string, BoardPlayer>();
-
-  for (const v of Object.values(values)) {
-    if (v.value <= 0 || taken(v.sleeperId)) continue;
-    if (!startable.has(v.position)) continue;
-    byId.set(
-      v.sleeperId,
-      attachRankings({
-        id: v.sleeperId,
-        name: v.name,
-        position: v.position,
-        team: v.team,
-        value: v.value,
-        overallRank: v.overallRank,
-        positionRank: v.positionRank,
-      }),
-    );
-  }
-
-  for (const e of LAB_300) {
-    if (taken(e.sleeperId) || byId.has(e.sleeperId)) continue;
-    // He writes DST where Sleeper's roster slot is DEF.
-    const position = e.position === "DST" ? "DEF" : e.position;
-    if (!startable.has(position)) continue;
-    byId.set(
-      e.sleeperId,
-      attachRankings({
-        id: e.sleeperId,
-        name: e.name,
-        position,
-        team: e.team,
-        value: 0,
-        overallRank: 0,
-        positionRank: e.positionRank,
-      }),
-    );
-  }
-
-  const pool: BoardPlayer[] = [...byId.values()];
-
-  // FantasyCalc's redraft set covers QB, RB, WR, and TE only. A league that
-  // starts a DEF or K has slots this board can never fill, so say so instead
-  // of leaving them permanently open with no candidates.
-  const covered = new Set(pool.map((p) => p.position));
-  const uncoveredSlots = needs.filter(
-    (n) => !n.eligible.some((pos) => covered.has(pos)),
-  );
-
-  const board = buildBoard(pool, needs, 5);
-  const bestAvailable = [...pool]
-    .sort((a, b) => boardRank(a) - boardRank(b))
-    .slice(0, 25);
+  // The board itself is lib/redraft/live-board.ts, shared with /api/draft.
+  // Two implementations of "best available" that drift is worse than not having
+  // the second one: Jack's phone would quietly disagree with this screen while
+  // he is on the clock.
+  const { needs, uncoveredSlots, board, bestAvailable, pool } = buildLiveBoard({
+    rosterPositions: profile.rosterPositions,
+    draftedIds: drafted,
+    myIds: mine,
+    positionById: (id) => players[id]?.position ?? undefined,
+    values,
+    limit: 5,
+  });
 
   // His calls are ADP-relative, which is exactly what a draft board wants.
   // Split into who is still on the table and who to let someone else take.
