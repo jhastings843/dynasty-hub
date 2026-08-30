@@ -1,6 +1,15 @@
 # Yahoo as a second league source
 
-Status: approved, not yet built
+Status: PARKED 2026-08-30, not built and not planned.
+
+Yahoo gates the Fantasy Sports API behind an approval queue. The app was
+created and works (token exchange succeeds, oob is accepted, a refresh token is
+issued), but the fantasy endpoint answers 401 with
+`oauth_problem="additional_authorization_required"` and `scope=fspt-r` is
+refused at the authorize endpoint with `invalid_scope`. Access requires an
+application at sports.yahoo.com/developer/access/ and a wait measured in weeks.
+Jack called it off rather than wait. This document is kept because the findings
+below cost real time to establish and would have to be rediscovered otherwise.
 Supersedes nothing. Extends the 2026-08-14 multi-league design, which assumed
 Sleeper was the only automatic source.
 
