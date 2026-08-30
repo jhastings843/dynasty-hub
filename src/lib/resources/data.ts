@@ -123,7 +123,7 @@ export const RESOURCES: Resource[] = [
     formats: ["redraft"],
     status: ["integrated", "free"],
     featured: true,
-    note: "Half-PPR redraft research. The Lab 300 is his tiered top-300 ranking, shipped 2026-08-16 and updated through the preseason; Fantasy Hub orders the redraft draft board by it. He also posts players he is high and low on versus ADP and single-player deep dives ending in a league-winner verdict. Updates often, so check the sub for anything newer than what Fantasy Hub has pulled in. Also @JinglesLabs on TikTok, X, and Instagram.",
+    note: "Half-PPR redraft research, and redraft or guillotine only: none of it is a dynasty opinion, because a redraft rank is a bet on four months and a dynasty value is a bet on three years. The Lab 300 is his tiered top-300 ranking, version 2.0 posted 2026-08-30; Fantasy Hub orders the redraft draft board by it. He also posts players he is high and low on versus ADP and single-player deep dives ending in a league-winner verdict. Updates often, so check the sub for anything newer than what Fantasy Hub has pulled in. Also @JinglesLabs on TikTok, X, and Instagram.",
   },
   {
     name: "FantasyPros weekly half-PPR rankings",
@@ -547,7 +547,7 @@ export const RESOURCES: Resource[] = [
     category: "rookie_draft_prep",
     formats: ["dynasty"],
     status: ["free"],
-    note: "Verify URL — FantasyCalc rookie page may live elsewhere.",
+    note: "Verify URL: FantasyCalc rookie page may live elsewhere.",
   },
   {
     name: "Dynasty Data Lab",
@@ -563,7 +563,7 @@ export const RESOURCES: Resource[] = [
     category: "rookie_draft_prep",
     formats: ["dynasty"],
     status: ["outdated"],
-    note: "Source unclear from notes — fill in URL when confirmed.",
+    note: "Source unclear from notes, fill in URL when confirmed.",
   },
 
   // --- ADP ---
@@ -598,7 +598,7 @@ export const RESOURCES: Resource[] = [
     category: "mock_draft",
     formats: ["dynasty"],
     status: ["outdated"],
-    note: "Couldn't find a canonical URL — fill in when confirmed.",
+    note: "Couldn't find a canonical URL, fill in when confirmed.",
   },
 
   // --- Survivor pool tools ---

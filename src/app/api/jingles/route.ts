@@ -1,6 +1,7 @@
 import {
   CALLS_BY_SLEEPER_ID,
   LAB_300,
+  LAB_300_APPLIES_TO,
   LAB_300_POSTED,
   LAB_300_URL,
   LAB_300_VERSION,
@@ -20,6 +21,12 @@ export const dynamic = "force-dynamic";
 //
 // Read only, and public like the rest of this app's API. Every entry already
 // carries the post it came from, because it is research Jingles publishes.
+//
+// The response says which formats this applies to, and it is not decoration.
+// Atlas reads this endpoint and cannot see the league a question is about, so
+// without `appliesTo` in the payload the natural thing for it to do is quote a
+// redraft rank at a dynasty trade. These are half-PPR redraft rankings: a bet
+// on the next four months, not on the next three years.
 const MAX_LIMIT = 300;
 const DEFAULT_LIMIT = 25;
 
@@ -64,6 +71,9 @@ export async function GET(request: Request) {
 
   return Response.json({
     ok: true,
+    appliesTo: LAB_300_APPLIES_TO,
+    scopeNote:
+      "Half-PPR redraft rankings. They apply to redraft and guillotine leagues only, and are not a dynasty opinion: do not use them for dynasty values or dynasty trades.",
     updated: LAST_UPDATED,
     labVersion: LAB_300_VERSION,
     labPosted: LAB_300_POSTED,

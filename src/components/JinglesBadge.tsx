@@ -2,6 +2,7 @@ import {
   CALLS_BY_SLEEPER_ID,
   LAST_UPDATED,
   type JinglesVerdict,
+  jinglesAppliesTo,
 } from "@/lib/jingles/data";
 import type { LeagueType } from "@/lib/league/types";
 
@@ -11,8 +12,10 @@ import type { LeagueType } from "@/lib/league/types";
 // His research is half-PPR redraft. A redraft fade says nothing about a
 // player's dynasty value, so these render only in non-dynasty leagues.
 
+// The rule lives in the data module, next to the research it governs, so this
+// component and the API cannot come to different conclusions about it.
 function appliesTo(type: LeagueType | undefined): boolean {
-  return type !== undefined && type !== "dynasty";
+  return jinglesAppliesTo(type);
 }
 
 const STYLE: Record<JinglesVerdict, string> = {
