@@ -57,10 +57,35 @@ export async function GET(request: Request) {
   // means "yes, send this week's guide a second time", which is a rarer and
   // more annoying thing to do by accident.
   const resend = params.get("resend") === "1";
+  const check = params.get("check") === "1";
   const requested = (params.get("league") ?? "").trim();
 
   const sendDay = configuredSendDay();
   const today = dayInNewYork(new Date());
+
+  // ?check=1 answers "is this actually going to work on Tuesday" without
+  // sending anything. Worth having: every failure mode here is silent by
+  // design, so the only alternative to a check is a missing email nobody
+  // notices until the week is over. Reports presence, never values.
+  if (check) {
+    const from = process.env.FAAB_EMAIL_FROM ?? null;
+    const to = process.env.FAAB_EMAIL_TO ?? null;
+    return Response.json({
+      ok: true,
+      willSend: Boolean(process.env.RESEND_API_KEY && to),
+      config: {
+        resendKey: process.env.RESEND_API_KEY ? "set" : "MISSING",
+        // The recipient and sender are Jack's own addresses and the whole
+        // point of the check is confirming they are the right ones, so these
+        // are shown. The API key never is.
+        to: to ?? "MISSING",
+        from: from ?? "onboarding@resend.dev (fallback)",
+        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "(default)",
+        cronSecret: process.env.CRON_SECRET ? "set" : "open",
+      },
+      schedule: { sendDay: DAYS[sendDay], today: DAYS[today] },
+    });
+  }
   if (!force && !dry && today !== sendDay) {
     return Response.json({
       ok: true,
