@@ -2,6 +2,7 @@ import { getMyLeagues } from "@/lib/league/discover";
 import { getUser } from "@/lib/sleeper/client";
 import { getRosterGrades } from "@/lib/rosteraudit/client";
 import { recordGradeSnapshot, snapshotDate } from "@/lib/history/grades";
+import { ingestJingles } from "@/lib/jingles/ingest";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,19 @@ export async function GET(request: Request) {
       }),
     );
 
-    return Response.json({ ok: true, date: snapshotDate(), results });
+    // Pull anything new from Jingles Labs on the same run. This rides along
+    // here rather than on a schedule of its own because Vercel Hobby allows two
+    // cron jobs and both are spoken for; he posts a few times a week, so daily
+    // is ample. A failure is reported, never fatal: the grade snapshot is the
+    // job this route exists to do.
+    let jingles: unknown;
+    try {
+      jingles = await ingestJingles();
+    } catch (e) {
+      jingles = { error: e instanceof Error ? e.message : String(e) };
+    }
+
+    return Response.json({ ok: true, date: snapshotDate(), results, jingles });
   } catch (e) {
     return Response.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },

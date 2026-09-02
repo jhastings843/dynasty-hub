@@ -57,16 +57,34 @@ export function boardRank(p: BoardPlayer): number {
   return 300 + (p.overallRank || 9999);
 }
 
+/**
+ * The ranking list a board is being built against.
+ *
+ * Passed in rather than imported so a league can be shown the list matching its
+ * own scoring. Omitting it keeps the shipped half-PPR research, which is what
+ * every caller did before there was more than one list to choose from.
+ */
+export interface RankingSource {
+  byId: Record<string, { rank: number; positionRank: number }>;
+  tierFor: (sleeperId: string) => string | null;
+}
+
+const SHIPPED: RankingSource = {
+  byId: LAB_300_BY_SLEEPER_ID,
+  tierFor: lab300Tier,
+};
+
 export function attachRankings(
   base: Omit<BoardPlayer, "jingles" | "labRank" | "labPositionRank" | "labTier">,
+  rankings: RankingSource = SHIPPED,
 ): BoardPlayer {
-  const lab = LAB_300_BY_SLEEPER_ID[base.id] ?? null;
+  const lab = rankings.byId[base.id] ?? null;
   return {
     ...base,
     jingles: CALLS_BY_SLEEPER_ID[base.id] ?? null,
     labRank: lab?.rank ?? null,
     labPositionRank: lab?.positionRank ?? null,
-    labTier: lab300Tier(base.id),
+    labTier: rankings.tierFor(base.id),
   };
 }
 

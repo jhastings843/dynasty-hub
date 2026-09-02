@@ -11,6 +11,7 @@ import {
 import { displayPositionRank } from "@/lib/redraft/draft-board";
 import { buildLiveBoard, neededPositionList } from "@/lib/redraft/live-board";
 import { jinglesAppliesTo, LAB_300_APPLIES_TO } from "@/lib/jingles/data";
+import { activeLab } from "@/lib/jingles/active";
 import { scoringSkewNotes } from "@/lib/guillotine/scoring";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     }, { status: 409 });
   }
 
-  const [me, drafts, rosters, players, valueSet, rawLeague] = await Promise.all([
+  const [me, drafts, rosters, players, valueSet, rawLeague, lab] = await Promise.all([
     getUser(username),
     getLeagueDrafts(leagueId),
     getLeagueRosters(leagueId),
@@ -72,6 +73,8 @@ export async function GET(request: Request) {
     // Cached, so asking a second time costs nothing. Needed for the scoring
     // notes, which the profile flattens too far to reconstruct.
     getLeague(leagueId).catch(() => null),
+    // His rankings for THIS league's scoring, when one has been ingested.
+    activeLab(league),
   ]);
 
   const draft = drafts[0] ?? null;
@@ -80,6 +83,8 @@ export async function GET(request: Request) {
   const myPickIds = picks.filter((p) => p.picked_by === me.user_id).map((p) => p.player_id);
 
   const board = buildLiveBoard({
+    labList: lab.list,
+    rankings: { byId: lab.byId, tierFor: lab.tierFor },
     rosterPositions: league.rosterPositions,
     draftedIds: picks.map((p) => p.player_id),
     myIds: [...(myRoster?.players ?? []), ...myPickIds],
@@ -107,7 +112,23 @@ export async function GET(request: Request) {
     // worth naming, and the page said so while this route did not. Atlas reads
     // this route and cannot see the league settings, so without these notes it
     // would quote a half-PPR rank at a full-PPR draft and sound certain.
-    scoringNotes: scoringSkewNotes(rawLeague?.scoring_settings ?? {}),
+    scoringNotes: [
+      ...scoringSkewNotes(rawLeague?.scoring_settings ?? {}),
+      // A skew note is only true while the list is the wrong one for this
+      // league. Once his matching list is ingested, say so instead.
+      ...(lab.matchesLeagueScoring
+        ? [`Ranked on his ${lab.scoring.replace("_", " ")} list, which matches this league's scoring.`]
+        : []),
+    ],
+    rankings: {
+      source: lab.source,
+      scoring: lab.scoring,
+      matchesLeagueScoring: lab.matchesLeagueScoring,
+      title: lab.title,
+      url: lab.url,
+      postedAt: lab.postedAt,
+      players: lab.list.length,
+    },
     league: { id: leagueId, name: league.name, type: league.type },
     draft: draft
       ? {

@@ -12,6 +12,7 @@
 // Pure. Everything it needs is passed in, so it can be tested without Sleeper.
 
 import { LAB_300, type Lab300Entry } from "@/lib/jingles/data";
+import type { RankingSource } from "./draft-board";
 import {
   attachRankings,
   boardRank,
@@ -40,6 +41,13 @@ export interface LiveBoardInput {
   >;
   /** How many recommendations to build. */
   limit?: number;
+  /**
+   * The ranking list to build the board from. Omit for the shipped half-PPR
+   * research; pass a league's own scoring list once one has been ingested.
+   */
+  labList?: Lab300Entry[];
+  /** Rank and tier lookups matching labList. */
+  rankings?: RankingSource;
 }
 
 export interface LiveBoard {
@@ -61,6 +69,15 @@ export interface LiveBoard {
 const labPosition = (e: Lab300Entry) => (e.position === "DST" ? "DEF" : e.position);
 
 export function buildLiveBoard(input: LiveBoardInput): LiveBoard {
+  // The list this board ranks on. Defaults to the shipped half-PPR research so
+  // every existing caller behaves exactly as before; a league whose scoring has
+  // its own list passes that instead.
+  const labList: Lab300Entry[] = input.labList ?? LAB_300;
+  const rankings: RankingSource | undefined = input.rankings;
+  const attach = (
+    base: Parameters<typeof attachRankings>[0],
+  ) => (rankings ? attachRankings(base, rankings) : attachRankings(base));
+
   const drafted = new Set(input.draftedIds);
   const mine = new Set(input.myIds);
 
@@ -79,14 +96,14 @@ export function buildLiveBoard(input: LiveBoardInput): LiveBoard {
   const byId = new Map<string, BoardPlayer>();
   for (const v of Object.values(input.values)) {
     if (v.value <= 0 || taken(v.sleeperId) || !startable.has(v.position)) continue;
-    byId.set(v.sleeperId, attachRankings({ ...v, id: v.sleeperId }));
+    byId.set(v.sleeperId, attach({ ...v, id: v.sleeperId }));
   }
-  for (const e of LAB_300) {
+  for (const e of labList) {
     const position = labPosition(e);
     if (taken(e.sleeperId) || byId.has(e.sleeperId) || !startable.has(position)) continue;
     byId.set(
       e.sleeperId,
-      attachRankings({
+      attach({
         id: e.sleeperId,
         name: e.name,
         position,
