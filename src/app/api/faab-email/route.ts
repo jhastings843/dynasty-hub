@@ -44,48 +44,57 @@ function dayInNewYork(now: Date): number {
   return DAYS.indexOf(weekday);
 }
 
+/** jackhastings00@gmail.com becomes ja***@gmail.com. */
+function maskAddress(value: string | null): string {
+  if (!value) return "MISSING";
+  return value.replace(/([^@<\s]{1,2})[^@<\s]*@/g, "$1***@");
+}
+
 export async function GET(request: Request) {
+  const params = new URL(request.url).searchParams;
+
+  // The readiness check runs BEFORE the cron guard on purpose. Vercel will not
+  // hand back a sensitive variable's value, so CRON_SECRET cannot be read back
+  // out to call this route by hand, which would leave the one question that
+  // matters ("will Tuesday work") unanswerable from a browser. It reports
+  // presence only, and masks the addresses, so what it exposes is that this app
+  // sends mail, which is not worth protecting.
+  if (params.get("check") === "1") {
+    const to = process.env.FAAB_EMAIL_TO ?? null;
+    const sendDay = configuredSendDay();
+    return Response.json({
+      ok: true,
+      willSend: Boolean(process.env.RESEND_API_KEY && to),
+      config: {
+        resendKey: process.env.RESEND_API_KEY ? "set" : "MISSING",
+        to: maskAddress(to),
+        from: maskAddress(process.env.FAAB_EMAIL_FROM ?? null),
+        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "(default)",
+        cronSecret: process.env.CRON_SECRET ? "set" : "open",
+      },
+      schedule: {
+        sendDay: DAYS[sendDay],
+        today: DAYS[dayInNewYork(new Date())],
+      },
+    });
+  }
+
   const secret = process.env.CRON_SECRET;
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const params = new URL(request.url).searchParams;
   const force = params.get("force") === "1";
   const dry = params.get("dry") === "1";
   // Deliberately separate from force. Force means "ignore the schedule"; resend
   // means "yes, send this week's guide a second time", which is a rarer and
   // more annoying thing to do by accident.
   const resend = params.get("resend") === "1";
-  const check = params.get("check") === "1";
   const requested = (params.get("league") ?? "").trim();
 
   const sendDay = configuredSendDay();
   const today = dayInNewYork(new Date());
 
-  // ?check=1 answers "is this actually going to work on Tuesday" without
-  // sending anything. Worth having: every failure mode here is silent by
-  // design, so the only alternative to a check is a missing email nobody
-  // notices until the week is over. Reports presence, never values.
-  if (check) {
-    const from = process.env.FAAB_EMAIL_FROM ?? null;
-    const to = process.env.FAAB_EMAIL_TO ?? null;
-    return Response.json({
-      ok: true,
-      willSend: Boolean(process.env.RESEND_API_KEY && to),
-      config: {
-        resendKey: process.env.RESEND_API_KEY ? "set" : "MISSING",
-        // The recipient and sender are Jack's own addresses and the whole
-        // point of the check is confirming they are the right ones, so these
-        // are shown. The API key never is.
-        to: to ?? "MISSING",
-        from: from ?? "onboarding@resend.dev (fallback)",
-        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "(default)",
-        cronSecret: process.env.CRON_SECRET ? "set" : "open",
-      },
-      schedule: { sendDay: DAYS[sendDay], today: DAYS[today] },
-    });
-  }
   if (!force && !dry && today !== sendDay) {
     return Response.json({
       ok: true,
