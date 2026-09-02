@@ -2,6 +2,7 @@ import { getMyLeagues } from "@/lib/league/discover";
 import { buildWeeklyReport } from "@/lib/guillotine/report";
 import { emailSubject, renderEmail } from "@/lib/guillotine/email";
 import { sendEmail } from "@/lib/guillotine/send";
+import { alreadySent, clearSent, recordSent } from "@/lib/guillotine/sent-log";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,10 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const force = params.get("force") === "1";
   const dry = params.get("dry") === "1";
+  // Deliberately separate from force. Force means "ignore the schedule"; resend
+  // means "yes, send this week's guide a second time", which is a rarer and
+  // more annoying thing to do by accident.
+  const resend = params.get("resend") === "1";
   const requested = (params.get("league") ?? "").trim();
 
   const sendDay = configuredSendDay();
@@ -122,7 +127,31 @@ export async function GET(request: Request) {
     });
   }
 
+  const season = report.league.season;
+
+  if (resend) {
+    await clearSent(leagueId, season, report.week);
+  } else {
+    const previous = await alreadySent(leagueId, season, report.week);
+    if (previous) {
+      return Response.json({
+        ok: true,
+        skipped: true,
+        reason: `Week ${report.week} already went out at ${previous.sentAt} ("${previous.subject}"). Add ?resend=1 to send it again.`,
+      });
+    }
+  }
+
   const result = await sendEmail(subject, html);
+
+  if (result.sent) {
+    await recordSent(leagueId, season, report.week, {
+      sentAt: new Date().toISOString(),
+      subject,
+      messageId: result.id,
+    });
+  }
+
   return Response.json({
     ok: result.sent,
     league: report.league.name,

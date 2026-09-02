@@ -46,6 +46,7 @@ function fallbackReport(
     league: {
       id: "",
       name: "",
+      season: "",
       teams: 0,
       teamsAlive: 0,
       budget: 0,
@@ -107,6 +108,7 @@ function identity(profile: LeagueProfile): Partial<WeeklyFaabReport> {
     league: {
       id: profile.id,
       name: profile.name,
+      season: profile.season,
       teams: profile.teams,
       teamsAlive: profile.teams,
       budget: profile.faab ?? 0,
@@ -332,6 +334,7 @@ export async function buildWeeklyReport(leagueId: string): Promise<WeeklyFaabRep
     league: {
       id: profile.id,
       name: profile.name,
+      season: profile.season,
       teams: profile.teams,
       teamsAlive: state.aliveRosterIds.length,
       budget: budgetTotal,

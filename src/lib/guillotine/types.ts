@@ -80,6 +80,7 @@ export interface WeeklyFaabReport {
   league: {
     id: string;
     name: string;
+    season: string;
     teams: number;
     teamsAlive: number;
     budget: number;
