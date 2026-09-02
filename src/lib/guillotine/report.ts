@@ -15,6 +15,7 @@ import { getByeWeeks, getSeasonRates, getWeekProjections } from "./projections";
 import { buildBidCard, finalFourBars } from "./recommend";
 import { snapshotFrom } from "./roster-diff";
 import { scoringSkewNotes } from "./scoring";
+import type { LeagueProfile } from "@/lib/league/types";
 import type { PoolPlayer, WeeklyFaabReport } from "./types";
 
 // The one assembly. The page, the API and the email all call this, so a number
@@ -100,6 +101,21 @@ function fallbackReport(
   };
 }
 
+/** Enough of the league for a no-advice report to still name itself. */
+function identity(profile: LeagueProfile): Partial<WeeklyFaabReport> {
+  return {
+    league: {
+      id: profile.id,
+      name: profile.name,
+      teams: profile.teams,
+      teamsAlive: profile.teams,
+      budget: profile.faab ?? 0,
+      scoringNotes: [],
+      tradesDisabled: false,
+    },
+  };
+}
+
 export async function buildWeeklyReport(leagueId: string): Promise<WeeklyFaabReport> {
   const league = await getLeague(leagueId);
   const profile = profileFromSleeper(league);
@@ -108,6 +124,7 @@ export async function buildWeeklyReport(leagueId: string): Promise<WeeklyFaabRep
     return fallbackReport(
       "not_guillotine",
       `${profile.name} is a ${profile.type} league. FAAB advice in this shape only applies to a guillotine league, where a chopped roster hits waivers every week and the money never comes back.`,
+      identity(profile),
     );
   }
 
@@ -115,6 +132,7 @@ export async function buildWeeklyReport(leagueId: string): Promise<WeeklyFaabRep
     return fallbackReport(
       "pre_draft",
       `${profile.name} has not drafted yet, so there is no roster to protect and no pool to bid into. This turns on the week after the draft.`,
+      identity(profile),
     );
   }
 

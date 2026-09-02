@@ -44,7 +44,8 @@ function escapeHtml(value: string): string {
 /** Subject line. Leads with the decision, because that is all the list shows. */
 export function emailSubject(report: WeeklyFaabReport): string {
   if (report.state !== "ok") {
-    return `Week ${report.week} FAAB: nothing to advise`;
+    const who = report.league.name || "Guillotine";
+    return `${who}: no FAAB advice yet`;
   }
   const verdict = POSTURE_COLOR[report.posture.posture].label;
   const risk = report.risk.myChopProbability;

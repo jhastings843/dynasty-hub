@@ -11,6 +11,7 @@ import {
 import { displayPositionRank } from "@/lib/redraft/draft-board";
 import { buildLiveBoard, neededPositionList } from "@/lib/redraft/live-board";
 import { jinglesAppliesTo, LAB_300_APPLIES_TO } from "@/lib/jingles/data";
+import { scoringSkewNotes } from "@/lib/guillotine/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
     }, { status: 409 });
   }
 
-  const [me, drafts, rosters, players, valueSet] = await Promise.all([
+  const [me, drafts, rosters, players, valueSet, rawLeague] = await Promise.all([
     getUser(username),
     getLeagueDrafts(leagueId),
     getLeagueRosters(leagueId),
@@ -68,6 +69,9 @@ export async function GET(request: Request) {
       .then((raw) => getValuesForProfile(league, raw))
       .then((r) => r.values)
       .catch(() => ({})),
+    // Cached, so asking a second time costs nothing. Needed for the scoring
+    // notes, which the profile flattens too far to reconstruct.
+    getLeague(leagueId).catch(() => null),
   ]);
 
   const draft = drafts[0] ?? null;
@@ -98,6 +102,12 @@ export async function GET(request: Request) {
   return Response.json({
     ok: true,
     appliesTo: LAB_300_APPLIES_TO,
+    // The board is ordered by the Lab 300, which is HALF-PPR research. When the
+    // league is not half PPR that ordering is systematically off in a direction
+    // worth naming, and the page said so while this route did not. Atlas reads
+    // this route and cannot see the league settings, so without these notes it
+    // would quote a half-PPR rank at a full-PPR draft and sound certain.
+    scoringNotes: scoringSkewNotes(rawLeague?.scoring_settings ?? {}),
     league: { id: leagueId, name: league.name, type: league.type },
     draft: draft
       ? {

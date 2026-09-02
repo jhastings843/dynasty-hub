@@ -14,14 +14,33 @@ export const dynamic = "force-dynamic";
 // is not a missed week, since ?force=1 sends on demand.
 //
 // Preview it without sending with ?dry=1, which returns the HTML.
-const SEND_DAY = 2; // Tuesday, in America/New_York.
+//
+// The send day is configurable because the one thing nobody can tell us yet is
+// when the commissioner actually drops the chopped roster. Tuesday is the
+// default and the right guess, but when that time is confirmed the fix should
+// be one environment variable, not a deploy.
+const DAYS = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+];
+const DEFAULT_SEND_DAY = 2; // Tuesday, in America/New_York.
+
+function configuredSendDay(): number {
+  const raw = (process.env.FAAB_EMAIL_DAY ?? "").trim();
+  if (!raw) return DEFAULT_SEND_DAY;
+
+  const asNumber = Number(raw);
+  if (Number.isInteger(asNumber) && asNumber >= 0 && asNumber <= 6) return asNumber;
+
+  const byName = DAYS.findIndex((d) => d.toLowerCase().startsWith(raw.slice(0, 3).toLowerCase()));
+  return byName >= 0 ? byName : DEFAULT_SEND_DAY;
+}
 
 function dayInNewYork(now: Date): number {
   const weekday = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
-    weekday: "short",
+    weekday: "long",
   }).format(now);
-  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekday);
+  return DAYS.indexOf(weekday);
 }
 
 export async function GET(request: Request) {
@@ -35,12 +54,13 @@ export async function GET(request: Request) {
   const dry = params.get("dry") === "1";
   const requested = (params.get("league") ?? "").trim();
 
+  const sendDay = configuredSendDay();
   const today = dayInNewYork(new Date());
-  if (!force && !dry && today !== SEND_DAY) {
+  if (!force && !dry && today !== sendDay) {
     return Response.json({
       ok: true,
       skipped: true,
-      reason: `The guide goes out on Tuesday and today is not Tuesday. Add ?force=1 to send anyway.`,
+      reason: `The guide goes out on ${DAYS[sendDay]} and today is ${DAYS[today]}. Add ?force=1 to send anyway.`,
     });
   }
 
@@ -78,9 +98,11 @@ export async function GET(request: Request) {
     );
   }
 
-  // A report with nothing to say is not worth an email. Before the draft and on
-  // a week with no projections there is no advice, only an apology.
-  if (report.state !== "ok" && !dry) {
+  // A report with nothing to say is not worth an email on a schedule. Before the
+  // draft and on a week with no projections there is no advice, only an apology.
+  // A forced run is different: someone asked for it by hand, usually to prove
+  // the plumbing works, and silence is the wrong answer to that.
+  if (report.state !== "ok" && !dry && !force) {
     return Response.json({
       ok: true,
       skipped: true,
