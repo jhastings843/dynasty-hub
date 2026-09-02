@@ -1,0 +1,113 @@
+import { getMyLeagues } from "@/lib/league/discover";
+import { buildWeeklyReport } from "@/lib/guillotine/report";
+import { emailSubject, renderEmail } from "@/lib/guillotine/email";
+import { sendEmail } from "@/lib/guillotine/send";
+
+export const dynamic = "force-dynamic";
+
+// GET /api/faab-email - the Tuesday guide, in Jack's inbox.
+//
+// Vercel Hobby runs one cron a day, so this runs daily and decides for itself
+// whether today is the day. Tuesday is the target: Monday night football is
+// played, the chop is known, the commissioner has dropped the roster, and there
+// is a full day before bids process. Running daily also means a missed Tuesday
+// is not a missed week, since ?force=1 sends on demand.
+//
+// Preview it without sending with ?dry=1, which returns the HTML.
+const SEND_DAY = 2; // Tuesday, in America/New_York.
+
+function dayInNewYork(now: Date): number {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+  }).format(now);
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekday);
+}
+
+export async function GET(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+    return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const params = new URL(request.url).searchParams;
+  const force = params.get("force") === "1";
+  const dry = params.get("dry") === "1";
+  const requested = (params.get("league") ?? "").trim();
+
+  const today = dayInNewYork(new Date());
+  if (!force && !dry && today !== SEND_DAY) {
+    return Response.json({
+      ok: true,
+      skipped: true,
+      reason: `The guide goes out on Tuesday and today is not Tuesday. Add ?force=1 to send anyway.`,
+    });
+  }
+
+  // Find the guillotine league rather than being told which one it is: the
+  // league id changes every season and a hardcoded one would quietly send last
+  // season's report forever.
+  let leagueId = requested;
+  if (!leagueId) {
+    try {
+      const leagues = await getMyLeagues();
+      const guillotine = leagues.filter((l) => l.type === "guillotine");
+      if (guillotine.length === 0) {
+        return Response.json({
+          ok: true,
+          skipped: true,
+          reason: "No guillotine league on this account for the current season.",
+        });
+      }
+      leagueId = guillotine[0].id;
+    } catch (e) {
+      return Response.json(
+        { ok: false, error: `Could not list leagues: ${(e as Error).message}` },
+        { status: 502 },
+      );
+    }
+  }
+
+  let report;
+  try {
+    report = await buildWeeklyReport(leagueId);
+  } catch (e) {
+    return Response.json(
+      { ok: false, error: `Could not build the report: ${(e as Error).message}` },
+      { status: 502 },
+    );
+  }
+
+  // A report with nothing to say is not worth an email. Before the draft and on
+  // a week with no projections there is no advice, only an apology.
+  if (report.state !== "ok" && !dry) {
+    return Response.json({
+      ok: true,
+      skipped: true,
+      state: report.state,
+      reason: report.message,
+    });
+  }
+
+  const subject = emailSubject(report);
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://fantasy-hub-tan.vercel.app";
+  const html = renderEmail(report, appUrl);
+
+  if (dry) {
+    return new Response(html, {
+      headers: { "content-type": "text/html; charset=utf-8" },
+    });
+  }
+
+  const result = await sendEmail(subject, html);
+  return Response.json({
+    ok: result.sent,
+    league: report.league.name,
+    week: report.week,
+    subject,
+    posture: report.posture.posture,
+    spend: Math.round(report.card.maxPossibleSpend),
+    ...(result.sent ? { id: result.id } : { error: result.reason }),
+  });
+}

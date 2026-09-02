@@ -20,6 +20,10 @@ export const TOOLS: ToolDef[] = [
   { key: "draft", label: "Draft", segment: "draft", types: ALL },
   // Guillotine has no trades under standard rules.
   { key: "trade", label: "Trade", segment: "trade", types: ["dynasty", "redraft"] },
+  // The inverse: FAAB is the only way to acquire anyone in a guillotine league,
+  // and the money never comes back, so the weekly bid decision earns its own
+  // tool there and means nothing anywhere else.
+  { key: "faab", label: "FAAB", segment: "faab", types: ["guillotine"] },
   { key: "players", label: "Players", segment: "players", types: ALL },
 ];
 

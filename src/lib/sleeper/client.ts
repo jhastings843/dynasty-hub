@@ -25,6 +25,7 @@ const KEY = {
   tradedPicks: (id: string) => `sleeper:v2:league:${id}:traded_picks`,
   userLeagues: (userId: string, season: string) =>
     `sleeper:v1:user:${userId}:leagues:nfl:${season}`,
+  nflState: () => `sleeper:v1:state:nfl`,
 };
 
 // TTLs are aggressive on anything that responds to live league
@@ -49,6 +50,9 @@ const TTL = {
   // catch up without manual refresh.
   tradedPicks: 60 * 60,
   userLeagues: 6 * 60 * 60,
+  // The NFL week only turns over once a week, but a stale week number would
+  // point every projection lookup at the wrong slate, so this stays short.
+  nflState: 30 * 60,
 };
 
 async function sleeperFetch<T>(path: string): Promise<T> {
@@ -187,5 +191,20 @@ export function getUserLeagues(
 ): Promise<SleeperLeague[]> {
   return cached(KEY.userLeagues(userId, season), TTL.userLeagues, () =>
     sleeperFetch<SleeperLeague[]>(`/user/${userId}/leagues/nfl/${season}`),
+  );
+}
+
+export interface SleeperNflState {
+  week: number;
+  season: string;
+  season_type: string;
+  display_week?: number;
+  season_start_date?: string;
+}
+
+/** The current NFL week and season, straight from Sleeper. */
+export function getNflState(): Promise<SleeperNflState> {
+  return cached(KEY.nflState(), TTL.nflState, () =>
+    sleeperFetch<SleeperNflState>(`/state/nfl`),
   );
 }

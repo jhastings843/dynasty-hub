@@ -7,13 +7,20 @@ const SLEEPER_TYPE: Record<number, LeagueType> = {
   0: "redraft",
   1: "dynasty", // keeper: strategy is far closer to dynasty than to redraft
   2: "dynasty",
+  // Sleeper added a native guillotine format and never documented the code.
+  // Their API reference still lists only 0, 1 and 2, and their own help article
+  // still says they do not support the format, but a guillotine league created
+  // in the app returns 3 and carries a disable_elimination setting. Verified
+  // against Dah Chopped, which is a real guillotine league returning type 3.
+  3: "guillotine",
 };
 
-// Sleeper has no guillotine format, so a league run as one is some other format
-// with house rules and the name is the only signal. "Chopped" is here because
-// Jack's is called "Dah Chopped League" with an axe, and matching only the word
-// "guillotine" meant his real guillotine league was read as dynasty for weeks.
-// The axe itself counts: people name these leagues by the joke, not the format.
+// The name check predates the type code above and still earns its place: it
+// catches a guillotine league run under house rules on a redraft league, which
+// is how the format was played before Sleeper supported it. "Chopped" is here
+// because Jack's is called "Dah Chopped League" with an axe, and matching only
+// the word "guillotine" once left his real guillotine league read as dynasty
+// for weeks. People name these leagues by the joke, not the format.
 const GUILLOTINE_NAME = /guillotin|chopped|\u{1FA93}/iu;
 
 export function detectLeagueType(league: SleeperLeague): LeagueType {

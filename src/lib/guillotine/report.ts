@@ -1,0 +1,347 @@
+import "server-only";
+import {
+  getLeague,
+  getLeagueRosters,
+  getLeagueUsers,
+  getNflState,
+  getUser,
+} from "@/lib/sleeper/client";
+import { profileFromSleeper } from "@/lib/league/detect";
+import { planBudget } from "./budget";
+import { callPosture, simulateChop, toSimTeam, type SimTeam } from "./chop-line";
+import { readLeagueState, seasonBids, writeSnapshot } from "./league-state";
+import { buildMarket, type ObservedBid, type Tier } from "./market";
+import { getByeWeeks, getSeasonRates, getWeekProjections } from "./projections";
+import { buildBidCard, finalFourBars } from "./recommend";
+import { snapshotFrom } from "./roster-diff";
+import { scoringSkewNotes } from "./scoring";
+import type { PoolPlayer, WeeklyFaabReport } from "./types";
+
+// The one assembly. The page, the API and the email all call this, so a number
+// shown in the app and a number sent in the email cannot disagree. That lesson
+// came from the draft board, which existed twice before it existed once.
+
+/**
+ * How many available players PER POSITION to carry into the recommender.
+ *
+ * Not a flat top-N of the whole pool, which was the first version and quietly
+ * broke in a one-quarterback league: quarterbacks outscore everyone, so the top
+ * of the free agent list is nothing but backup QBs who can never enter the
+ * lineup, and the running backs who could actually help fall off the end.
+ */
+const POOL_PER_POSITION = 30;
+
+/** Sleeper statuses that mean the player will not take a snap this week. */
+const UNAVAILABLE = new Set(["Out", "IR", "NA", "PUP", "Sus", "Suspended", "DNR"]);
+
+function fallbackReport(
+  state: WeeklyFaabReport["state"],
+  message: string,
+  partial: Partial<WeeklyFaabReport> = {},
+): WeeklyFaabReport {
+  return {
+    state,
+    message,
+    league: {
+      id: "",
+      name: "",
+      teams: 0,
+      teamsAlive: 0,
+      budget: 0,
+      scoringNotes: [],
+      tradesDisabled: false,
+    },
+    week: 0,
+    generatedAt: new Date().toISOString(),
+    posture: { posture: "yellow", headline: "No advice", detail: message },
+    phase: "field",
+    risk: {
+      teams: [],
+      expectedChopLine: 0,
+      myMargin: null,
+      myChopProbability: null,
+      baselineRisk: 0,
+      simulations: 0,
+      chopLineRange: [0, 0],
+    },
+    field: [],
+    me: {
+      rosterId: 0,
+      name: "",
+      faabRemaining: 0,
+      projected: 0,
+      starters: [],
+      weakSlots: [],
+      byeAlerts: [],
+    },
+    budget: {
+      phase: "field",
+      phaseNote: "",
+      eliminationsRemaining: 0,
+      neutralAllowance: 0,
+      holdFloor: 0,
+      weeklyCap: 0,
+      maxSingleBid: 0,
+      purchasingPowerShare: 0,
+      maxRivalBid: 0,
+      notes: [],
+    },
+    market: { estimates: {} as never, history: [], note: "" },
+    card: {
+      chains: [],
+      maxPossibleSpend: 0,
+      weeklyCap: 0,
+      sitOut: true,
+      summary: message,
+      sharedDisplacement: [],
+    },
+    caveats: [],
+    ...partial,
+  };
+}
+
+export async function buildWeeklyReport(leagueId: string): Promise<WeeklyFaabReport> {
+  const league = await getLeague(leagueId);
+  const profile = profileFromSleeper(league);
+
+  if (profile.type !== "guillotine") {
+    return fallbackReport(
+      "not_guillotine",
+      `${profile.name} is a ${profile.type} league. FAAB advice in this shape only applies to a guillotine league, where a chopped roster hits waivers every week and the money never comes back.`,
+    );
+  }
+
+  if (profile.status === "pre_draft" || profile.status === "drafting") {
+    return fallbackReport(
+      "pre_draft",
+      `${profile.name} has not drafted yet, so there is no roster to protect and no pool to bid into. This turns on the week after the draft.`,
+    );
+  }
+
+  const budgetTotal = profile.faab ?? 0;
+  const scoring = league.scoring_settings ?? {};
+
+  const [nflState, rosters, users, username] = await Promise.all([
+    getNflState(),
+    getLeagueRosters(leagueId),
+    getLeagueUsers(leagueId),
+    Promise.resolve(process.env.SLEEPER_USERNAME),
+  ]);
+
+  const week = nflState.week ?? 1;
+
+  if (!username) {
+    return fallbackReport(
+      "not_guillotine",
+      "SLEEPER_USERNAME is not set, so the app cannot tell which of the sixteen rosters is yours.",
+    );
+  }
+
+  const me = await getUser(username);
+  const myRoster = rosters.find((r) => r.owner_id === me.user_id);
+  if (!myRoster) {
+    return fallbackReport(
+      "not_guillotine",
+      `No roster in ${profile.name} belongs to ${username}.`,
+    );
+  }
+
+  const [weekProjections, seasonRates, byes, state] = await Promise.all([
+    getWeekProjections(leagueId, profile.season, week, scoring),
+    getSeasonRates(leagueId, profile.season, scoring),
+    getByeWeeks(leagueId, profile.season, week, scoring),
+    readLeagueState(leagueId, week, rosters, budgetTotal),
+  ]);
+
+  if (Object.keys(weekProjections).length === 0) {
+    return fallbackReport(
+      "no_projections",
+      `Sleeper has no projections for week ${week} yet. Without them there is no chop line and no way to price a bid, so this report waits rather than guessing.`,
+    );
+  }
+
+  const choppedIds = new Set(state.choppedPlayerIds);
+
+  const toPool = (playerId: string): PoolPlayer | null => {
+    const weekly = weekProjections[playerId];
+    const rate = seasonRates[playerId];
+    if (!weekly && !rate) return null;
+    const base = weekly ?? rate;
+    const team = base.team;
+    return {
+      playerId,
+      name: base.name,
+      position: base.position,
+      team,
+      weekPoints: weekly?.points ?? 0,
+      rosPoints: rate?.points ?? weekly?.points ?? 0,
+      injuryStatus: base.injuryStatus,
+      byeWeek: team ? (byes[team] ?? null) : null,
+      fromChoppedRoster: choppedIds.has(playerId),
+    };
+  };
+
+  const poolFor = (ids: string[]): PoolPlayer[] =>
+    ids.map(toPool).filter((p): p is PoolPlayer => p !== null);
+
+  // --- The field ---
+
+  const teamName = (rosterId: number): string => {
+    const roster = rosters.find((r) => r.roster_id === rosterId);
+    const user = users.find((u) => u.user_id === roster?.owner_id);
+    return user?.metadata?.team_name || user?.display_name || user?.username || `Roster ${rosterId}`;
+  };
+
+  const simTeams: SimTeam[] = state.aliveRosterIds.map((rosterId) => {
+    const roster = rosters.find((r) => r.roster_id === rosterId);
+    const players = poolFor(roster?.players ?? []).map((p) => ({
+      playerId: p.playerId,
+      position: p.position,
+      // A player ruled out is a zero, not a projection. Treating him as healthy
+      // is the single most expensive mistake this report could make. Sleeper
+      // uses several strings for "will not play", and NA is the one that caught
+      // this out: Josh Jacobs carried it with no week-1 stat line at all.
+      points: UNAVAILABLE.has(p.injuryStatus ?? "") ? 0 : p.weekPoints,
+    }));
+    return toSimTeam(rosterId, teamName(rosterId), rosterId === myRoster.roster_id, players, profile.rosterPositions);
+  });
+
+  const risk = simulateChop(simTeams);
+  const posture = callPosture(risk);
+
+  // --- Budget ---
+
+  const myFaab = state.faabRemaining[myRoster.roster_id] ?? 0;
+  const rivalRemaining = state.aliveRosterIds
+    .filter((id) => id !== myRoster.roster_id)
+    .map((id) => state.faabRemaining[id] ?? 0);
+
+  const budget = planBudget({
+    budget: budgetTotal,
+    remaining: myFaab,
+    teamsAlive: state.aliveRosterIds.length,
+    totalTeams: profile.teams,
+    posture: posture.posture,
+    rivalRemaining,
+  });
+
+  // --- Market ---
+
+  const myPlayers = poolFor(myRoster.players ?? []);
+  const leaguePlayers = [...state.rosteredPlayerIds]
+    .map((id) => seasonRates[id])
+    .filter((p): p is NonNullable<typeof p> => p != null)
+    .map((p) => ({ position: p.position, rosPoints: p.points }));
+  const bars = finalFourBars(leaguePlayers, profile.rosterPositions);
+
+  const bids = await seasonBids(leagueId, Math.max(0, week - 1));
+  const observed: ObservedBid[] = bids.map((bid) => {
+    const player = seasonRates[bid.playerId];
+    const rate = player?.points ?? 0;
+    const bar = player ? (bars[player.position] ?? Infinity) : Infinity;
+    // Tiering a historical bid by the player's level is the only reading
+    // available after the fact: what he was worth to the buyer's lineup that
+    // week is not recoverable.
+    const tier: Tier = rate >= bar ? "championship" : rate >= bar * 0.6 ? "multiweek" : "bandaid";
+    return { week: bid.week, tier, amount: bid.amount };
+  });
+
+  const market = buildMarket(budgetTotal, budget.phase, observed);
+
+  // --- The pool ---
+
+  const byPosition = new Map<string, PoolPlayer[]>();
+  for (const id of Object.keys(weekProjections)) {
+    if (state.rosteredPlayerIds.has(id)) continue;
+    const player = toPool(id);
+    if (!player) continue;
+    const list = byPosition.get(player.position) ?? [];
+    list.push(player);
+    byPosition.set(player.position, list);
+  }
+
+  const available = [...byPosition.values()].flatMap((list) =>
+    list
+      .sort((a, b) => b.weekPoints - a.weekPoints || b.rosPoints - a.rosPoints)
+      .slice(0, POOL_PER_POSITION),
+  );
+
+  const card = buildBidCard({
+    myPlayers,
+    candidates: available,
+    rosterPositions: profile.rosterPositions,
+    budget,
+    market,
+    posture: posture.posture,
+    week,
+    leaguePlayers,
+  });
+
+  // --- My lineup, for the report's own section ---
+
+  const mySim = simTeams.find((t) => t.isMine);
+  const myLineup = (mySim?.starters ?? []).map((s) => {
+    const player = myPlayers.find((p) => p.playerId === s.playerId);
+    return {
+      slot: player?.position ?? s.position,
+      name: player?.name ?? s.playerId,
+      points: s.points,
+      injuryStatus: player?.injuryStatus ?? null,
+    };
+  });
+
+  const byeAlerts = myPlayers
+    .filter((p) => p.byeWeek != null && p.byeWeek > week)
+    .map((p) => `${p.name} is on bye in week ${p.byeWeek}`);
+
+  const caveats = [...state.caveats];
+  for (const name of card.sharedDisplacement) {
+    caveats.push(
+      `Two of these groups would both replace ${name}. Winning both is legal, but the second upgrade is worth less than its stated gain, because the first already took that slot.`,
+    );
+  }
+  if (market.history.length === 0 && week > 2) {
+    caveats.push(
+      "No winning FAAB bids have been recorded in this league yet, so prices are published benchmarks rather than what this room actually pays.",
+    );
+  }
+
+  // Store this week's rosters so next week can tell what was chopped.
+  await writeSnapshot(leagueId, snapshotFrom(rosters, week));
+
+  return {
+    state: "ok",
+    league: {
+      id: profile.id,
+      name: profile.name,
+      teams: profile.teams,
+      teamsAlive: state.aliveRosterIds.length,
+      budget: budgetTotal,
+      scoringNotes: scoringSkewNotes(scoring),
+      tradesDisabled: league.settings?.disable_trades === 1,
+    },
+    week,
+    generatedAt: new Date().toISOString(),
+    posture,
+    phase: budget.phase,
+    risk,
+    field: risk.teams,
+    me: {
+      rosterId: myRoster.roster_id,
+      name: teamName(myRoster.roster_id),
+      faabRemaining: myFaab,
+      projected: risk.teams.find((t) => t.isMine)?.projected ?? 0,
+      starters: myLineup,
+      weakSlots: myLineup
+        .slice()
+        .sort((a, b) => a.points - b.points)
+        .slice(0, 2)
+        .map((s) => `${s.slot} ${s.name} (${s.points.toFixed(1)})`),
+      byeAlerts,
+    },
+    budget,
+    market,
+    card,
+    caveats,
+  };
+}
