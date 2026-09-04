@@ -1,0 +1,285 @@
+import { describe, expect, it } from "vitest";
+import { assembleReport, currentWeek, resolveCompleted } from "./engine";
+import { DEFAULT_POOL, type Game, type InjuryNote } from "./types";
+
+function game(
+  week: number,
+  home: string,
+  away: string,
+  p: number,
+  extra: Partial<Game> = {},
+): Game {
+  return {
+    week,
+    home,
+    away,
+    kickoff: `2026-09-${String(6 + week).padStart(2, "0")}T17:00:00Z`,
+    homeSpread: null,
+    homeMoneyline: null,
+    awayMoneyline: null,
+    overUnder: null,
+    homeWinProb: p,
+    probSource: "moneyline",
+    completed: false,
+    homeScore: null,
+    awayScore: null,
+    ...extra,
+  };
+}
+
+const BEFORE_WEEK_1 = new Date("2026-09-06T00:00:00Z");
+
+// A complete, flat distribution. Every candidate then has the same conditional
+// field-survival rate, so leverage cancels and the tests isolate one variable.
+const EVEN: Record<string, number> = {
+  KC: 1 / 6, DEN: 1 / 6, PHI: 1 / 6, NYG: 1 / 6, BUF: 1 / 6, NYJ: 1 / 6,
+};
+
+function report(
+  games: Game[],
+  picks: Record<string, number>,
+  pool = {},
+  now = BEFORE_WEEK_1,
+  injuries: InjuryNote[] = [],
+) {
+  return assembleReport({
+    season: 2026,
+    games,
+    ownership: { week: 1, source: "yahoo", picks, pulledAt: now.toISOString() },
+    injuries,
+    pool: { ...DEFAULT_POOL, ...pool },
+    now,
+  });
+}
+
+describe("currentWeek", () => {
+  const games = [game(1, "KC", "DEN", 0.8), game(2, "BUF", "NYJ", 0.7)];
+
+  it("is the earliest week with a game still to come", () => {
+    expect(currentWeek(games, BEFORE_WEEK_1)).toBe(1);
+  });
+
+  it("does not roll forward just because one game has kicked off", () => {
+    const mid = [
+      game(1, "KC", "DEN", 0.8, { kickoff: "2026-09-07T00:00:00Z" }),
+      game(1, "PHI", "NYG", 0.7, { kickoff: "2026-09-07T20:00:00Z" }),
+      game(2, "BUF", "NYJ", 0.7),
+    ];
+    expect(currentWeek(mid, new Date("2026-09-07T10:00:00Z"))).toBe(1);
+  });
+
+  it("moves on once the whole week has started", () => {
+    expect(currentWeek(games, new Date("2026-09-07T18:00:00Z"))).toBe(2);
+  });
+
+  it("settles on the last week when the season is over", () => {
+    expect(currentWeek(games, new Date("2027-01-01T00:00:00Z"))).toBe(18);
+  });
+});
+
+describe("resolveCompleted", () => {
+  it("collapses a finished game to a certainty", () => {
+    const [g] = resolveCompleted([
+      game(1, "KC", "DEN", 0.8, { completed: true, homeScore: 10, awayScore: 24 }),
+    ]);
+    expect(g.homeWinProb).toBe(0);
+  });
+
+  it("does the same for a home win", () => {
+    const [g] = resolveCompleted([
+      game(1, "KC", "DEN", 0.8, { completed: true, homeScore: 24, awayScore: 10 }),
+    ]);
+    expect(g.homeWinProb).toBe(1);
+  });
+
+  it("leaves a tie at a coin flip", () => {
+    const [g] = resolveCompleted([
+      game(1, "KC", "DEN", 0.8, { completed: true, homeScore: 17, awayScore: 17 }),
+    ]);
+    expect(g.homeWinProb).toBe(0.5);
+  });
+
+  it("leaves games in progress alone", () => {
+    const [g] = resolveCompleted([game(1, "KC", "DEN", 0.8)]);
+    expect(g.homeWinProb).toBe(0.8);
+  });
+});
+
+describe("assembleReport", () => {
+  const slate = [
+    game(1, "KC", "DEN", 0.85),
+    game(1, "PHI", "NYG", 0.8),
+    game(1, "BUF", "NYJ", 0.75),
+    game(2, "KC", "LV", 0.9),
+    game(2, "PHI", "DAL", 0.7),
+    game(2, "BUF", "MIA", 0.7),
+  ];
+
+  it("puts a candidate on the board for both sides of every open game", () => {
+    const r = report(slate, {});
+    expect(r.candidates).toHaveLength(6);
+    expect(r.week).toBe(1);
+  });
+
+  it("never offers a team that has already been burned", () => {
+    const r = report(slate, {}, { usedTeams: ["KC", "PHI"] });
+    expect(r.candidates.map((c) => c.team)).not.toContain("KC");
+    expect(r.candidates.map((c) => c.team)).not.toContain("PHI");
+  });
+
+  it("drops the games that have already kicked off, keeping the rest", () => {
+    // Thursday night is gone, Sunday is not. Still Week 1, four teams fewer.
+    const mixed = [
+      game(1, "KC", "DEN", 0.85, { kickoff: "2026-09-07T00:00:00Z" }),
+      game(1, "PHI", "NYG", 0.8, { kickoff: "2026-09-07T20:00:00Z" }),
+      game(1, "BUF", "NYJ", 0.75, { kickoff: "2026-09-07T20:00:00Z" }),
+    ];
+    const r = report(mixed, {}, {}, new Date("2026-09-07T10:00:00Z"));
+    expect(r.week).toBe(1);
+    expect(r.candidates.map((c) => c.team).sort()).toEqual([
+      "BUF",
+      "NYG",
+      "NYJ",
+      "PHI",
+    ]);
+    expect(r.notes.some((n) => n.includes("already kicked off"))).toBe(true);
+  });
+
+  it("takes the safest team when nothing later needs it", () => {
+    // One week only, so there is no future value to weigh against safety.
+    const oneWeek = slate.filter((g) => g.week === 1);
+    const r = report(oneWeek, EVEN);
+    expect(r.bestTeam).toBe("KC");
+    expect(r.safestTeam).toBe("KC");
+    expect(r.safetyGiveUp).toBe(0);
+  });
+
+  it("gives up this week to keep a team that is worth more next week", () => {
+    // KC is 85% now and 90% in Week 2, and it is the only strong Week 2 option.
+    // Burning it leaves a 70% Week 2 (0.85 x 0.70 = 0.595); saving it makes the
+    // pair 0.80 x 0.90 = 0.720. Surviving both weeks beats surviving this one,
+    // so the engine spends the second-best team now and holds KC back.
+    const r = report(slate, EVEN);
+    expect(r.safestTeam).toBe("KC");
+    expect(r.bestTeam).toBe("PHI");
+    expect(r.plan[1].team).toBe("KC");
+    const kc = r.candidates.find((c) => c.team === "KC")!;
+    expect(kc.bestFutureWeek).toBe(2);
+    expect(kc.futureCost).toBeGreaterThan(0);
+    expect(kc.flags.some((f) => f.kind === "scarcity")).toBe(true);
+  });
+
+  it("fades a favourite the whole field is already on", () => {
+    // KC is safest at 85% but carries 90% of the field; PHI is 80% on 2%.
+    const r = report(slate, { KC: 0.9, PHI: 0.02, BUF: 0.02, DEN: 0.02 });
+    expect(r.safestTeam).toBe("KC");
+    expect(r.bestTeam).not.toBe("KC");
+    expect(r.safetyGiveUp).toBeGreaterThan(0);
+  });
+
+  it("warns loudly when the leverage play is a big concession", () => {
+    const wide = [
+      game(1, "KC", "DEN", 0.95),
+      game(1, "BUF", "NYJ", 0.6),
+    ];
+    const r = report(wide, { KC: 0.98, BUF: 0.01 });
+    expect(r.safetyGiveUp).toBeGreaterThan(0.08);
+    expect(r.notes.some((n) => n.includes("points of win probability"))).toBe(true);
+  });
+
+  it("charges future value against a team the rest of the season needs", () => {
+    const kc = report(slate, {}).candidates.find((c) => c.team === "KC");
+    expect(kc?.futureCost).toBeGreaterThan(0);
+    expect(kc?.bestFutureWeek).toBe(2);
+  });
+
+  it("prices a team with no future games at zero future cost", () => {
+    const nyj = report(slate, {}).candidates.find((c) => c.team === "NYJ");
+    expect(nyj?.futureCost).toBe(0);
+  });
+
+  it("plans one team per week and never repeats one", () => {
+    const r = report(slate, {});
+    const teams = r.plan.map((p) => p.team);
+    expect(new Set(teams).size).toBe(teams.length);
+    expect(r.plan[0].week).toBe(1);
+    expect(r.plan[0].team).toBe(r.bestTeam);
+  });
+
+  it("reports the survival of the path it actually shows", () => {
+    const r = report(slate, {}, { horizon: 2 });
+    expect(r.plan).toHaveLength(2);
+    expect(r.planSurvival).toBeCloseTo(
+      r.plan[0].winProb * r.plan[1].winProb,
+      6,
+    );
+  });
+
+  it("flags a slate whose plan leans on beating one team over and over", () => {
+    const lopsided = [
+      game(1, "KC", "ARI", 0.9),
+      game(2, "PHI", "ARI", 0.9),
+      game(3, "BUF", "ARI", 0.9),
+      game(1, "SF", "SEA", 0.6),
+    ];
+    const r = report(lopsided, {}, { horizon: 3 });
+    expect(r.notes.some((n) => n.includes("ARI in 3"))).toBe(true);
+  });
+
+  it("prefers a pasted pool distribution over the national one", () => {
+    const r = report(slate, EVEN, {
+      ownershipOverride: { "1": { KC: 90, DEN: 2, PHI: 3, NYG: 2, BUF: 2, NYJ: 1 } },
+    });
+    expect(r.ownership.source).toBe("manual");
+    expect(r.bestTeam).not.toBe("KC");
+    expect(r.notes.some((n) => n.includes("pasted"))).toBe(true);
+  });
+
+  it("says so rather than guessing when no distribution loaded", () => {
+    const r = report(slate, {});
+    expect(r.notes.some((n) => n.includes("evenly spread"))).toBe(true);
+  });
+
+  it("refuses to invent ownership from a half-empty snapshot", () => {
+    // 6% of the field listed. The old behaviour handed the missing 94% to the
+    // three unlisted teams and read them as 31% chalk each.
+    const r = report(slate, { KC: 0.02, PHI: 0.02, BUF: 0.02 });
+    for (const c of r.candidates) expect(c.ownership).toBeCloseTo(1 / 6, 6);
+    expect(r.notes.some((n) => n.includes("evenly spread"))).toBe(true);
+  });
+
+  it("warns when the snapshot covers only part of the field", () => {
+    const r = report(slate, { KC: 0.4, PHI: 0.2, BUF: 0.1 });
+    expect(r.notes.some((n) => n.includes("70% of the field"))).toBe(true);
+  });
+
+  it("survives a week where every team is already used", () => {
+    const r = report(slate, {}, {
+      usedTeams: ["KC", "DEN", "PHI", "NYG", "BUF", "NYJ"],
+    });
+    expect(r.candidates).toHaveLength(0);
+    expect(r.bestTeam).toBeNull();
+    expect(r.headline).toContain("nothing legal");
+  });
+
+  it("puts a quarterback on the card and leaves the rest of the report off it", () => {
+    const injuries: InjuryNote[] = [
+      { team: "KC", player: "Starter QB", position: "QB", status: "Out", comment: "", premium: false },
+      { team: "KC", player: "A Back", position: "RB", status: "Out", comment: "", premium: false },
+      { team: "KC", player: "A Corner", position: "CB", status: "Questionable", comment: "", premium: false },
+    ];
+    const kc = report(slate, {}, {}, BEFORE_WEEK_1, injuries).candidates.find(
+      (c) => c.team === "KC",
+    );
+    const texts = kc!.flags.filter((f) => f.kind === "injury").map((f) => f.text);
+    expect(texts.some((t) => t.includes("Starter QB"))).toBe(true);
+    expect(texts.some((t) => t.includes("A Back"))).toBe(false);
+  });
+
+  it("marks a game with no line as soft rather than quoting it as fact", () => {
+    const soft = [game(1, "KC", "DEN", 0.7, { probSource: "rating" })];
+    const r = report(soft, {});
+    expect(r.candidates[0].flags.some((f) => f.kind === "data")).toBe(true);
+    expect(r.notes.some((n) => n.includes("no line posted"))).toBe(true);
+  });
+});

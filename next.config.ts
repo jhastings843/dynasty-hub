@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
         hostname: "rosteraudit.com",
         pathname: "/wp-content/uploads/**",
       },
+      {
+        // NFL team logos on the survivor board.
+        protocol: "https",
+        hostname: "a.espncdn.com",
+        pathname: "/i/teamlogos/**",
+      },
     ],
   },
   async redirects() {

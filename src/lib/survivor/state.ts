@@ -1,0 +1,34 @@
+import "server-only";
+import { redis } from "@/lib/redis/client";
+import { DEFAULT_POOL, type PoolConfig } from "./types";
+
+// Single-user tool, so the pool lives at one key rather than under a user id.
+// It is in Upstash rather than localStorage because the picks have to be the
+// same on the phone at 12:55 on Sunday as they were on the laptop on Thursday.
+const KEY = (season: number) => `survivor:pool:${season}:v1`;
+
+export async function getPool(season: number): Promise<PoolConfig> {
+  try {
+    const stored = await redis.get<Partial<PoolConfig>>(KEY(season));
+    if (!stored) return { ...DEFAULT_POOL };
+    return { ...DEFAULT_POOL, ...stored };
+  } catch {
+    return { ...DEFAULT_POOL };
+  }
+}
+
+export async function savePool(
+  season: number,
+  patch: Partial<PoolConfig>,
+): Promise<PoolConfig> {
+  const current = await getPool(season);
+  const next: PoolConfig = { ...current, ...patch };
+  next.usedTeams = [...new Set(next.usedTeams)];
+  next.poolSize = Math.max(1, Math.round(next.poolSize));
+  next.horizon = Math.min(12, Math.max(1, Math.round(next.horizon)));
+  if (next.entriesAlive !== null) {
+    next.entriesAlive = Math.max(1, Math.round(next.entriesAlive));
+  }
+  await redis.set(KEY(season), next);
+  return next;
+}

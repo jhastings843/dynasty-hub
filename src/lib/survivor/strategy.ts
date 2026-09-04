@@ -1,7 +1,10 @@
-// Strategy articles surfaced as expandable cards on the survivor
-// page. Content is intentionally short, action-oriented, written for
-// someone who already plays survivor pools and wants the principles,
-// not a 101 explainer.
+// Strategy articles surfaced as expandable cards on the survivor page.
+//
+// These describe what the engine on this page is actually doing, so the numbers
+// on screen and the reasoning here cannot drift apart. Sources: Bergman &
+// Imbrogno (Operations Research 65(5), the sequential-assignment treatment of
+// survivor pools), PoolGenius/TeamRankings on expected value and pool size, and
+// the standard de-vig and spread-to-margin conversions.
 
 export interface StrategyArticle {
   id: string;
@@ -15,43 +18,43 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
   {
     id: "win-vs-finish",
     title: "Surviving is not the goal. Finishing first is.",
-    hook: "Maximize first-place equity, not week-by-week safety.",
-    body: "Survivor pools pay first place (sometimes second and third). The optimal strategy is the one that maximizes your probability of being the last entry standing, not the one that minimizes weekly elimination risk. Those two objectives diverge constantly. A safe 95% favorite that 60% of the field is also taking gives you almost no leverage. A 78% favorite that 8% of the field is on can be the better expected-value play even though it raises your weekly bust risk, because the world where it hits is a world where you have a much smaller field to beat. Always check the equity math, not just the pick odds.",
-    takeaway: "EV(first place) > EV(survival) when leverage is on the table.",
+    hook: "The board is ranked on equity, which is win probability divided by how much of the field survives with you.",
+    body: "A survivor pool pays the last entry standing, so the number that matters is not your chance of surviving the week, it is your chance of outlasting everyone else. Those two come apart constantly. The engine scores every pick with an equity multiplier: your win probability divided by the fraction of rivals expected to survive if your pick hits, adjusted for the fact that a 500-entry pool is finite. A multiplier of 1.00 means you neither gain nor lose ground on the field. Above 1.00 you gained ground even in the worlds where you both survived. A 95% favourite that 60% of the pool is also on can score below 1.00, because surviving alongside almost everybody is not progress, it is a stay of execution.",
+    takeaway: "Read the equity number, not the win percentage. 1.00 is treading water.",
+  },
+  {
+    id: "the-threshold",
+    title: "The only ownership threshold worth memorising.",
+    hook: "If a favourite is picked more often than it wins, the other side has the better equity.",
+    body: "There is no universal rule like 'fade anything above 30%'. What is true, and provable, is the two-sided case: if the whole field were split across one game, the favourite is the better play exactly when its ownership is below its win probability. A 78% favourite on 55% of entries is fine. A 78% favourite on 85% of entries is not, and no amount of it being the safest game on the board changes that. Real slates are messier because entries on every other game also survive, which is why the engine computes the full conditional survival rate rather than the shortcut of win probability divided by your own ownership. That shortcut is only correct in the artificial one-game case, and it overstates leverage badly on a normal Sunday.",
+    takeaway: "Ownership above win probability is the fade signal. Below it, chalk is fine.",
   },
   {
     id: "future-value",
-    title: "Save elite teams for scarce weeks.",
-    hook: "KC, BUF, PHI, BAL, DET, SF on a Week 3 home game is a leak.",
-    body: "There are usually three or four weeks each season where the slate is genuinely thin: every team has a road game, a divisional game, or is on short rest. Burning your top-tier teams in Weeks 1-5 when there are 6-8 viable options leaves you holding 14-point underdogs in Week 11. Map your usable teams against the full schedule before you make any pick after Week 1. If KC is also a fit in Week 11 and Week 14, do not use them in Week 4 unless the alternative options that week are noticeably worse.",
-    takeaway: "Plan three weeks ahead minimum. Five is better.",
+    title: "Every pick costs you the weeks you could have used that team.",
+    hook: "Burn cost is the survival you give up later by spending a team now.",
+    body: "Eighteen weeks need eighteen different teams out of thirty-two, so the constraint really binds, and the good teams are worth different amounts in different weeks. The engine solves the whole remaining season as an assignment problem: one team per week, no team twice, maximising the total log probability of surviving the path. Burn cost is then the shadow price, meaning how much that best path gets worse if you take a team off the board today. It is never negative, and it is often zero for a team nothing later needs. Future weeks are discounted at roughly the weekly survival rate, so a Week 16 slot is worth a fraction of a Week 2 slot: hoarding elite teams for weeks you will probably never reach is its own way of losing.",
+    takeaway: "A high burn cost means the team is load-bearing later. Spend something else.",
   },
   {
     id: "pool-size",
-    title: "Pool size dictates risk tolerance.",
-    hook: "Small pool = chalk. Large pool = leverage.",
-    body: "In a 30-entry pool, surviving is most of the battle: take the safest pick, lock in the equity gain when others bust. In a 5,000-entry pool, raw survival math means you finish 800th unless you take leverage. Rough cutoffs: under 100 entries lean chalk, 100-1000 entries take moderate leverage on the most-popular team, 1000+ entries actively pivot off the most-public team if a 70%+ alternative exists. Update this read every week as the field shrinks.",
-    takeaway: "Always know how many entries are still alive in your pool.",
-  },
-  {
-    id: "trap-games",
-    title: "Filter favorites for trap signals.",
-    hook: "Spread alone is not safety. Volatility kills survivor entries.",
-    body: "A 9-point favorite with a turnover-prone QB on the road is not the same bet as a 9-point favorite at home with their starting line healthy. Run every candidate through a quick filter: short rest, cross-country travel, divisional rematch (much closer historically), QB injury status, OL injuries, weather (cold + wind + outdoor), backup QB on the other side leading to scheme uncertainty. Any two of these and you should look elsewhere or take a smaller favorite without the red flags.",
-    takeaway: "Two trap signals = pivot, even at the cost of a few percentage points.",
+    title: "Pool size decides how much safety you can sell.",
+    hook: "At 500 entries, leverage is real. At 20 it mostly is not.",
+    body: "In a 20-entry pool the season usually ends before anyone runs out of teams, so survival is almost the whole game and giving up more than about three points of win probability is a bad trade. At 500 entries, entries survive the season often enough that pure survival finishes you mid-pack, and giving up five to eight points for genuine leverage becomes correct. Two things change as the pool thins: leverage is measured against the entries still alive, not the ones that started, and public pick percentages get less reliable as the field shrinks toward a handful of people whose habits you actually know. Keep the 'still alive' number current, because it is an input, not decoration.",
+    takeaway: "Update entries alive every week. It changes the maths, not just the display.",
   },
   {
     id: "vegas-not-public",
-    title: "Trust line movement over public sentiment.",
-    hook: "Sharps move the line. The public follows.",
-    body: "If a spread opens at -7 and moves to -9, that is information regardless of how popular the team is. If it opens at -7 and stays despite 80% of bets coming in on the favorite, that is also information (sharp money on the dog). Cross-reference the line move and the bet split. Public-heavy pick + line not moving + ownership ballooning is a textbook fade-the-public spot. Public-heavy pick + line moving favorite + smart money agreeing is fine to ride.",
-    takeaway: "Line movement is a sharper read than survivor pick popularity.",
+    title: "Use no-vig moneylines, never raw odds.",
+    hook: "A -185 favourite is 64%, not 65%, and the gap compounds over eighteen weeks.",
+    body: "Raw implied odds always sum to more than 100%, because the overround is the book's margin and belongs to neither side. Taking -185 at face value reads as 64.9% when the fair price is 64.3%. That is small once and material across a season of compounding. The engine normalises both sides of every moneyline before using it. A spread is a worse input and is only a fallback: the -110 attached to a spread prices the cover, not the outright win, so converting it means modelling the margin as a normal distribution around the spread, which smooths over the fact that NFL games land on exactly 3 and exactly 7 far more often than on 4 or 6. When a game has no moneyline the board says so rather than quoting a soft number as if it were firm.",
+    takeaway: "Moneyline beats spread. De-vigged beats raw. The page marks it when neither is available.",
   },
   {
-    id: "thanksgiving-late-season",
-    title: "Holidays and late-season weeks behave differently.",
-    hook: "Thanksgiving, Christmas, late-December games have unique variance.",
-    body: "Thanksgiving has only three games, which compresses ownership and exposes you to single-game variance. Late-season games involving teams locked into playoff seeds or eliminated have motivation issues that the spread does not always capture. Backup QBs come in for rest weeks. Outdoor weather games in December swing 5+ points. If you are still alive in December, the strategy shifts from EV optimization to surviving variance. Take the team you trust over the team with the best closing-line value.",
-    takeaway: "December survivor strategy is different from October. Adjust.",
+    id: "concentration",
+    title: "Watch for a plan that beats the same team every week.",
+    hook: "One bad team carrying six weeks of your path is a single point of failure.",
+    body: "The solver finds the highest-probability path, and in most seasons that means repeatedly playing whoever the market has written off. That is the market's honest view and not a bug, but it concentrates your risk in one place: if that team turns out to be a few points better than projected, every week of the plan degrades at once rather than one week of it. The same logic applies to the calendar. December games involve teams resting starters and locked into seeds, weather swings outdoor games by several points, and Thanksgiving compresses ownership across only three games. If you are alive in December the job shifts from squeezing out equity to surviving variance.",
+    takeaway: "If the plan leans on one opponent, ration those weeks rather than spending them early.",
   },
 ];
