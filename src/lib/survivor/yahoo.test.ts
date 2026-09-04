@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  archiveNeedsWrite,
   canonYahoo,
   extractJsonObject,
+  mergePublicPicks,
   normalizeOwnership,
   parseYahoo,
 } from "./yahoo";
@@ -114,5 +116,69 @@ describe("normalizeOwnership", () => {
 
   it("handles an empty slate", () => {
     expect(normalizeOwnership({ KC: 1 }, [])).toEqual({});
+  });
+});
+
+describe("mergePublicPicks", () => {
+  const wk1 = { KC: 0.6, DEN: 0.4 };
+  const wk2 = { BUF: 0.7, NYJ: 0.3 };
+
+  it("keeps a week Yahoo has since forgotten", () => {
+    // The whole point: by Week 2, Yahoo no longer publishes Week 1.
+    const merged = mergePublicPicks({ "1": wk1 }, { "2": wk2 });
+    expect(merged["1"]).toEqual(wk1);
+    expect(merged["2"]).toEqual(wk2);
+  });
+
+  it("lets fresher numbers win for the week in progress", () => {
+    const later = { KC: 0.8, DEN: 0.2 };
+    expect(mergePublicPicks({ "1": wk1 }, { "1": later })["1"]).toEqual(later);
+  });
+
+  it("ignores the empty weeks Yahoo ships for the rest of the season", () => {
+    // Weeks 2-22 come back as empty arrays before anyone has picked them.
+    const merged = mergePublicPicks({ "1": wk1 }, { "1": {}, "2": {}, "3": {} });
+    expect(merged["1"]).toEqual(wk1);
+    expect(merged["2"]).toBeUndefined();
+  });
+
+  it("builds up an archive across a season", () => {
+    let archive: Record<string, Record<string, number>> = {};
+    for (const [week, picks] of [["1", wk1], ["2", wk2], ["3", { SF: 1 }]] as const) {
+      archive = mergePublicPicks(archive, { [week]: picks });
+    }
+    expect(Object.keys(archive).sort()).toEqual(["1", "2", "3"]);
+  });
+
+  it("works from an empty archive", () => {
+    expect(mergePublicPicks({}, { "1": wk1 })).toEqual({ "1": wk1 });
+  });
+});
+
+describe("archiveNeedsWrite", () => {
+  const wk1 = { KC: 0.6, DEN: 0.4 };
+
+  it("writes when a new week appears", () => {
+    expect(archiveNeedsWrite({}, { "1": wk1 })).toBe(true);
+  });
+
+  it("writes when ownership actually moves", () => {
+    expect(archiveNeedsWrite({ "1": wk1 }, { "1": { KC: 0.65, DEN: 0.35 } })).toBe(true);
+  });
+
+  it("skips a write for rounding-level drift", () => {
+    expect(
+      archiveNeedsWrite({ "1": wk1 }, { "1": { KC: 0.6001, DEN: 0.3999 } }),
+    ).toBe(false);
+  });
+
+  it("skips a write when nothing changed", () => {
+    expect(archiveNeedsWrite({ "1": wk1 }, { "1": { ...wk1 } })).toBe(false);
+  });
+
+  it("writes when a team joins the week", () => {
+    expect(
+      archiveNeedsWrite({ "1": wk1 }, { "1": { ...wk1, SF: 0.1 } }),
+    ).toBe(true);
   });
 });

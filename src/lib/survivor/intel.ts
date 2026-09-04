@@ -1,5 +1,5 @@
 import "server-only";
-import { cached } from "@/lib/redis/cached";
+import { cachedWithFallback } from "@/lib/redis/cached";
 import { parseInjuries, type EspnInjuryFeed } from "./intel-pure";
 import type { InjuryNote } from "./types";
 
@@ -11,12 +11,20 @@ const ESPN_INJURIES =
  * feed, it is the one line that explains why a 78% favourite is really a 68%
  * favourite and the market has not caught up yet.
  */
-export function getInjuries(): Promise<InjuryNote[]> {
-  return cached("survivor:injuries:v1", 60 * 30, async () => {
-    const res = await fetch(ESPN_INJURIES, { cache: "no-store" });
-    if (!res.ok) throw new Error(`ESPN injuries: ${res.status}`);
-    return parseInjuries((await res.json()) as EspnInjuryFeed);
-  }).catch(() => [] as InjuryNote[]);
+export async function getInjuries(): Promise<InjuryNote[]> {
+  const res = await cachedWithFallback<InjuryNote[]>({
+    key: "survivor:injuries:v2",
+    ttlSeconds: 60 * 30,
+    empty: [],
+    // The league always has injuries. An empty list means a broken fetch.
+    isComplete: (notes) => notes.length > 0,
+    fetcher: async () => {
+      const r = await fetch(ESPN_INJURIES, { cache: "no-store" });
+      if (!r.ok) throw new Error(`ESPN injuries: ${r.status}`);
+      return parseInjuries((await r.json()) as EspnInjuryFeed);
+    },
+  });
+  return res.value;
 }
 
 export { notesForTeam, parseInjuries } from "./intel-pure";

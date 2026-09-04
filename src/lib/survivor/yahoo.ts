@@ -143,3 +143,48 @@ export function ownershipCoverage(
   }
   return Math.min(1, known);
 }
+
+/**
+ * Yahoo only ever publishes the CURRENT week's distribution. The response
+ * carries a key for every week of the season, but the future ones are empty
+ * arrays and past ones drop off once the week is gone.
+ *
+ * That is a problem for calibration, which needs the public baseline for the
+ * weeks the pool has already played in order to measure the pool against it. So
+ * every week's numbers are archived the first time they are seen, and the live
+ * response is merged over the top: fresher data wins for the week in progress,
+ * and weeks Yahoo has forgotten are kept.
+ */
+export function mergePublicPicks(
+  archive: Record<string, Ownership>,
+  live: Record<string, Ownership>,
+): Record<string, Ownership> {
+  const merged: Record<string, Ownership> = { ...archive };
+  for (const [week, picks] of Object.entries(live)) {
+    // An empty week is Yahoo saying "nobody has picked yet", never a correction.
+    if (Object.keys(picks).length === 0) continue;
+    merged[week] = picks;
+  }
+  return merged;
+}
+
+/** Whether the merge added anything the archive did not already hold. */
+export function archiveNeedsWrite(
+  archive: Record<string, Ownership>,
+  merged: Record<string, Ownership>,
+): boolean {
+  const keys = Object.keys(merged);
+  if (keys.length !== Object.keys(archive).length) return true;
+  for (const k of keys) {
+    const a = archive[k];
+    const m = merged[k];
+    if (!a) return true;
+    const ak = Object.keys(a);
+    if (ak.length !== Object.keys(m).length) return true;
+    for (const t of ak) {
+      // Ownership drifts all week; only a real move is worth a write.
+      if (Math.abs((a[t] ?? 0) - (m[t] ?? 0)) > 0.0005) return true;
+    }
+  }
+  return false;
+}

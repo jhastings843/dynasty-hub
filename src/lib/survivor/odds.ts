@@ -1,5 +1,5 @@
 import "server-only";
-import { cached } from "@/lib/redis/cached";
+import { cachedWithFallback } from "@/lib/redis/cached";
 import type { Game, TeamWeek } from "./types";
 import { noVig, ratingWinProb, spreadToWinProb } from "./probability";
 
@@ -99,7 +99,7 @@ export function toGame(week: number, ev: EspnEvent): Game | null {
   };
 }
 
-async function fetchWeek(season: number, week: number): Promise<Game[]> {
+async function fetchWeekOnce(season: number, week: number): Promise<Game[]> {
   const url = `${ESPN_SCOREBOARD}?week=${week}&seasontype=2&dates=${season}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`ESPN scoreboard week ${week}: ${res.status}`);
@@ -109,19 +109,60 @@ async function fetchWeek(season: number, week: number): Promise<Game[]> {
     .filter((g): g is Game => g !== null);
 }
 
+/** One retry, because a single blip should not cost a week of the schedule. */
+async function fetchWeek(season: number, week: number): Promise<Game[]> {
+  try {
+    return await fetchWeekOnce(season, week);
+  } catch {
+    return fetchWeekOnce(season, week);
+  }
+}
+
+export const REGULAR_SEASON_WEEKS = 18;
+
 /**
- * Every regular season game with a priced win probability. Cached 15 minutes:
- * lines move through the week but not minute to minute, and the page reads
- * this on every render.
+ * Every regular season week has games, so a week with none means the fetch
+ * failed rather than that the NFL took a week off. That distinction matters: a
+ * missing week silently rewrites every future-value number, and a missing
+ * CURRENT week would move the whole page on to next week's board and invite a
+ * pick for the wrong slate.
  */
-export function getSeasonGames(season: number): Promise<Game[]> {
-  return cached(`survivor:games:${season}:v1`, 60 * 15, async () => {
-    const weeks = Array.from({ length: 18 }, (_, i) => i + 1);
-    const results = await Promise.all(
-      weeks.map((w) => fetchWeek(season, w).catch(() => [] as Game[])),
-    );
-    return results.flat();
+export function seasonIsComplete(games: Game[]): boolean {
+  const weeks = new Set(games.map((g) => g.week));
+  for (let w = 1; w <= REGULAR_SEASON_WEEKS; w++) {
+    if (!weeks.has(w)) return false;
+  }
+  return true;
+}
+
+export interface SeasonGames {
+  games: Game[];
+  /** True when serving a last-known-good copy because a fetch came back short. */
+  stale: boolean;
+  at: string;
+}
+
+/**
+ * Every regular season game with a priced win probability. Refreshed every 15
+ * minutes: lines move through the week but not minute to minute, and the page
+ * reads this on every render. A short or failed fetch falls back to the last
+ * complete copy rather than caching a hole in the schedule.
+ */
+export async function getSeasonGames(season: number): Promise<SeasonGames> {
+  const res = await cachedWithFallback<Game[]>({
+    key: `survivor:games:${season}:v2`,
+    ttlSeconds: 60 * 15,
+    empty: [],
+    isComplete: seasonIsComplete,
+    fetcher: async () => {
+      const weeks = Array.from({ length: REGULAR_SEASON_WEEKS }, (_, i) => i + 1);
+      const results = await Promise.all(
+        weeks.map((w) => fetchWeek(season, w).catch(() => [] as Game[])),
+      );
+      return results.flat();
+    },
   });
+  return { games: res.value, stale: res.stale, at: res.at };
 }
 
 /** Flatten games into one row per team per week. */

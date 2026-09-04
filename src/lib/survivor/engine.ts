@@ -156,6 +156,10 @@ export interface EngineInput {
   /** Yahoo's distribution for EVERY week. Past weeks calibrate, this week prices. */
   publicByWeek: Record<string, Ownership>;
   publicPulledAt: string;
+  /** Set when a feed is being served from its last-known-good copy. */
+  publicStale?: boolean;
+  gamesStale?: boolean;
+  gamesAt?: string;
   injuries: InjuryNote[];
   pool: PoolConfig;
   now?: Date;
@@ -352,6 +356,18 @@ export function assembleReport(input: EngineInput): SurvivorReport {
   }
 
   const notes: string[] = [];
+
+  // Say it out loud rather than quietly serving yesterday's numbers as today's.
+  if (input.gamesStale) {
+    notes.push(
+      `Odds and results could not be refreshed, so the board is running on the last complete pull${input.gamesAt ? ` from ${new Date(input.gamesAt).toISOString().slice(0, 16).replace("T", " ")}Z` : ""}. Lines may have moved since. Reload in a minute.`,
+    );
+  }
+  if (input.publicStale) {
+    notes.push(
+      "Pick percentages could not be refreshed, so ownership is the last complete pull. Treat the leverage numbers as a little behind.",
+    );
+  }
   if (best && safest && safest.winProb - best.winProb > 0.08) {
     notes.push(
       `The recommended pick gives up ${((safest.winProb - best.winProb) * 100).toFixed(1)} points of win probability against ${safest.team}. Even in a ${entriesAlive}-entry pool that is a large concession, so take the leverage only if you believe the ownership number.`,

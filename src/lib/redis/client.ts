@@ -15,4 +15,16 @@ function buildClient(): Redis {
   return new Redis({ url, token });
 }
 
-export const redis: Redis = buildClient();
+let client: Redis | null = null;
+
+/** Built on first use, not at import, so modules stay importable without env. */
+export function getRedis(): Redis {
+  if (!client) client = buildClient();
+  return client;
+}
+
+export const redis: Redis = new Proxy({} as Redis, {
+  get(_target, prop) {
+    return Reflect.get(getRedis(), prop);
+  },
+});

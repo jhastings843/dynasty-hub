@@ -16,7 +16,7 @@ export const SEASON = 2026;
 export async function buildReport(
   overrides?: Partial<PoolConfig>,
 ): Promise<SurvivorReport> {
-  const [games, stored, injuries, publicPicks] = await Promise.all([
+  const [season, stored, injuries, publicPicks] = await Promise.all([
     getSeasonGames(SEASON),
     getPool(SEASON),
     getInjuries(),
@@ -25,9 +25,12 @@ export async function buildReport(
 
   return assembleReport({
     season: SEASON,
-    games,
+    games: season.games,
+    gamesStale: season.stale,
+    gamesAt: season.at,
     publicByWeek: publicPicks.byWeek,
     publicPulledAt: publicPicks.pulledAt,
+    publicStale: publicPicks.stale,
     injuries,
     pool: { ...stored, ...overrides },
   });

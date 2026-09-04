@@ -1,6 +1,7 @@
 import "server-only";
-import { cached } from "@/lib/redis/cached";
-import { parseYahoo } from "./yahoo";
+import { cachedWithFallback } from "@/lib/redis/cached";
+import { redis } from "@/lib/redis/client";
+import { archiveNeedsWrite, mergePublicPicks, parseYahoo } from "./yahoo";
 import type { Ownership, OwnershipSnapshot } from "./types";
 
 // Yahoo's Survival Football pick distribution is public and unauthenticated,
@@ -33,6 +34,19 @@ export interface PublicPicks {
   /** week number as a string -> abbr -> fraction of the field. */
   byWeek: Record<string, Ownership>;
   pulledAt: string;
+  /** True when serving a last-known-good copy. */
+  stale: boolean;
+}
+
+/**
+ * Yahoo answering 200 with a login stub or a trimmed page would parse to a
+ * thin object rather than an error, so require at least one week carrying most
+ * of the league before treating a fetch as usable.
+ */
+export function publicPicksAreComplete(
+  byWeek: Record<string, Ownership>,
+): boolean {
+  return Object.values(byWeek).some((w) => Object.keys(w).length >= 24);
 }
 
 /**
@@ -43,11 +57,45 @@ export interface PublicPicks {
  * Past weeks are kept because they are the baseline the pool's own logged picks
  * get compared against. Without them there is nothing to calibrate to.
  */
-export async function getPublicPicks(): Promise<PublicPicks> {
-  const byWeek = await cached("survivor:yahoo:v1", 60 * 15, fetchYahoo).catch(
-    () => ({}) as Record<string, Ownership>,
-  );
-  return { byWeek, pulledAt: new Date().toISOString() };
+/**
+ * Our own record of what the public did each week, since Yahoo does not keep
+ * one. Written only when a week's numbers actually move, and never expired.
+ */
+const ARCHIVE_KEY = (season: number) => `survivor:public-archive:${season}:v1`;
+
+async function readArchive(season: number): Promise<Record<string, Ownership>> {
+  try {
+    return (await redis.get<Record<string, Ownership>>(ARCHIVE_KEY(season))) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export async function getPublicPicks(
+  season = 2026,
+): Promise<PublicPicks> {
+  const res = await cachedWithFallback<Record<string, Ownership>>({
+    key: `survivor:yahoo:${season}:v3`,
+    ttlSeconds: 60 * 15,
+    empty: {},
+    isComplete: publicPicksAreComplete,
+    // Runs only on a real fetch, so the archive read and write happen about
+    // four times an hour rather than on every page load.
+    fetcher: async () => {
+      const live = await fetchYahoo();
+      const archive = await readArchive(season);
+      const merged = mergePublicPicks(archive, live);
+      if (archiveNeedsWrite(archive, merged)) {
+        try {
+          await redis.set(ARCHIVE_KEY(season), merged);
+        } catch {
+          // A failed archive write must not cost us this week's numbers.
+        }
+      }
+      return merged;
+    },
+  });
+  return { byWeek: res.value, pulledAt: res.at, stale: res.stale };
 }
 
 /** Just this week's slice, for callers that do not need the history. */
