@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Check,
+  ClipboardList,
   ChevronDown,
   Info,
   Lock,
@@ -162,12 +163,16 @@ export default function SurvivorTool({ report }: { report: SurvivorReport }) {
     setPasteOpen(false);
     setPaste("");
     void patch({
-      ownershipOverride: {
-        ...(pool.ownershipOverride ?? {}),
-        [String(report.week)]: picks,
-      },
+      weeklyPicks: { ...pool.weeklyPicks, [String(logWeek)]: picks },
     });
   }
+
+  // The week the log box writes to: the most recent finished week still missing
+  // its pool picks, falling back to the last completed week for corrections.
+  const logWeek =
+    report.unloggedWeeks.length > 0
+      ? report.unloggedWeeks[report.unloggedWeeks.length - 1]
+      : Math.max(1, report.week - 1);
 
   const best = report.candidates[0] ?? null;
   const safest =
@@ -176,6 +181,16 @@ export default function SurvivorTool({ report }: { report: SurvivorReport }) {
       : null;
   const rest = showAll ? report.candidates.slice(1) : report.candidates.slice(1, 8);
   const locksIn = countdown(report.locksAt);
+
+  // Teams a meaningful slice of the surviving field can no longer pick.
+  // Nothing is loggable until a week has actually finished.
+  const nothingToLogYet =
+    report.unloggedWeeks.length === 0 && report.field.weeksLogged === 0;
+
+  const burnedByField = Object.entries(report.field.burned)
+    .filter(([, share]) => share >= 0.05)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12);
 
   return (
     <div className="flex flex-col gap-8">
@@ -412,29 +427,69 @@ export default function SurvivorTool({ report }: { report: SurvivorReport }) {
         </ul>
       )}
 
-      {/* The board */}
-      {rest.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              The rest of the board
-            </h2>
-            <button
-              type="button"
-              onClick={() => setPasteOpen((p) => !p)}
-              className="text-xs font-semibold text-amber-700 transition-colors hover:text-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-amber-400"
-            >
-              {report.ownership.source === "manual"
-                ? "Edit pool distribution"
-                : "Use my pool's pick percentages"}
-            </button>
+      {/* Log last week, which is the only recurring input the tool asks for */}
+      <section className="flex flex-col gap-3">
+        <div
+          className={`flex flex-col gap-3 rounded-2xl border p-5 ${
+            report.unloggedWeeks.length > 0
+              ? "border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/20"
+              : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+          }`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <ClipboardList
+                  size={14}
+                  aria-hidden
+                  className={
+                    report.unloggedWeeks.length > 0
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-zinc-400 dark:text-zinc-500"
+                  }
+                />
+                <span
+                  className={`text-[11px] font-bold uppercase tracking-wider ${
+                    report.unloggedWeeks.length > 0
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-zinc-500 dark:text-zinc-400"
+                  }`}
+                >
+                  {report.unloggedWeeks.length > 0
+                    ? `Log Week ${logWeek}`
+                    : nothingToLogYet
+                      ? "Pool history"
+                      : `${report.field.weeksLogged} week(s) logged`}
+                </span>
+              </div>
+              <p className="max-w-xl text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {report.unloggedWeeks.length > 0
+                  ? `Week ${logWeek} is finished, so your pool now shows what everyone picked. Paste it once and three things update: how far your pool leans off the public, which teams the field has burned, and how many entries are left.`
+                  : nothingToLogYet
+                    ? "Nothing to log yet. Once a week finishes, your pool shows what everyone picked and which teams they have used. Paste that here and the ownership numbers stop being Yahoo's public estimate and start being your pool."
+                    : "Every finished week is in, so the ownership numbers are projected for your pool rather than taken from Yahoo alone."}
+              </p>
+            </div>
+            {!nothingToLogYet && (
+              <button
+                type="button"
+                onClick={() => setPasteOpen((o) => !o)}
+                className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                  report.unloggedWeeks.length > 0
+                    ? "bg-amber-500 text-white hover:bg-amber-600"
+                    : "border border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:text-zinc-400"
+                }`}
+              >
+                {pasteOpen ? "Close" : `Paste Week ${logWeek} picks`}
+              </button>
+            )}
           </div>
 
           {pasteOpen && (
-            <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex flex-col gap-2 border-t border-zinc-200/70 pt-3 dark:border-zinc-800">
               <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Paste your pool&apos;s Week {report.week} distribution, one team
-                per line. Team code then percentage, any separator.
+                One team per line, team code then percentage. Any separator, and
+                a partial list is fine.
               </p>
               <textarea
                 value={paste}
@@ -449,35 +504,99 @@ export default function SurvivorTool({ report }: { report: SurvivorReport }) {
                   {pasteError}
                 </p>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={working}
                   onClick={submitPaste}
                   className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
                 >
-                  Use these numbers
+                  Save Week {logWeek}
                 </button>
-                {report.ownership.source === "manual" && (
+                {pool.weeklyPicks[String(logWeek)] && (
                   <button
                     type="button"
                     disabled={working}
                     onClick={() => {
-                      const next = { ...(pool.ownershipOverride ?? {}) };
-                      delete next[String(report.week)];
-                      void patch({
-                        ownershipOverride: Object.keys(next).length ? next : null,
-                      });
+                      const next = { ...pool.weeklyPicks };
+                      delete next[String(logWeek)];
+                      void patch({ weeklyPicks: next });
                       setPasteOpen(false);
                     }}
-                    className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-600 transition-colors hover:border-zinc-300 disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-400"
+                    className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-600 transition-colors hover:border-rose-300 hover:text-rose-700 disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-400"
                   >
-                    Back to Yahoo
+                    Delete Week {logWeek}
                   </button>
                 )}
               </div>
             </div>
           )}
+
+          {report.field.weeksLogged > 0 && (
+            <div className="grid gap-4 border-t border-zinc-200/70 pt-3 sm:grid-cols-3 dark:border-zinc-800">
+              <Stat
+                label="Entries left"
+                value={report.field.entriesAlive.toLocaleString()}
+                hint="Derived from the picks you logged and the results, not typed in."
+              />
+              <Stat
+                label="Chalk factor"
+                value={`${report.calibration.alpha.toFixed(2)}x`}
+                tone={report.calibration.alpha > 1.15 ? "accent" : "default"}
+                hint="Above 1 means your pool crowds the favourite harder than the public does."
+              />
+              <Stat
+                label="Fit confidence"
+                value={report.calibration.confidence}
+                hint={`Based on ${report.calibration.weeks} logged week(s).`}
+              />
+            </div>
+          )}
+
+          {burnedByField.length > 0 && (
+            <div className="flex flex-col gap-2 border-t border-zinc-200/70 pt-3 dark:border-zinc-800">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                What the field has burned
+              </span>
+              <ul className="flex flex-wrap gap-1.5">
+                {burnedByField.map(([team, share]) => (
+                  <li
+                    key={team}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <Logo abbr={team} size={16} />
+                    <span className="text-[11px] font-semibold">{team}</span>
+                    <span className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
+                      {pct(share, 0)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                These are unavailable to that share of the surviving field. If
+                you still hold one for a week it is a big favourite, most of the
+                pool cannot follow you.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* The board */}
+      {rest.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              The rest of the board
+            </h2>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              {report.ownership.source === "projected"
+                ? `Ownership projected for your pool (${report.calibration.alpha.toFixed(2)}x chalk)`
+                : report.ownership.source === "manual"
+                  ? "Ownership from your logged picks"
+                  : "Ownership from Yahoo national"}
+            </span>
+          </div>
 
           <ul className="flex flex-col gap-2">
             {rest.map((c, i) => (

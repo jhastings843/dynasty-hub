@@ -9,9 +9,20 @@ const KEY = (season: number) => `survivor:pool:${season}:v1`;
 
 export async function getPool(season: number): Promise<PoolConfig> {
   try {
-    const stored = await redis.get<Partial<PoolConfig>>(KEY(season));
+    const stored = await redis.get<
+      Partial<PoolConfig> & {
+        ownershipOverride?: Record<string, Record<string, number>> | null;
+      }
+    >(KEY(season));
     if (!stored) return { ...DEFAULT_POOL };
-    return { ...DEFAULT_POOL, ...stored };
+    const { ownershipOverride, ...rest } = stored;
+    return {
+      ...DEFAULT_POOL,
+      ...rest,
+      // ownershipOverride was written when the tool assumed live pool picks
+      // were visible. Same shape, so carry anything stored under it forward.
+      weeklyPicks: { ...(ownershipOverride ?? {}), ...(rest.weeklyPicks ?? {}) },
+    };
   } catch {
     return { ...DEFAULT_POOL };
   }
@@ -24,6 +35,7 @@ export async function savePool(
   const current = await getPool(season);
   const next: PoolConfig = { ...current, ...patch };
   next.usedTeams = [...new Set(next.usedTeams)];
+  next.weeklyPicks = next.weeklyPicks ?? {};
   next.poolSize = Math.max(1, Math.round(next.poolSize));
   next.horizon = Math.min(12, Math.max(1, Math.round(next.horizon)));
   if (next.entriesAlive !== null) {

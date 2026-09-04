@@ -42,7 +42,7 @@ export type Ownership = Record<string, number>;
 
 export interface OwnershipSnapshot {
   week: number;
-  source: "yahoo" | "manual";
+  source: "yahoo" | "projected" | "manual";
   /** 0-1 fractions. Only teams playing that week appear. */
   picks: Ownership;
   pulledAt: string;
@@ -110,8 +110,14 @@ export interface PoolConfig {
   tieAdvances: boolean;
   /** Teams already burned, canonical abbrs. */
   usedTeams: string[];
-  /** Manual ownership override, week -> abbr -> percent (0-100). */
-  ownershipOverride: Record<string, Record<string, number>> | null;
+  /**
+   * What the pool ACTUALLY picked, week -> abbr -> percent. Only visible after
+   * a week ends, so this is a record of the past rather than an input to the
+   * present. It does two jobs: it fits how far the pool leans off the public,
+   * and it derives which teams the field has burned and how many entries are
+   * left.
+   */
+  weeklyPicks: Record<string, Record<string, number>>;
   /** Weeks to look ahead when pricing future value. */
   horizon: number;
 }
@@ -123,7 +129,7 @@ export const DEFAULT_POOL: PoolConfig = {
   canRebuy: false,
   tieAdvances: false,
   usedTeams: [],
-  ownershipOverride: null,
+  weeklyPicks: {},
   horizon: 8,
 };
 
@@ -134,6 +140,9 @@ export interface FuturePlan {
   home: boolean;
   winProb: number;
 }
+
+import type { FieldState } from "./field";
+import type { Calibration } from "./calibration";
 
 export interface SurvivorReport {
   season: number;
@@ -168,4 +177,14 @@ export interface SurvivorReport {
   ownership: OwnershipSnapshot;
   injuries: InjuryNote[];
   notes: string[];
+
+  /** Where the pool stands: entries left, and which teams it has burned. */
+  field: FieldState;
+  /**
+   * Completed weeks whose pool picks have not been logged yet. Logging these is
+   * the one recurring input the tool asks for.
+   */
+  unloggedWeeks: number[];
+  /** How far the pool leans off the public, fitted from the logged weeks. */
+  calibration: Calibration;
 }

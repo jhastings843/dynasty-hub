@@ -1,5 +1,7 @@
 import { NFL_TEAMS, teamByAbbr } from "./teams";
 import { normalizeOwnership, ownershipCoverage } from "./yahoo";
+import { applyAvailability, deriveFieldState, type WeekPicks } from "./field";
+import { calibrate, projectOwnership, type Observation } from "./calibration";
 import { notesForTeam } from "./intel-pure";
 import { equityMultiplier, fieldSurvival } from "./equity";
 import { futureCost, planFuture } from "./assignment";
@@ -8,6 +10,7 @@ import type {
   CandidateFlag,
   Game,
   InjuryNote,
+  Ownership,
   OwnershipSnapshot,
   PoolConfig,
   SurvivorReport,
@@ -62,6 +65,7 @@ function buildFlags(
   c: Omit<Candidate, "flags" | "score">,
   own: InjuryNote[],
   opp: InjuryNote[],
+  fieldBurned: number,
 ): CandidateFlag[] {
   const flags: CandidateFlag[] = [];
 
@@ -73,6 +77,14 @@ function buildFlags(
         c.ownership > c.winProb
           ? `Over-owned. ${pct(c.ownership)} of the field is on a ${pct(c.winProb)} favourite, and ownership above win probability is the textbook fade.`
           : `Heavy chalk at ${pct(c.ownership)}, but still owned below its ${pct(c.winProb)} win probability.`,
+    });
+  }
+
+  if (fieldBurned >= 0.35) {
+    flags.push({
+      kind: "leverage",
+      severity: "info",
+      text: `${(fieldBurned * 100).toFixed(0)}% of the surviving field has already used ${c.team}, so most of them cannot follow you here.`,
     });
   }
 
@@ -141,7 +153,9 @@ function buildFlags(
 export interface EngineInput {
   season: number;
   games: Game[];
-  ownership: OwnershipSnapshot;
+  /** Yahoo's distribution for EVERY week. Past weeks calibrate, this week prices. */
+  publicByWeek: Record<string, Ownership>;
+  publicPulledAt: string;
   injuries: InjuryNote[];
   pool: PoolConfig;
   now?: Date;
@@ -163,15 +177,71 @@ export function assembleReport(input: EngineInput): SurvivorReport {
   );
 
   const teamsPlaying = weekGames.flatMap((g) => [g.home, g.away]);
-  const manual = pool.ownershipOverride?.[String(week)];
-  const rawPicks = manual
-    ? Object.fromEntries(Object.entries(manual).map(([k, v]) => [k, v / 100]))
-    : input.ownership.picks;
+  const publicThisWeek = input.publicByWeek[String(week)] ?? {};
+
+  // Where the pool stands, derived from the weeks already logged. This is what
+  // makes entries-alive a computed number rather than one to keep by hand.
+  const logged: WeekPicks[] = Object.entries(pool.weeklyPicks).map(
+    ([w, picks]) => ({ week: Number(w), picks }),
+  );
+  const field = deriveFieldState(
+    logged.filter((o) => o.week < week),
+    games,
+    pool.poolSize,
+    pool.tieAdvances,
+  );
+
+  // How far the pool leans off the public, fitted week by week against Yahoo's
+  // distribution for those same weeks.
+  const observations: Observation[] = logged
+    .filter((o) => o.week < week && input.publicByWeek[String(o.week)])
+    .map((o) => ({
+      week: o.week,
+      publicPicks: input.publicByWeek[String(o.week)],
+      poolPicks: Object.fromEntries(
+        Object.entries(o.picks).map(([k, v]) => [k, v / 100]),
+      ),
+    }));
+  const calibration = calibrate(observations);
+
+  // If the pool's own numbers for THIS week are somehow known, they beat any
+  // projection. Otherwise project: take the public distribution, bend it by the
+  // pool's chalk factor, then remove the teams the field can no longer pick.
+  const manual = pool.weeklyPicks[String(week)];
+  let rawPicks: Ownership;
+  let source: OwnershipSnapshot["source"];
+  if (manual) {
+    rawPicks = Object.fromEntries(
+      Object.entries(manual).map(([k, v]) => [k, v / 100]),
+    );
+    source = "manual";
+  } else if (calibration.weeks > 0 || field.weeksLogged > 0) {
+    const bent = projectOwnership(publicThisWeek, calibration.alpha, teamsPlaying);
+    rawPicks = applyAvailability(bent, field.burned, teamsPlaying);
+    source = "projected";
+  } else {
+    rawPicks = publicThisWeek;
+    source = "yahoo";
+  }
+
   const coverage = ownershipCoverage(rawPicks, teamsPlaying);
   const ownership = normalizeOwnership(rawPicks, teamsPlaying);
 
-  const entriesAlive = pool.entriesAlive ?? pool.poolSize;
+  const entriesAlive =
+    field.weeksLogged > 0
+      ? field.entriesAlive
+      : (pool.entriesAlive ?? pool.poolSize);
   const used = new Set(pool.usedTeams);
+
+  // Weeks that are done but not yet logged. Only count a week as loggable once
+  // its results are actually in, or the field maths cannot use it anyway.
+  const unloggedWeeks: number[] = [];
+  for (let w = 1; w < week; w++) {
+    if (pool.weeklyPicks[String(w)]) continue;
+    const wk = games.filter((g) => g.week === w);
+    if (wk.length > 0 && wk.every((g) => g.completed)) unloggedWeeks.push(w);
+  }
+
 
   // Teams still on the board for the rest of the season, which is what the
   // future-value solver gets to work with.
@@ -228,6 +298,7 @@ export function assembleReport(input: EngineInput): SurvivorReport {
           partial,
           notesForTeam(injuries, team),
           notesForTeam(injuries, opponent),
+          field.burned[team] ?? 0,
         ),
         // The ranking number: the log of the equity this pick gains you this
         // week, minus the log-survival it costs you in the weeks to come.
@@ -302,8 +373,30 @@ export function assembleReport(input: EngineInput): SurvivorReport {
     }
   }
 
+  if (field.weeksLogged > 0) {
+    const last = field.attrition[field.attrition.length - 1];
+    notes.push(
+      `${field.weeksLogged} week(s) logged. The pool is down to ${field.entriesAlive} entries from ${pool.poolSize}${last ? `, ${last.entering - last.survived} of them in Week ${last.week}` : ""}. That count is derived from the picks you logged, so it does not need maintaining by hand.`,
+    );
+  }
+  if (calibration.weeks > 0) notes.push(calibration.summary);
+  if (unloggedWeeks.length > 0) {
+    notes.push(
+      `Week(s) ${unloggedWeeks.join(", ")} finished but have not been logged. Paste what the pool picked and the projection, the burned teams and the entry count all update.`,
+    );
+  }
+  if (field.unscored.length > 0) {
+    notes.push(
+      `Week(s) ${field.unscored.join(", ")} were logged but could not be scored, usually because the results are not all in. They are ignored until they can be.`,
+    );
+  }
+
   if (manual) {
-    notes.push("Using the pool distribution you pasted in, not Yahoo's national numbers.");
+    notes.push("Using the pool distribution you logged for this week, not a projection.");
+  } else if (source === "projected") {
+    notes.push(
+      `Ownership is Yahoo's national distribution bent to fit your pool: chalk factor ${calibration.alpha.toFixed(2)}x, then the teams the field has already burned removed. Confidence is ${calibration.confidence} on ${calibration.weeks} logged week(s).`,
+    );
   } else if (coverage < 0.5) {
     notes.push(
       "No usable pick distribution for this week, so the field is being treated as evenly spread. The leverage numbers are not meaningful until it loads, and the ranking is effectively just win probability minus future value.",
@@ -314,7 +407,7 @@ export function assembleReport(input: EngineInput): SurvivorReport {
     );
   } else {
     notes.push(
-      `Ownership is Yahoo's national Survival Football distribution, pulled ${new Date(input.ownership.pulledAt).toISOString().slice(0, 16).replace("T", " ")}Z. A ${entriesAlive}-entry pool tracks the public closely; paste your pool's own numbers to override it.`,
+      `Ownership is Yahoo's national Survival Football distribution, pulled ${new Date(input.publicPulledAt).toISOString().slice(0, 16).replace("T", " ")}Z. Log what your pool actually picked once a week ends and this starts correcting toward your pool instead.`,
     );
   }
   const unpriced = weekGames.filter((g) => g.probSource === "rating").length;
@@ -345,10 +438,16 @@ export function assembleReport(input: EngineInput): SurvivorReport {
     safetyGiveUp: best && safest ? Math.max(0, safest.winProb - best.winProb) : 0,
     plan: shownPlan,
     planSurvival,
-    ownership: manual
-      ? { ...input.ownership, source: "manual", picks: rawPicks }
-      : input.ownership,
+    ownership: {
+      week,
+      source,
+      picks: rawPicks,
+      pulledAt: input.publicPulledAt,
+    },
     injuries,
     notes,
+    field,
+    unloggedWeeks,
+    calibration,
   };
 }

@@ -29,21 +29,31 @@ async function fetchYahoo(): Promise<Record<string, Ownership>> {
   return Object.fromEntries([...byWeek].map(([w, p]) => [String(w), p]));
 }
 
+export interface PublicPicks {
+  /** week number as a string -> abbr -> fraction of the field. */
+  byWeek: Record<string, Ownership>;
+  pulledAt: string;
+}
+
 /**
- * Public pick percentages for the week. Cached 15 minutes: the distribution
- * moves all week as entries lock in, and the last read before kickoff is the
- * one that matters.
+ * Public pick percentages for EVERY week, not just this one. Cached 15 minutes:
+ * the distribution moves all week as entries lock in, and the last read before
+ * kickoff is the one that matters.
+ *
+ * Past weeks are kept because they are the baseline the pool's own logged picks
+ * get compared against. Without them there is nothing to calibrate to.
  */
-export async function getOwnership(week: number): Promise<OwnershipSnapshot> {
-  const all = await cached("survivor:yahoo:v1", 60 * 15, fetchYahoo).catch(
+export async function getPublicPicks(): Promise<PublicPicks> {
+  const byWeek = await cached("survivor:yahoo:v1", 60 * 15, fetchYahoo).catch(
     () => ({}) as Record<string, Ownership>,
   );
-  return {
-    week,
-    source: "yahoo",
-    picks: all[String(week)] ?? {},
-    pulledAt: new Date().toISOString(),
-  };
+  return { byWeek, pulledAt: new Date().toISOString() };
+}
+
+/** Just this week's slice, for callers that do not need the history. */
+export async function getOwnership(week: number): Promise<OwnershipSnapshot> {
+  const { byWeek, pulledAt } = await getPublicPicks();
+  return { week, source: "yahoo", picks: byWeek[String(week)] ?? {}, pulledAt };
 }
 
 export { normalizeOwnership, ownershipCoverage, canonYahoo, parseYahoo } from "./yahoo";

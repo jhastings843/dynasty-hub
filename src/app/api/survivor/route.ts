@@ -32,9 +32,8 @@ const patchSchema = z.object({
   tieAdvances: z.boolean().optional(),
   usedTeams: z.array(z.string().max(4)).max(32).optional(),
   horizon: z.number().int().min(1).max(12).optional(),
-  ownershipOverride: z
+  weeklyPicks: z
     .record(z.string(), z.record(z.string(), z.number().min(0).max(100)))
-    .nullable()
     .optional(),
 });
 

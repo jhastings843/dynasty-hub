@@ -41,11 +41,13 @@ function report(
   pool = {},
   now = BEFORE_WEEK_1,
   injuries: InjuryNote[] = [],
+  publicByWeek?: Record<string, Record<string, number>>,
 ) {
   return assembleReport({
     season: 2026,
     games,
-    ownership: { week: 1, source: "yahoo", picks, pulledAt: now.toISOString() },
+    publicByWeek: publicByWeek ?? { "1": picks },
+    publicPulledAt: now.toISOString(),
     injuries,
     pool: { ...DEFAULT_POOL, ...pool },
     now,
@@ -228,11 +230,11 @@ describe("assembleReport", () => {
 
   it("prefers a pasted pool distribution over the national one", () => {
     const r = report(slate, EVEN, {
-      ownershipOverride: { "1": { KC: 90, DEN: 2, PHI: 3, NYG: 2, BUF: 2, NYJ: 1 } },
+      weeklyPicks: { "1": { KC: 90, DEN: 2, PHI: 3, NYG: 2, BUF: 2, NYJ: 1 } },
     });
     expect(r.ownership.source).toBe("manual");
     expect(r.bestTeam).not.toBe("KC");
-    expect(r.notes.some((n) => n.includes("pasted"))).toBe(true);
+    expect(r.notes.some((n) => n.includes("you logged for this week"))).toBe(true);
   });
 
   it("says so rather than guessing when no distribution loaded", () => {
@@ -274,6 +276,150 @@ describe("assembleReport", () => {
     const texts = kc!.flags.filter((f) => f.kind === "injury").map((f) => f.text);
     expect(texts.some((t) => t.includes("Starter QB"))).toBe(true);
     expect(texts.some((t) => t.includes("A Back"))).toBe(false);
+  });
+
+  describe("learning from logged weeks", () => {
+    // Week 1 is finished, Week 2 is the live slate.
+    const played = (
+      week: number,
+      home: string,
+      away: string,
+      hs: number,
+      as_: number,
+    ): Game =>
+      game(week, home, away, 0.5, {
+        completed: true,
+        homeScore: hs,
+        awayScore: as_,
+      });
+
+    const twoWeeks = [
+      played(1, "KC", "DEN", 30, 10),
+      played(1, "PHI", "NYG", 21, 7), // NYG busts, so the 30% on it are out
+      game(2, "BUF", "NYJ", 0.8),
+      game(2, "SF", "SEA", 0.6),
+    ];
+    // After Week 1 kicked off (09-07 17:00Z) and before Week 2 does (09-08 17:00Z).
+    const NOW_WEEK_2 = new Date("2026-09-08T00:00:00Z");
+    const publicByWeek = {
+      "1": { KC: 0.6, NYG: 0.4 },
+      "2": { BUF: 0.7, NYJ: 0.05, SF: 0.2, SEA: 0.05 },
+    };
+
+    function wk2(pool: Record<string, unknown>) {
+      return assembleReport({
+        season: 2026,
+        games: twoWeeks,
+        publicByWeek,
+        publicPulledAt: NOW_WEEK_2.toISOString(),
+        injuries: [],
+        pool: { ...DEFAULT_POOL, poolSize: 500, ...pool },
+        now: NOW_WEEK_2,
+      });
+    }
+
+    it("asks for the finished week it has not been given", () => {
+      const r = wk2({});
+      expect(r.week).toBe(2);
+      expect(r.unloggedWeeks).toEqual([1]);
+      expect(r.notes.some((n) => n.includes("have not been logged"))).toBe(true);
+    });
+
+    it("stops asking once that week is logged", () => {
+      const r = wk2({ weeklyPicks: { "1": { KC: 70, NYG: 30 } } });
+      expect(r.unloggedWeeks).toEqual([]);
+    });
+
+    it("derives entries alive instead of trusting the typed number", () => {
+      // 70% took KC and survived, 30% took NYG and busted.
+      const r = wk2({
+        weeklyPicks: { "1": { KC: 70, NYG: 30 } },
+        entriesAlive: 999, // deliberately wrong
+      });
+      expect(r.entriesAlive).toBe(350);
+      expect(r.field.entriesAlive).toBe(350);
+      expect(r.field.weeksLogged).toBe(1);
+    });
+
+    it("falls back to the typed number when nothing is logged", () => {
+      expect(wk2({ entriesAlive: 420 }).entriesAlive).toBe(420);
+    });
+
+    it("knows which teams the surviving field can no longer use", () => {
+      const r = wk2({ weeklyPicks: { "1": { KC: 70, NYG: 30 } } });
+      expect(r.field.burned.KC).toBeCloseTo(1, 4);
+      expect(r.field.burned.NYG ?? 0).toBeCloseTo(0, 4);
+    });
+
+    it("fits how far the pool leans off the public", () => {
+      const r = wk2({ weeklyPicks: { "1": { KC: 90, NYG: 10 } } });
+      // The pool went harder on the chalk than Yahoo's 60/40.
+      expect(r.calibration.weeks).toBe(1);
+      expect(r.calibration.alpha).toBeGreaterThan(1);
+      expect(r.ownership.source).toBe("projected");
+    });
+
+    it("says it is projecting and how much it trusts the fit", () => {
+      const r = wk2({ weeklyPicks: { "1": { KC: 90, NYG: 10 } } });
+      expect(r.notes.some((n) => n.includes("chalk factor"))).toBe(true);
+      expect(r.calibration.confidence).toBe("low");
+    });
+
+    it("uses raw public numbers before anything is logged", () => {
+      expect(wk2({}).ownership.source).toBe("yahoo");
+      expect(wk2({}).calibration.alpha).toBe(1);
+    });
+
+    it("flags a team most of the field can no longer follow you onto", () => {
+      // Everyone alive used BUF in week 1, so it is unavailable to them now.
+      const burnedBuf = [
+        played(1, "BUF", "NYJ", 30, 10),
+        game(2, "BUF", "NYJ", 0.8),
+        game(2, "SF", "SEA", 0.6),
+      ];
+      const r = assembleReport({
+        season: 2026,
+        games: burnedBuf,
+        publicByWeek: { "1": { BUF: 1 }, "2": { BUF: 0.7, SF: 0.3 } },
+        publicPulledAt: NOW_WEEK_2.toISOString(),
+        injuries: [],
+        pool: {
+          ...DEFAULT_POOL,
+          poolSize: 500,
+          weeklyPicks: { "1": { BUF: 100 } },
+        },
+        now: NOW_WEEK_2,
+      });
+      const buf = r.candidates.find((c) => c.team === "BUF")!;
+      expect(buf.ownership).toBeCloseTo(0, 4);
+      expect(
+        buf.flags.some((f) => f.text.includes("cannot follow you here")),
+      ).toBe(true);
+    });
+
+    it("ignores a logged week whose results are not all in", () => {
+      const halfPlayed = [
+        played(1, "KC", "DEN", 30, 10),
+        game(1, "PHI", "NYG", 0.7), // never finished
+        game(2, "BUF", "NYJ", 0.8),
+      ];
+      const r = assembleReport({
+        season: 2026,
+        games: halfPlayed,
+        publicByWeek,
+        publicPulledAt: NOW_WEEK_2.toISOString(),
+        injuries: [],
+        pool: {
+          ...DEFAULT_POOL,
+          poolSize: 500,
+          weeklyPicks: { "1": { KC: 70, NYG: 30 } },
+        },
+        now: NOW_WEEK_2,
+      });
+      expect(r.field.weeksLogged).toBe(0);
+      expect(r.field.unscored).toEqual([1]);
+      expect(r.entriesAlive).toBe(500);
+    });
   });
 
   it("marks a game with no line as soft rather than quoting it as fact", () => {
