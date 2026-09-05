@@ -61,18 +61,54 @@ export function scoreStatLine(stats: StatLine, scoring: ScoringSettings): number
  * pass-catching backs and slot receivers, and a 4-point passing touchdown
  * flattens the quarterback position.
  */
-export function scoringSkewNotes(scoring: ScoringSettings): string[] {
+export function scoringSkewNotes(
+  scoring: ScoringSettings,
+  /**
+   * The scoring of the list actually being quoted.
+   *
+   * Half PPR was the only possible answer until 2026-09-05, when he published
+   * full PPR and standard as well. Once a league is reading his matching list
+   * there is no receiving skew left to warn about, and the warning became worse
+   * than useless: Dah Chopped was told "full PPR against a half-PPR list" on the
+   * same screen as "ranked on his full ppr list, which matches this league's
+   * scoring". Two sentences, one of them wrong, and no way for Jack to know
+   * which.
+   *
+   * Defaults to half PPR so a caller that has not been told keeps the old
+   * behaviour rather than silently dropping a true warning.
+   */
+  listScoring: string = "half_ppr",
+): string[] {
   const notes: string[] = [];
 
   const rec = scoring.rec ?? 0;
-  if (rec >= 1) {
-    notes.push(
-      "Full PPR against a half-PPR list: receiving backs and slot receivers are worth more here than their rank says.",
-    );
-  } else if (rec === 0) {
-    notes.push(
-      "Standard scoring against a half-PPR list: high-volume receivers are worth less here than their rank says.",
-    );
+  const leagueScoring = rec >= 1 ? "full_ppr" : rec === 0 ? "standard" : "half_ppr";
+  // A list whose scoring could not be read is not a match for anything, so the
+  // warning stays. Unknown is a reason to be careful, not a reason to go quiet.
+  const say = (s: string) =>
+    s === "full_ppr" ? "full-PPR" : s === "standard" ? "standard" : "half-PPR";
+
+  // Only when the two actually differ. The direction is named rather than
+  // implied: a list read at the wrong scoring is not vaguely off, it is off in
+  // a way you can act on.
+  if (leagueScoring !== listScoring) {
+    if (leagueScoring === "full_ppr") {
+      notes.push(
+        `Full PPR against a ${say(listScoring)} list: receiving backs and slot receivers are worth more here than their rank says.`,
+      );
+    } else if (leagueScoring === "standard") {
+      notes.push(
+        `Standard scoring against a ${say(listScoring)} list: high-volume receivers are worth less here than their rank says.`,
+      );
+    } else {
+      notes.push(
+        `Half PPR against a ${say(listScoring)} list: ${
+          listScoring === "full_ppr"
+            ? "pass-catching backs and slot receivers are worth slightly less here than their rank says."
+            : "receivers are worth more here than their rank says."
+        }`,
+      );
+    }
   }
 
   const passTd = scoring.pass_td ?? 6;

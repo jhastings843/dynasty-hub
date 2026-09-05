@@ -113,9 +113,11 @@ export async function GET(request: Request) {
     // this route and cannot see the league settings, so without these notes it
     // would quote a half-PPR rank at a full-PPR draft and sound certain.
     scoringNotes: [
-      ...scoringSkewNotes(rawLeague?.scoring_settings ?? {}),
       // A skew note is only true while the list is the wrong one for this
-      // league. Once his matching list is ingested, say so instead.
+      // league, so the list being quoted is passed in and the note suppresses
+      // itself. It used to be added unconditionally and sat directly above the
+      // line saying the list matched, which is two answers to one question.
+      ...scoringSkewNotes(rawLeague?.scoring_settings ?? {}, lab.scoring),
       ...(lab.matchesLeagueScoring
         ? [`Ranked on his ${lab.scoring.replace("_", " ")} list, which matches this league's scoring.`]
         : []),
