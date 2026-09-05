@@ -11,13 +11,12 @@ import { PlayerLink } from "@/components/PlayerLink";
 import { RefreshButton } from "@/components/RefreshButton";
 import {
   JINGLES_CALLS,
-  LAB_300_POSTED,
-  LAB_300_URL,
   LAB_300_VERSION,
   LAST_UPDATED,
 } from "@/lib/jingles/data";
 import type { LeagueProfile } from "@/lib/league/types";
 import { buildLiveBoard } from "@/lib/redraft/live-board";
+import { activeLab } from "@/lib/jingles/active";
 import {
   displayPositionRank,
   picksForSlot,
@@ -92,6 +91,12 @@ export async function RedraftDraft({
   // Two implementations of "best available" that drift is worse than not having
   // the second one: Jack's phone would quietly disagree with this screen while
   // he is on the clock.
+  // The same list /api/draft answers from. This screen used to fall back to the
+  // file compiled into the build while the API read whatever had been ingested
+  // that morning, which is precisely the drift the comment above warns about,
+  // one screen apart: on 2026-09-05 he posted a new Lab 300 at 11:23 and this
+  // page would still have been ordering by the 30 August one.
+  const lab = await activeLab(profile);
   const { needs, uncoveredSlots, board, bestAvailable, pool } = buildLiveBoard({
     rosterPositions: profile.rosterPositions,
     draftedIds: drafted,
@@ -99,6 +104,8 @@ export async function RedraftDraft({
     positionById: (id) => players[id]?.position ?? undefined,
     values,
     limit: 5,
+    labList: lab.list,
+    rankings: { byId: lab.byId, tierFor: lab.tierFor },
   });
 
   // His calls are ADP-relative, which is exactly what a draft board wants.
@@ -193,14 +200,14 @@ export async function RedraftDraft({
           <p className="max-w-2xl text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
             Ordered by{" "}
             <a
-              href={LAB_300_URL}
+              href={lab.url}
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-amber-700 hover:underline dark:text-amber-400"
             >
-              the Lab 300 v{LAB_300_VERSION}
+              {lab.source === "curated" ? `the Lab 300 v${LAB_300_VERSION}` : lab.title}
             </a>{" "}
-            ({LAB_300_POSTED}), his tiered half-PPR ranking, with FantasyCalc
+            ({lab.postedAt.slice(0, 10)}), his tiered half-PPR ranking, with FantasyCalc
             value alongside and for anyone he has not ranked. Age and long-term
             upside are ignored on purpose: the roster resets in January.
           </p>

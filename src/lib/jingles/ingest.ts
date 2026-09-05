@@ -2,6 +2,7 @@ import "server-only";
 import { redis } from "@/lib/redis/client";
 import { getAllPlayers } from "@/lib/sleeper/client";
 import { fetchPosts, type JinglesPost } from "./feed";
+import { inboxConfigured } from "./inbox";
 import { parseMentions, parsePlays, parseRankings, type Scoring } from "./parse";
 import { resolveNames, toCandidates } from "./resolve";
 
@@ -302,11 +303,16 @@ export async function ingestJingles(options: { force?: boolean } = {}): Promise<
     report.postsNew++;
 
     if (post.truncated) {
+      // Still a teaser after the inbox was offered its chance, so say which of
+      // the two ways it failed. "Paid post" on its own sent somebody looking
+      // for a paywall problem that had been solved.
       report.skipped.push({
         title: post.title,
         reason:
           post.audience === "only_paid"
-            ? "paid post, and the public feed only carries the teaser"
+            ? inboxConfigured()
+              ? "paid post, and no email of it was found in the inbox either"
+              : "paid post, and no mailbox is configured here to read the emailed copy"
             : "body looks truncated",
       });
       seen.add(post.id);

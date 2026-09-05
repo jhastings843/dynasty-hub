@@ -1,14 +1,27 @@
 # Refreshing Jingles Labs
 
+> **Mostly obsolete as of 2026-09-05.** Rankings are ingested automatically now,
+> free posts from the Substack feed and paid ones from Jack's email, and the
+> app prefers the ingested list over `data.ts` wherever it can reach one.
+> `src/lib/jingles/data.ts` is the fallback, not the source. You would follow
+> the steps below only to change that fallback, which is rare. Everything about
+> what actually runs is in
+> `docs/superpowers/specs/2026-09-02-jingles-substack-ingestion-design.md`, and
+> `/api/jingles-ingest` with no arguments tells you what has been pulled and
+> when.
+
 `src/lib/jingles/data.ts` is a hand-curated snapshot of r/JoeInglesOfficial.
 He posts often, so it goes stale quickly. This is how to update it.
 
-## Why it is not automatic
+## Why it was not automatic
 
-Reddit blocks unauthenticated reads, so there is no path from a Vercel
-function to the subreddit. Reaching it needs a logged-in browser session,
+Reddit blocks unauthenticated reads, so there was no path from a Vercel
+function to the subreddit. Reaching it needed a logged-in browser session,
 which only exists on your machine. Scheduled scraping of one person's
 subreddit is also not something this project should do.
+
+He launched a Substack on 2026-08-31, which is where the posts are now, and
+that constraint is gone.
 
 So: read the posts locally, add entries, commit. Two minutes when he posts.
 

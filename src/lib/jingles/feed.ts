@@ -1,6 +1,7 @@
 import "server-only";
 import { cached } from "@/lib/redis/cached";
 import { classifyPost, htmlToLines, type PostKind } from "./parse";
+import { fetchInboxPosts, inboxConfigured, slugFrom } from "./inbox";
 
 // Reading Jingles Labs off Substack.
 //
@@ -154,11 +155,11 @@ export async function fetchArchive(limit = 30): Promise<Map<string, ArchiveRow>>
   return byUrl;
 }
 
-/** Feed posts, with the archive's audience field merged in where it matches. */
+/** Posts to consider ingesting: the feed's list, made whole where it is not. */
 export async function fetchPosts(): Promise<JinglesPost[]> {
   const [posts, archive] = await Promise.all([fetchFeedPosts(), fetchArchive()]);
 
-  return posts.map((post) => {
+  const merged: JinglesPost[] = posts.map((post) => {
     const row = archive.get(post.url);
     if (!row?.audience) return post;
     const audience =
@@ -169,6 +170,42 @@ export async function fetchPosts(): Promise<JinglesPost[]> {
       // A paid post read from the feed is a teaser whether or not the marker
       // survived, so the archive's word is better than the body's.
       truncated: post.truncated || audience === "only_paid",
+    };
+  });
+
+  return fillFromInbox(merged);
+}
+
+/**
+ * Replace the teasers with the real thing, from Jack's email.
+ *
+ * The Lab 300 went paid on 2026-09-05 and the feed's copy of it is 180 words
+ * ending in "Read more". Substack delivers the whole post to a subscriber's
+ * inbox, so a post the app wants and cannot read is looked for there.
+ *
+ * Opened only when there is something to look for, and only when the mailbox
+ * is configured. On a day when everything is free this costs one boolean.
+ */
+async function fillFromInbox(posts: JinglesPost[]): Promise<JinglesPost[]> {
+  const wanted = posts.filter((p) => p.truncated && p.kind !== "other");
+  if (!wanted.length || !inboxConfigured()) return posts;
+
+  const mail = await fetchInboxPosts();
+  if (!mail.size) return posts;
+
+  return posts.map((post) => {
+    if (!post.truncated) return post;
+    const slug = slugFrom(post.url);
+    const found = slug ? mail.get(slug) : undefined;
+    if (!found) return post;
+    return {
+      ...post,
+      html: found.html,
+      // Classified again against the real body. A teaser is 180 words and can
+      // read as prose when the post it was cut from is a 300 row list.
+      kind: classifyPost(post.title, found.html),
+      truncated: false,
+      source: "inbox" as const,
     };
   });
 }

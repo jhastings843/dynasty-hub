@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",
+    "imapflow": "^1.7.8",
     "lucide-react": "^1.14.0",
+    "mailparser": "^3.9.20",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/mailparser": "^3.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

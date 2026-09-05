@@ -109,8 +109,19 @@ function ingestedIndex(
  * already names, and that is a great deal better than no ranking at all.
  */
 export async function activeLab(profile: LeagueProfile): Promise<LabIndex> {
-  const wanted = scoringForLeague(profile);
+  return labForScoring(scoringForLeague(profile));
+}
 
+/**
+ * The best available rankings for a scoring, with no league in hand.
+ *
+ * /api/jingles is the reason this exists separately. Atlas reads that endpoint
+ * and cannot see which league a question is about, so it has no profile to
+ * pass, and until 2026-09-05 it read `data.ts` directly. That meant the draft
+ * board answered off the list ingested this morning while Atlas answered off
+ * the file compiled in last week: two lists, one app, both confident.
+ */
+export async function labForScoring(wanted: Scoring): Promise<LabIndex> {
   const exact = await readRankings(wanted);
   if (exact && exact.entries.length > 0) return ingestedIndex(exact, true);
 

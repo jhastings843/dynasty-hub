@@ -1,0 +1,810 @@
+<html lang="en" dir="ltr" style="scrollbar-width: thin;scrollbar-color: rgb(219,219,219)rgb(255,255,255);"><head><meta charset="utf-8"><title>The Lab 300: 2026 Half PPR Rankings</title><style>
+@media (max-width: 1024px) {
+  .typography .pullquote-align-left,
+  .typography.editor .pullquote-align-left,
+  .typography .pullquote-align-right,
+  .typography.editor .pullquote-align-right,
+  .typography .pullquote-align-wide,
+  .typography.editor .pullquote-align-wide,
+  .typography .pullquote-align-center,
+  .typography.editor .pullquote-align-center {
+    float: none;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .typography .markup table.image-wrapper img,
+  .typography.editor .markup table.image-wrapper img,
+  .typography .markup table.kindle-wrapper img,
+  .typography.editor .markup table.kindle-wrapper img {
+    max-width: 550px;
+  }
+}
+@media (min-width: 1024px) {
+  .typography:not(:has(#toc)) .captioned-image-container figure:has(> a.image2-offset-left),
+  .typography.editor:not(:has(#toc)) .captioned-image-container figure:has(> a.image2-offset-left) {
+    margin-left: var(--image-offset-margin);
+  }
+  .typography:not(:has(#toc)) .captioned-image-container figure:has(> a.image2-offset-right),
+  .typography.editor:not(:has(#toc)) .captioned-image-container figure:has(> a.image2-offset-right) {
+    margin-right: var(--image-offset-margin);
+  }
+}
+@media (min-width: 1300px) {
+  .typography .captioned-image-container figure:has(> a.image2-offset-left),
+  .typography.editor .captioned-image-container figure:has(> a.image2-offset-left) {
+    margin-left: var(--image-offset-margin);
+  }
+  .typography .captioned-image-container figure:has(> a.image2-offset-right),
+  .typography.editor .captioned-image-container figure:has(> a.image2-offset-right) {
+    margin-right: var(--image-offset-margin);
+  }
+}
+@media (max-width: 1024px) {
+  .typography,
+  .typography.editor {
+    /* Disable offset on mobile/tablet */
+  }
+  .typography .captioned-image-container figure:has(> a.image2-align-left),
+  .typography.editor .captioned-image-container figure:has(> a.image2-align-left),
+  .typography .captioned-image-container figure:has(> a.image2-align-right),
+  .typography.editor .captioned-image-container figure:has(> a.image2-align-right) {
+    float: none;
+    margin: 1em auto;
+    max-width: 100%;
+    width: auto;
+    padding: 0;
+  }
+  .typography .captioned-image-container figure:has(> a.image2-align-left.thefp),
+  .typography.editor .captioned-image-container figure:has(> a.image2-align-left.thefp),
+  .typography .captioned-image-container figure:has(> a.image2-align-right.thefp),
+  .typography.editor .captioned-image-container figure:has(> a.image2-align-right.thefp) {
+    margin: 1em auto;
+  }
+  .typography .captioned-image-container figure:has(> a.image2-offset-left),
+  .typography.editor .captioned-image-container figure:has(> a.image2-offset-left),
+  .typography .captioned-image-container figure:has(> a.image2-offset-right),
+  .typography.editor .captioned-image-container figure:has(> a.image2-offset-right) {
+    margin: 1em auto;
+  }
+  .typography .captioned-image-container figure:has(> a.image2-align-left) .image2-inset,
+  .typography.editor .captioned-image-container figure:has(> a.image2-align-left) .image2-inset,
+  .typography .captioned-image-container figure:has(> a.image2-align-right) .image2-inset,
+  .typography.editor .captioned-image-container figure:has(> a.image2-align-right) .image2-inset {
+    display: block;
+    justify-content: initial;
+  }
+}
+@media (max-width: 768px) {
+  .typography .markup div.sponsorship-campaign-embed,
+  .typography.editor .markup div.sponsorship-campaign-embed {
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+  .typography .markup div.sponsorship-campaign-embed:first-child,
+  .typography.editor .markup div.sponsorship-campaign-embed:first-child {
+    margin-top: 0px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .typography .markup div.youtube-overlay,
+  .typography.editor .markup div.youtube-overlay,
+  .typography .markup div.vimeo-overlay,
+  .typography.editor .markup div.vimeo-overlay {
+    display: none !important;
+  }
+}
+@media screen and (max-width: 370px) {
+  .typography .markup div.tiktok-wrap,
+  .typography.editor .markup div.tiktok-wrap {
+    width: calc(95vw - 32px);
+    height: calc((95vw - 32px - 2px) / 0.485714);
+  }
+}
+@media screen and (max-width: 650px) {
+  .typography .markup div.embedded-publication-wrap .embedded-publication.show-subscribe,
+  .typography.editor .markup div.embedded-publication-wrap .embedded-publication.show-subscribe {
+    padding: 24px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .typography .markup div.subscription-widget-wrap .subscription-widget.show-subscribe,
+  .typography.editor .markup div.subscription-widget-wrap .subscription-widget.show-subscribe,
+  .typography .markup div.subscription-widget-wrap-editor .subscription-widget.show-subscribe,
+  .typography.editor .markup div.subscription-widget-wrap-editor .subscription-widget.show-subscribe,
+  .typography .markup div.captioned-button-wrap .subscription-widget.show-subscribe,
+  .typography.editor .markup div.captioned-button-wrap .subscription-widget.show-subscribe {
+    padding: 0px 24px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .typography .markup div.subscription-widget-wrap .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  .typography.editor .markup div.subscription-widget-wrap .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  .typography .markup div.subscription-widget-wrap-editor .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  .typography.editor .markup div.subscription-widget-wrap-editor .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  .typography .markup div.captioned-button-wrap .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  .typography.editor .markup div.captioned-button-wrap .subscription-widget.show-subscribe .subscription-widget-subscribe .button {
+    padding: 10px 12px;
+    min-width: 110px;
+  }
+}
+@media (max-width: 650px) {
+  .typography .markup .twitter-embed,
+  .typography.editor .markup .twitter-embed,
+  .typography .markup .tweet,
+  .typography.editor .markup .tweet {
+    padding: 12px;
+  }
+}
+@media (max-width: 650px) {
+  .typography .markup .twitter-embed .tweet-text,
+  .typography.editor .markup .twitter-embed .tweet-text,
+  .typography .markup .tweet .tweet-text,
+  .typography.editor .markup .tweet .tweet-text {
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+@media (max-width: 650px) {
+  .typography .markup .twitter-embed .tweet-photos-container.two,
+  .typography.editor .markup .twitter-embed .tweet-photos-container.two,
+  .typography .markup .tweet .tweet-photos-container.two,
+  .typography.editor .markup .tweet .tweet-photos-container.two,
+  .typography .markup .twitter-embed .tweet-photos-container.three,
+  .typography.editor .markup .twitter-embed .tweet-photos-container.three,
+  .typography .markup .tweet .tweet-photos-container.three,
+  .typography.editor .markup .tweet .tweet-photos-container.three,
+  .typography .markup .twitter-embed .tweet-photos-container.four,
+  .typography.editor .markup .twitter-embed .tweet-photos-container.four,
+  .typography .markup .tweet .tweet-photos-container.four,
+  .typography.editor .markup .tweet .tweet-photos-container.four {
+    height: 200px;
+  }
+}
+@media (max-width: 650px) {
+  .typography .markup .twitter-embed a.expanded-link .expanded-link-img,
+  .typography.editor .markup .twitter-embed a.expanded-link .expanded-link-img,
+  .typography .markup .tweet a.expanded-link .expanded-link-img,
+  .typography.editor .markup .tweet a.expanded-link .expanded-link-img {
+    max-height: 180px;
+  }
+}
+@media (max-width: 650px) {
+  .typography .markup .twitter-embed a.expanded-link .expanded-link-description,
+  .typography.editor .markup .twitter-embed a.expanded-link .expanded-link-description,
+  .typography .markup .tweet a.expanded-link .expanded-link-description,
+  .typography.editor .markup .tweet a.expanded-link .expanded-link-description {
+    display: none;
+  }
+}
+@media screen and (max-width: 650px) {
+  .typography .markup .apple-podcast-container,
+  .typography.editor .markup .apple-podcast-container {
+    width: unset;
+  }
+}
+@media (max-width: 420px) {
+  .typography .markup .install-substack-app-embed img.install-substack-app-embed-img,
+  .typography.editor .markup .install-substack-app-embed img.install-substack-app-embed-img {
+    margin: 0 auto 16px auto;
+  }
+}
+@media (max-width: 420px) {
+  .typography .markup .install-substack-app-embed .install-substack-app-embed-text,
+  .typography.editor .markup .install-substack-app-embed .install-substack-app-embed-text {
+    margin: 0 0 12px 0;
+    max-width: 100%;
+    width: auto;
+    text-align: center;
+  }
+}
+@media (max-width: 420px) {
+  .typography .markup .install-substack-app-embed .install-substack-app-embed-link,
+  .typography.editor .markup .install-substack-app-embed .install-substack-app-embed-link {
+    display: flex;
+    justify-content: center;
+  }
+}
+@media screen and (min-width: 481px) {
+  .share-button-container {
+    height: 38px;
+  }
+}
+@media screen and (min-width: 481px) {
+  .share-button-container a.comment {
+    height: 38px;
+    line-height: 38px;
+    padding-right: 10px;
+  }
+}
+@media screen and (max-width: 480px) {
+  .share-button-container .separator {
+    display: block;
+    margin: 0;
+    height: 8px;
+    border-left: none;
+  }
+}
+@media screen and (max-width: 480px) {
+  .share-button-container a.share.first img {
+    padding-left: 0;
+  }
+}
+@media screen and (min-width: 481px) {
+  .share-button-container a.mobile {
+    display: none !important;
+  }
+}
+@media screen and (min-width: 541px) {
+  .settings-add-pub-modal-wrapper .container .add-recommending-pub-modal-container {
+    padding: 36px;
+    height: 680px;
+  }
+}
+@media screen and (min-width: 541px) {
+  .settings-add-pub-modal-wrapper .container .add-recommending-pub-modal-container .footer {
+    position: absolute;
+    bottom: 36px;
+    margin: 0px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .header-anchor-parent {
+    display: none;
+  }
+}
+@media screen and (max-width: 768px) {
+  .post {
+    padding: 16px 0 0 0;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post .post-header .post-label {
+    margin-top: 8px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post .post-header .meta-author-wrap.alternative-meta .meta-right-column .post-meta {
+    margin-top: 6px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post .footer-facepile-container {
+    height: 64px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post .post-footer.use-separators {
+    justify-content: center;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post .post-footer.next-prev {
+    height: 64px;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post-contributor-footer .post-contributor-bio-table {
+    display: block;
+  }
+  .post-contributor-footer .post-contributor-bio-table-row {
+    display: flex;
+    flex-direction: row;
+  }
+  .post-contributor-footer .post-contributor-bio-userhead-cell,
+  .post-contributor-footer .post-contributor-bio-body-cell {
+    display: block;
+  }
+  .post-contributor-footer .post-contributor-bio-body-cell {
+    flex-grow: 1;
+  }
+  .post-contributor-footer .post-contributor-bio-body-table {
+    display: block;
+  }
+  .post-contributor-footer .post-contributor-bio-body-table-row {
+    display: block;
+  }
+  .post-contributor-footer .post-contributor-bio-copy-cell,
+  .post-contributor-footer .post-contributor-bio-controls-cell {
+    display: block;
+  }
+  .post-contributor-footer .post-contributor-bio-copy-cell {
+    margin: 0 0 16px 0;
+  }
+  .post-contributor-footer .post-contributor-bio-controls-cell {
+    width: auto;
+  }
+  .post-contributor-footer .post-contributor-bio-controls {
+    margin: auto;
+  }
+  .post-contributor-footer .post-contributor-bio-controls .button.primary {
+    width: 100%;
+  }
+  .post-contributor-footer .post-contributor-bio-text {
+    font-size: 14px;
+  }
+}
+@media screen and (min-width: 768px) {
+  .post-silhouette {
+    padding: 32px 0;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post-silhouette .post-silhouette-title {
+    margin-top: 10.44225025px;
+    height: 120px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post-silhouette .post-silhouette-meta {
+    width: 75%;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post-silhouette .post-silhouette-meta.with-byline-image {
+    margin: 20px 0;
+  }
+}
+@media screen and (max-width: 650px) {
+  .use-theme-bg .post-meta.alternative-meta .post-meta-item,
+  .post-meta.alternative-meta .post-meta-item {
+    padding-right: 16px;
+  }
+}
+@media screen and (max-width: 370px) {
+  .use-theme-bg .post-meta.alternative-meta .post-meta-item,
+  .post-meta.alternative-meta .post-meta-item {
+    font-size: 14px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .use-theme-bg .post-meta.alternative-meta .post-meta-item.guest-author-publication,
+  .post-meta.alternative-meta .post-meta-item.guest-author-publication {
+    display: none;
+  }
+}
+@media screen and (max-width: 370px) {
+  .post-meta .post-meta-item .post-meta-button {
+    height: 36px !important;
+    /* important to override in-line height style on emails */
+  }
+  .post-meta .post-meta-item .post-meta-button .meta-button-label {
+    display: none;
+  }
+  .post-meta .post-meta-item .post-meta-button > svg {
+    margin-right: 0;
+  }
+}
+@media screen and (max-width: 370px) {
+  .post-meta .post-meta-item {
+    font-size: 12px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post .floating-subscribe-button {
+    bottom: 20px;
+    right: 20px;
+  }
+}
+@media screen and (max-width: 480px) {
+  body.bulwark-email-thebulwark .bulwark-email-title {
+    font-size: 32px !important;
+    line-height: 36px !important;
+  }
+}
+@media (max-width: 1024px) {
+  body .pullquote-align-left,
+  body .pullquote-align-right,
+  body .pullquote-align-wide,
+  body .pullquote-align-center {
+    float: none;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  body .markup table.image-wrapper img,
+  body .markup table.kindle-wrapper img {
+    max-width: 550px;
+  }
+}
+@media (min-width: 1024px) {
+  body:not(:has(#toc)) .captioned-image-container figure:has(> a.image2-offset-left) {
+    margin-left: var(--image-offset-margin);
+  }
+  body:not(:has(#toc)) .captioned-image-container figure:has(> a.image2-offset-right) {
+    margin-right: var(--image-offset-margin);
+  }
+}
+@media (min-width: 1300px) {
+  body .captioned-image-container figure:has(> a.image2-offset-left) {
+    margin-left: var(--image-offset-margin);
+  }
+  body .captioned-image-container figure:has(> a.image2-offset-right) {
+    margin-right: var(--image-offset-margin);
+  }
+}
+@media (max-width: 1024px) {
+  body {
+    /* Disable offset on mobile/tablet */
+  }
+  body .captioned-image-container figure:has(> a.image2-align-left),
+  body .captioned-image-container figure:has(> a.image2-align-right) {
+    float: none;
+    margin: 1em auto;
+    max-width: 100%;
+    width: auto;
+    padding: 0;
+  }
+  body .captioned-image-container figure:has(> a.image2-align-left.thefp),
+  body .captioned-image-container figure:has(> a.image2-align-right.thefp) {
+    margin: 1em auto;
+  }
+  body .captioned-image-container figure:has(> a.image2-offset-left),
+  body .captioned-image-container figure:has(> a.image2-offset-right) {
+    margin: 1em auto;
+  }
+  body .captioned-image-container figure:has(> a.image2-align-left) .image2-inset,
+  body .captioned-image-container figure:has(> a.image2-align-right) .image2-inset {
+    display: block;
+    justify-content: initial;
+  }
+}
+@media (max-width: 768px) {
+  body .markup div.sponsorship-campaign-embed {
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+  body .markup div.sponsorship-campaign-embed:first-child {
+    margin-top: 0px;
+  }
+}
+@media screen and (max-width: 650px) {
+  body .markup div.youtube-overlay,
+  body .markup div.vimeo-overlay {
+    display: none !important;
+  }
+}
+@media screen and (max-width: 370px) {
+  body .markup div.tiktok-wrap {
+    width: calc(95vw - 32px);
+    height: calc((95vw - 32px - 2px) / 0.485714);
+  }
+}
+@media screen and (max-width: 650px) {
+  body .markup div.embedded-publication-wrap .embedded-publication.show-subscribe {
+    padding: 24px;
+  }
+}
+@media screen and (max-width: 650px) {
+  body .markup div.subscription-widget-wrap .subscription-widget.show-subscribe,
+  body .markup div.subscription-widget-wrap-editor .subscription-widget.show-subscribe,
+  body .markup div.captioned-button-wrap .subscription-widget.show-subscribe {
+    padding: 0px 24px;
+  }
+}
+@media screen and (max-width: 650px) {
+  body .markup div.subscription-widget-wrap .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  body .markup div.subscription-widget-wrap-editor .subscription-widget.show-subscribe .subscription-widget-subscribe .button,
+  body .markup div.captioned-button-wrap .subscription-widget.show-subscribe .subscription-widget-subscribe .button {
+    padding: 10px 12px;
+    min-width: 110px;
+  }
+}
+@media (max-width: 650px) {
+  body .markup .twitter-embed,
+  body .markup .tweet {
+    padding: 12px;
+  }
+}
+@media (max-width: 650px) {
+  body .markup .twitter-embed .tweet-text,
+  body .markup .tweet .tweet-text {
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+@media (max-width: 650px) {
+  body .markup .twitter-embed .tweet-photos-container.two,
+  body .markup .tweet .tweet-photos-container.two,
+  body .markup .twitter-embed .tweet-photos-container.three,
+  body .markup .tweet .tweet-photos-container.three,
+  body .markup .twitter-embed .tweet-photos-container.four,
+  body .markup .tweet .tweet-photos-container.four {
+    height: 200px;
+  }
+}
+@media (max-width: 650px) {
+  body .markup .twitter-embed a.expanded-link .expanded-link-img,
+  body .markup .tweet a.expanded-link .expanded-link-img {
+    max-height: 180px;
+  }
+}
+@media (max-width: 650px) {
+  body .markup .twitter-embed a.expanded-link .expanded-link-description,
+  body .markup .tweet a.expanded-link .expanded-link-description {
+    display: none;
+  }
+}
+@media screen and (max-width: 650px) {
+  body .markup .apple-podcast-container {
+    width: unset;
+  }
+}
+@media (max-width: 420px) {
+  body .markup .install-substack-app-embed img.install-substack-app-embed-img {
+    margin: 0 auto 16px auto;
+  }
+}
+@media (max-width: 420px) {
+  body .markup .install-substack-app-embed .install-substack-app-embed-text {
+    margin: 0 0 12px 0;
+    max-width: 100%;
+    width: auto;
+    text-align: center;
+  }
+}
+@media (max-width: 420px) {
+  body .markup .install-substack-app-embed .install-substack-app-embed-link {
+    display: flex;
+    justify-content: center;
+  }
+}
+@media screen and (min-width: 500px) {
+  body .header a.logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+}
+@media screen and (max-width: 420px) {
+  body .subscription-receipt table:first-of-type .subscription-amount .subscription-discount {
+    width: 72px !important;
+  }
+}
+@media screen and (min-width: 481px) {
+  body .share-button-container {
+    height: auto;
+  }
+}
+@media screen and (max-width: 480px) {
+  body .share-button-container .separator {
+    display: block !important;
+    margin: 0 !important;
+    height: 8px !important;
+    border-left: none !important;
+  }
+}
+@media screen and (max-width: 650px) {
+  .digest .item .post-meta-item.audience {
+    display: none;
+  }
+}
+@media screen and (min-width: 500px) {
+  .digest-publication .logo img {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .comments-page .container .comment-list .collapsed-reply {
+    margin-left: calc(10 + 32px - 24px);
+  }
+}
+@media screen and (max-width: 650px) {
+  .comment > .comment-list {
+    padding-left: 24px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .finish-magic-login-modal .modal-content .container {
+    padding: 24px 0;
+  }
+}
+@media (max-width: 650px) {
+  .reader2-text-b3 {
+    line-height: 24px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .reader2-text-h4 {
+    line-height: 24px;
+  }
+}
+@media screen and (min-width: 541px) {
+  .user-profile-modal {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .subscribe-widget form.form .sideBySideWrap button.rightButton {
+    padding: 10px 12px;
+  }
+}
+@media screen and (min-width: 541px) {
+  .pub-icon:hover .logo-hover,
+  .feed-item-icon:hover .logo-hover {
+    display: block;
+  }
+}
+@media screen and (max-width: 650px) {
+  .post-ufi.single-full-width-button .post-ufi-button-wrapper {
+    width: 100%;
+    padding: 16px;
+  }
+  .post-ufi.single-full-width-button .post-ufi-button-wrapper:empty {
+    display: none;
+  }
+  .post-ufi.single-full-width-button .post-ufi-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media screen and (max-width: 768px) {
+  .file-embed-wrapper {
+    padding: 0;
+  }
+}
+@media screen and (max-width: 768px) {
+  .file-embed-wrapper-editor {
+    padding: 0;
+  }
+}
+@media screen and (max-width: 768px) {
+  .file-embed-wrapper-editor:active {
+    padding: 0;
+  }
+}
+@media only screen and (max-width: 650px) {
+  .file-embed-button.wide,
+  .file-embed-error-button.wide {
+    display: none;
+  }
+}
+@media only screen and (min-width: 630px) {
+  .file-embed-button.narrow,
+  .file-embed-error-button.narrow {
+    display: none;
+  }
+}
+@media screen and (min-width: 541px) {
+  .audio-player-wrapper .audio-player {
+    min-width: 500px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .audio-player-wrapper .audio-player .audio-player-progress {
+    border-left-width: 16px;
+    border-right-width: 16px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .audio-player-wrapper .audio-player .audio-player-progress .audio-player-progress-bar .audio-player-progress-bar-popup {
+    top: -54px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .audio-player-wrapper-fancy .audio-player .audio-player-progress {
+    border-left-width: 16px;
+    border-right-width: 16px;
+  }
+}
+@media screen and (max-width: 650px) {
+  .audio-player-wrapper-fancy .audio-player .audio-player-progress .audio-player-progress-bar .audio-player-progress-bar-popup {
+    top: -54px;
+  }
+}
+@media (min-width: 250px) {
+  .audio-player-wrapper-fancy .audio-player {
+    padding: 32px;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group {
+    display: flex;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group .button:last-of-type {
+    display: block;
+  }
+}
+@media (min-width: 300px) {
+  .audio-player-wrapper-fancy .audio-player .btn-group {
+    display: block;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group .button:first-of-type {
+    display: block;
+  }
+}
+@media (min-width: 350px) {
+  .audio-player-wrapper-fancy .audio-player .audio-player-substack-logo {
+    display: block;
+  }
+  .audio-player-wrapper-fancy .audio-player .audio-player-title {
+    margin-top: 16px;
+  }
+  .audio-player-wrapper-fancy .audio-player .audio-player-hero-image-container {
+    padding-top: 15%;
+    width: 15%;
+    display: block;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group .button:first-of-type {
+    display: block;
+  }
+  .audio-player-wrapper-fancy .audio-player .audio-player-substack-logo {
+    display: block;
+  }
+}
+@media (min-width: 350px) {
+  .audio-player-wrapper-fancy .audio-player .audio-player-hero-image-container {
+    padding-top: 25%;
+    width: 25%;
+    display: block;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group {
+    display: flex;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group .button:first-of-type {
+    display: block;
+  }
+}
+@media (min-width: 400px) {
+  .audio-player-wrapper-fancy .audio-player .audio-player-hero-image-container {
+    padding-top: 40%;
+    width: 40%;
+  }
+}
+@media (max-width: 400px) {
+  .audio-player-wrapper-fancy .audio-player .btn-group {
+    margin-top: 12px;
+  }
+  .audio-player-wrapper-fancy .audio-player .btn-group .button {
+    font-size: 13px;
+    padding: 6px 12px;
+    height: auto;
+    margin-top: 10px;
+  }
+}
+@media (min-width: 600px) {
+  .audio-player-wrapper-fancy .audio-player .audio-player-hero-image-container {
+    padding-top: 55%;
+    width: 55%;
+  }
+}
+@media (max-width: 650px) {
+  .poll-editor-modal {
+    min-width: calc(100% - 20px);
+  }
+}
+@media (max-width: 750px) {
+  .poll-embed .poll-anchor-target .poll-anchor-copy-button {
+    left: 8px;
+    top: 45px;
+  }
+}
+@media not all and (min-resolution: 0.001dpcm) {
+  @supports (-webkit-appearance: none) {
+    p a:not(.primary.button),
+    .post p:not(.button-wrapper) a:not(.primary.button),
+    .footnote a.footnote-anchor:not(.primary.button),
+    .thread-head .markup p:not(.button-wrapper) a:not(.primary.button) {
+      color: #02fa5d;
+      text-decoration: none;
+    }
+    p a:not(.primary.button):hover,
+    .post p:not(.button-wrapper) a:not(.primary.button):hover,
+    .footnote a.footnote-anchor:not(.primary.button):hover,
+    .thread-head .markup p:not(.button-wrapper) a:not(.primary.button):hover {
+      text-decoration: underline;
+    }
+  }
+}</style></head><body class="email-body" style="font-kerning: auto;--image-offset-margin: -120px;"><img src="https://eotrx.substackcdn.com/o/d6d7c005cb2f952b/p.gif?token=eyJtIjoiPDIwMjYwOTA1MTUyMzA0LjMuM2QzMDEwNTEzZjRhNjEyNUBtZzEuc3Vic3RhY2suY29tPiIsInUiOjMzMTMyOTYwMSwiciI6ImphY2toYXN0aW5nczAwQGdtYWlsLmNvbSIsImQiOiJtZzEuc3Vic3RhY2suY29tIiwicCI6MjE0MzA4MDc4LCJ0IjoibmV3c2xldHRlciIsImEiOiJvbmx5X3BhaWQiLCJzIjoxMDU3MDE4MCwiYyI6InBvc3QiLCJmIjpmYWxzZSwicG9zaXRpb24iOiJ0b3AiLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MTc5MTIxMzc5MCwiaXNzIjoicHViLTAiLCJzdWIiOiJlbyJ9.LUXLbEt1UAkn_hq3rkbsrFLoX15GEKaXTvwSPPSInAE" alt="" width="1" height="1" border="0" style="height:1px !important;width:1px !important;border-width:0 !important;margin-top:0 !important;margin-bottom:0 !important;margin-right:0 !important;margin-left:0 !important;padding-top:0 !important;padding-bottom:0 !important;padding-right:0 !important;padding-left:0 !important;"/><div class="preview" style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Updated September 5th, 2026</div><div class="preview" style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;</div><table class="email-body-container" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td></td><td class="content" width="550"></td><td></td></tr><tr><td></td><td class="content" width="550" align="left"><div style="font-size: 16px;line-height: 26px;max-width: 550px;width: 100%;margin: 0 auto;overflow-wrap: break-word;"><table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="right" style="height:20px;"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><span class="pencraft pc-reset reset-IxiVJZ pencraft color-secondary-ls1g8s font-text-qe4AeH size-13-hZTUKr" style="list-style: none;text-decoration: unset;color: rgb(119,119,119);margin: 0;font-size: 13px;line-height: 20px;font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';"><a class="pencraft color-secondary-ls1g8s decoration-underline-ClTkYc" href="https://substack.com/redirect/2/eyJlIjoiaHR0cHM6Ly93d3cuamluZ2xlc2xhYnMuY29tL3AvdGhlLWxhYi0zMDAtMjAyNi1oYWxmLXBwci1yYW5raW5ncz91dG1fY2FtcGFpZ249ZW1haWwtcG9zdCZyPTVoOWprMSZ0b2tlbj1leUoxYzJWeVgybGtJam96TXpFek1qazJNREVzSW5CdmMzUmZhV1FpT2pJeE5ETXdPREEzT0N3aWFXRjBJam94TnpnNE5qSXhOemt3TENKbGVIQWlPakUzT1RFeU1UTTNPVEFzSW1semN5STZJbkIxWWkweE1EVTNNREU0TUNJc0luTjFZaUk2SW5CdmMzUXRjbVZoWTNScGIyNGlmUS5WSTJGX0tLUkV0dGh6bVI4azVtd1RnalFaV0VVd3JtbHB6WldsNWxISzQ4IiwicCI6MjE0MzA4MDc4LCJzIjoxMDU3MDE4MCwiZiI6ZmFsc2UsInUiOjMzMTMyOTYwMSwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjIxMDQxOTc3OTAsImlzcyI6InB1Yi0wIiwic3ViIjoibGluay1yZWRpcmVjdCJ9.3HNI5d6F16eiBD5HalbWfU_E3g_9uXPEGjcQR7BUbpk?" style="color: rgb(119,119,119);-webkit-text-decoration-line: underline;text-decoration-line: underline;">View in browser</a></span></td></tr></tbody></table></td></tr></tbody></table><table class="header graphic-header" role="presentation" style="border-spacing: 0;padding: 16px 0 32px;"><tbody><tr><td align="center" style="text-align: center;padding: 0;"><a href="https://substack.com/redirect/2/eyJlIjoiaHR0cHM6Ly93d3cuamluZ2xlc2xhYnMuY29tL3AvdGhlLWxhYi0zMDAtMjAyNi1oYWxmLXBwci1yYW5raW5ncz91dG1fY2FtcGFpZ249ZW1haWwtaGFsZi1wb3N0JnI9NWg5amsxJnRva2VuPWV5SjFjMlZ5WDJsa0lqb3pNekV6TWprMk1ERXNJbkJ2YzNSZmFXUWlPakl4TkRNd09EQTNPQ3dpYVdGMElqb3hOemc0TmpJeE56a3dMQ0psZUhBaU9qRTNPVEV5TVRNM09UQXNJbWx6Y3lJNkluQjFZaTB4TURVM01ERTRNQ0lzSW5OMVlpSTZJbkJ2YzNRdGNtVmhZM1JwYjI0aWZRLlZJMkZfS0tSRXR0aHptUjhrNW13VGdqUVpXRVV3cm1scHpaV2w1bEhLNDgiLCJwIjoyMTQzMDgwNzgsInMiOjEwNTcwMTgwLCJmIjpmYWxzZSwidSI6MzMxMzI5NjAxLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MjEwNDE5Nzc5MCwiaXNzIjoicHViLTAiLCJzdWIiOiJsaW5rLXJlZGlyZWN0In0.n9G_fPxg5zuODGyw8EmZt40DZxM7wbe75HiLMvarf1c?"><img class="header-image" role="presentation" width="550" height="220" src="https://substackcdn.com/image/fetch/$s_!-qTB!,w_1100,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4d224bdd-860f-4157-ac5f-21a790dd30a8_1983x793.png" style="border: none !important;vertical-align: middle;max-width: 550px;display: block;margin: 0 auto;height: auto;width: 100%;"></a></td></tr></tbody></table><div class="post typography" dir="auto" style="--image-offset-margin: -120px;padding: 32px 0 0 0;font-size: 16px;line-height: 26px;"><div class="post-header" role="region" aria-label="Post header" style="font-size: 16px;line-height: 26px;"><h1 class="post-title published title-X77sOw" dir="auto" style="direction: auto;text-align: start;unicode-bidi: isolate;color: rgb(54,55,55);overflow-wrap: anywhere;word-break: normal;font-family: 'SF Pro Display',-apple-system-headline,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: antialiased;-webkit-appearance: optimizelegibility;-moz-appearance: optimizelegibility;appearance: optimizelegibility;margin: 0;line-height: 36px;font-size: 32px;"><a href="https://substack.com/app-link/post?publication_id=10570180&post_id=214308078&utm_source=post-email-title&utm_campaign=email-post-title&isFreemail=false&r=5h9jk1&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjE3OTEyMTM3OTAsImlzcyI6InB1Yi0xMDU3MDE4MCIsInN1YiI6InBvc3QtcmVhY3Rpb24ifQ.VI2F_KKREtthzmR8k5mwTgjQZWEUwrmlpzZWl5lHK48" style="color: rgb(54,55,55);text-decoration: none;">The Lab 300: 2026 Half PPR Rankings</a></h1><h3 class="subtitle subtitle-HEEcLo" dir="auto" style="direction: auto;text-align: start;unicode-bidi: isolate;font-family: 'SF Pro Display',-apple-system-headline,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: normal;-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: antialiased;-webkit-appearance: optimizelegibility;-moz-appearance: optimizelegibility;appearance: optimizelegibility;margin: 4px 0 0;color: #777777;overflow-wrap: anywhere;word-break: normal;line-height: 24px;font-size: 18px;margin-top: 12px;">Updated September 5th, 2026</h3><table class="post-meta" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 1em 0;height: 20px;align-items: center;"><tbody><tr><td><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><div class="pencraft pc-reset color-primary-zABazT line-height-20-t4M0El font-meta-MWBumP size-11-NuY2Zx weight-medium-fw81nC transform-uppercase-yKDgcq reset-IxiVJZ meta-EgzBVA custom-css-email-post-author" style="list-style: none;font-size: 11px;line-height: 20px;text-decoration: unset;color: rgb(54,55,55);margin: 0;font-family: 'SF Compact',-apple-system,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: 500;text-transform: uppercase;letter-spacing: .2px;"><a class="pencraft pc-reset color-primary-zABazT line-height-20-t4M0El font-meta-MWBumP size-11-NuY2Zx weight-medium-fw81nC transform-uppercase-yKDgcq reset-IxiVJZ meta-EgzBVA" style="list-style: none;color: rgb(54,55,55);margin: 0;font-size: 11px;line-height: 20px;font-family: 'SF Compact',-apple-system,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: 500;text-transform: uppercase;letter-spacing: .2px;text-decoration: none" href="https://substack.com/@jingleslabs">Jingles Labs</a></div></td></tr></tbody></table></td></tr><tr><td><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><div class="pencraft pc-reset color-secondary-ls1g8s line-height-20-t4M0El font-meta-MWBumP size-11-NuY2Zx weight-medium-fw81nC transform-uppercase-yKDgcq reset-IxiVJZ meta-EgzBVA" style="list-style: none;font-size: 11px;line-height: 20px;text-decoration: unset;color: rgb(119,119,119);margin: 0;font-family: 'SF Compact',-apple-system,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: 500;text-transform: uppercase;letter-spacing: .2px;"><time datetime="2026-09-05T15:23:04.873Z">Sep 5</time></div></td><td width="4" style="min-width:4px;"></td><td style="vertical-align:middle;"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><div class="pencraft pc-reset color-secondary-ls1g8s line-height-20-t4M0El font-meta-MWBumP size-11-NuY2Zx weight-medium-fw81nC transform-uppercase-yKDgcq reset-IxiVJZ meta-EgzBVA" style="list-style: none;font-size: 11px;line-height: 20px;text-decoration: unset;color: rgb(119,119,119);margin: 0;font-family: 'SF Compact',-apple-system,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: 500;text-transform: uppercase;letter-spacing: .2px;">&#8729;</div></td><td width="4" style="min-width:4px;"></td><td style="vertical-align:middle;"><div class="pencraft pc-reset color-paid-LmY0EP line-height-20-t4M0El font-meta-MWBumP size-11-NuY2Zx weight-medium-fw81nC transform-uppercase-yKDgcq reset-IxiVJZ meta-EgzBVA" translated="" style="list-style: none;font-size: 11px;line-height: 20px;text-decoration: unset;color: rgb(94,73,217);margin: 0;font-family: 'SF Compact',-apple-system,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: 500;text-transform: uppercase;letter-spacing: .2px;">Paid</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td><td align="right"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><a href="https://substack.com/@jingleslabs"><img class="custom-css-email-avatar avatar-QIQ5yR" src="https://substackcdn.com/image/fetch/$s_!34kq!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1c038d85-ee1a-4cb3-8c4f-8d3906655b5f_1202x1204.png" style="box-sizing: border-box;max-width: 550px;border: none;vertical-align: middle;width: 40px;height: 40px;min-width: 40px;min-height: 40px;object-fit: cover;margin: 0px;display: inline;border-radius: 50%" width="40" height="40"></a></td></tr></tbody></table></td></tr></tbody></table><table class="email-ufi-2-top" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top: 1px solid rgb(0,0,0,.1);border-bottom: 1px solid rgb(0,0,0,.1);min-width: 100%;"><tbody><tr height="16"><td height="16" style="font-size:0px;line-height:0;">&nbsp;</td></tr><tr><td><table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><table role="presentation" width="38" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-icon-button" href="https://substack.com/app-link/post?publication_id=10570180&post_id=214308078&utm_source=substack&isFreemail=false&submitLike=true&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwicmVhY3Rpb24iOiLinaQiLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MTc5MTIxMzc5MCwiaXNzIjoicHViLTEwNTcwMTgwIiwic3ViIjoicmVhY3Rpb24ifQ.pcIPKOfCWDiMhL29dVrwQMg5BuS8afWJx-GqxPx0F_U&utm_medium=email&utm_campaign=email-reaction&r=5h9jk1" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 1;padding: 9px 0;text-decoration: none;color: rgb(119,119,119);min-width: 38px;box-sizing: border-box;width: 38px"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!PeVs!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideHeart%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width="18" height="18" style="border: none;vertical-align: middle;max-width: 18px" alt=""></a></td></tr></tbody></table></td><td width="8" style="min-width:8px;"></td><td style="vertical-align:middle;"><table role="presentation" width="38" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-icon-button" href="https://substack.com/app-link/post?publication_id=10570180&post_id=214308078&utm_source=substack&utm_medium=email&isFreemail=false&comments=true&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjE3OTEyMTM3OTAsImlzcyI6InB1Yi0xMDU3MDE4MCIsInN1YiI6InBvc3QtcmVhY3Rpb24ifQ.VI2F_KKREtthzmR8k5mwTgjQZWEUwrmlpzZWl5lHK48&r=5h9jk1&utm_campaign=email-half-magic-comments&action=post-comment&utm_source=substack&utm_medium=email" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 1;padding: 9px 0;text-decoration: none;color: rgb(119,119,119);min-width: 38px;box-sizing: border-box;width: 38px"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!x1tS!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideComments%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width="18" height="18" style="border: none;vertical-align: middle;max-width: 18px" alt=""></a></td></tr></tbody></table></td><td width="8" style="min-width:8px;"></td><td style="vertical-align:middle;"><table role="presentation" width="38" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-icon-button" href="https://substack.com/app-link/post?publication_id=10570180&post_id=214308078&utm_source=substack&utm_medium=email&utm_content=share&utm_campaign=email-share&action=share&triggerShare=true&isFreemail=false&r=5h9jk1&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjE3OTEyMTM3OTAsImlzcyI6InB1Yi0xMDU3MDE4MCIsInN1YiI6InBvc3QtcmVhY3Rpb24ifQ.VI2F_KKREtthzmR8k5mwTgjQZWEUwrmlpzZWl5lHK48" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 1;padding: 9px 0;text-decoration: none;color: rgb(119,119,119);min-width: 38px;box-sizing: border-box;width: 38px"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!_L14!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideShare2%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width="18" height="18" style="border: none;vertical-align: middle;max-width: 18px" alt=""></a></td></tr></tbody></table></td><td width="8" style="min-width:8px;"></td><td style="vertical-align:middle;"><table role="presentation" width="38" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-icon-button" href="https://open.substack.com/pub/jingleslabs/p/the-lab-300-2026-half-ppr-rankings?utm_source=substack&utm_medium=email&utm_campaign=email-restack-comment&action=restack-comment&r=5h9jk1&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjE3OTEyMTM3OTAsImlzcyI6InB1Yi0xMDU3MDE4MCIsInN1YiI6InBvc3QtcmVhY3Rpb24ifQ.VI2F_KKREtthzmR8k5mwTgjQZWEUwrmlpzZWl5lHK48&utm_source=substack&utm_medium=email" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 1;padding: 9px 0;text-decoration: none;color: rgb(119,119,119);min-width: 38px;box-sizing: border-box;width: 38px"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!ubXF!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2Fnotes__NoteRestackIcon%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2%26strokeLinecap%3Dround%26strokeLinejoin%3Dround" width="18" height="18" alt="" style="max-width: 550px;border: none !important;vertical-align: middle;"></a></td></tr></tbody></table></td></tr></tbody></table></td><td align="right"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td style="vertical-align:middle;"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-button-outline" href="https://open.substack.com/pub/jingleslabs/p/the-lab-300-2026-half-ppr-rankings?utm_source=email&redirect=app-store-no-desktop&inbox=true&utm_campaign=email-read-in-app" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 12px;padding: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><div class="email-button-spacer" style="font-size: 16px;line-height: 26px;display: inline-block;vertical-align: middle;max-width: 0;min-height: 18px;"></div><span class="email-button-text" style="vertical-align: middle;margin-right: 4px">READ IN APP</span><img class="icon text-icon" src="https://substackcdn.com/image/fetch/$s_!ET-_!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideArrowUpRight%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width="18" height="18" style="min-width: 18px;min-height: 18px;border: none;vertical-align: middle;margin-right: 0;margin-left: 0;max-width: 18px" alt=""></a></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr height="16"><td height="16" style="font-size:0px;line-height:0;">&nbsp;</td></tr></tbody></table></div></div><div class="post typography" dir="auto" style="--image-offset-margin: -120px;padding: 32px 0 0 0;font-size: 16px;line-height: 26px;"><div class="body markup" dir="auto" style="text-align: initial;font-size: 16px;line-height: 26px;width: 100%;margin-bottom: 16px;overflow-wrap: anywhere;word-break: break-word;font-family: Inter,sans-serif;font-weight: 400;"><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;margin-top: 0;"><strong>Four months of film, numbers and way too much tinkering later, The Lab 300 is complete.</strong></p><div class="paywall-jump" data-component-name="PaywallToDOM" style="font-size: 16px;line-height: 26px;display: none;"></div><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>These aren&#8217;t just rankings of who I think the best players are. I&#8217;m looking at </span><strong>talent, opportunity, upside, risk, situation, ADP</strong><span> and what I believe each player can actually return at their draft cost. </span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;">I&#8217;ve spent the offseason watching film, digging through the numbers and adjusting this board as roles, depth charts and situations have changed.</p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>This is my </span><strong>final preseason Half PPR draft board</strong><span> for 2026, but the fantasy coverage is just getting started.</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>Once the season kicks off, I&#8217;ll be posting </span><strong>updated weekly rankings, waiver wire targets, Start/Sit decisions, Love/Hate lists, DFS plays, player analysis</strong><span> and plenty more throughout the season.</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>PPR and Standard versions of The Lab 300 are coming next.</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>The board is yours. Do with it what you will. &#129514;</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 1</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>1: Jahmyr Gibbs | </span><strong>RB1</strong><span> | DET</span><br><span>2: Bijan Robinson | </span><strong>RB2</strong><span> | ATL</span><br><span>3: Puka Nacua | </span><strong>WR1</strong><span> | LAR</span><br><span>4: Ja&#8217;Marr Chase | </span><strong>WR2</strong><span> | CIN</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 2</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>5: Jaxon Smith-Njigba | </span><strong>WR3</strong><span> | SEA</span><br><span>6: James Cook III | </span><strong>RB3</strong><span> | BUF</span><br><span>7: Amon-Ra St. Brown | </span><strong>WR4</strong><span> | DET</span><br><span>8: Christian McCaffrey | </span><strong>RB4</strong><span> | SF</span><br><span>9: Jonathan Taylor | </span><strong>RB5</strong><span> | IND</span><br><span>10: Kenneth Walker III | </span><strong>RB6</strong><span> | KC</span><br><span>11: Chase Brown | </span><strong>RB7</strong><span> | CIN</span><br><span>12: CeeDee Lamb | </span><strong>WR5</strong><span> | DAL</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 3</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>13: Saquon Barkley | </span><strong>RB8</strong><span> | PHI</span><br><span>14: Justin Jefferson | </span><strong>WR6</strong><span> | MIN</span><br><span>15: Ashton Jeanty | </span><strong>RB9</strong><span> | LV</span><br><span>16: De&#8217;Von Achane | </span><strong>RB10</strong><span> | MIA</span><br><span>17: Omarion Hampton | </span><strong>RB11</strong><span> | LAC</span><br><span>18: Derrick Henry | </span><strong>RB12</strong><span> | BAL</span><br><span>19: Drake London | </span><strong>WR7</strong><span> | ATL</span><br><span>20: Brock Bowers | </span><strong>TE1</strong><span> | LV</span><br><span>21: Nico Collins | </span><strong>WR8</strong><span> | HOU</span><br><span>22: Malik Nabers | </span><strong>WR9</strong><span> | NYG</span><br><span>23: A.J. Brown | </span><strong>WR10</strong><span> | NE</span><br><span>24: George Pickens | </span><strong>WR11</strong><span> | DAL</span><br><span>25: Jeremiyah Love | </span><strong>RB13</strong><span> | ARI</span><br><span>26: Breece Hall | </span><strong>RB14</strong><span> | NYJ</span><br><span>27: Kyren Williams | </span><strong>RB15</strong><span> | LAR</span><br><span>28: Javonte Williams | </span><strong>RB16</strong><span> | DAL</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 4</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>29: Chris Olave | </span><strong>WR12</strong><span> | NO</span><br><span>30: DeVonta Smith | </span><strong>WR13</strong><span> | PHI</span><br><span>31: Jaylen Waddle | </span><strong>WR14</strong><span> | DEN</span><br><span>32: Zay Flowers | </span><strong>WR15</strong><span> | BAL</span><br><span>33: Rashee Rice | </span><strong>WR16</strong><span> | KC</span><br><span>34: Trey McBride | </span><strong>TE2</strong><span> | ARI</span><br><span>35: Colston Loveland | </span><strong>TE3</strong><span> | CHI</span><br><span>36: Luther Burden III | </span><strong>WR17</strong><span> | CHI</span><br><span>37: Tee Higgins | </span><strong>WR18</strong><span> | CIN</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 5</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>38: D&#8217;Andre Swift | </span><strong>RB17</strong><span> | CHI</span><br><span>39: Travis Etienne Jr. | </span><strong>RB18</strong><span> | NO</span><br><span>40: Josh Allen | </span><strong>QB1</strong><span> | BUF</span><br><span>41: Garrett Wilson | </span><strong>WR19</strong><span> | NYJ</span><br><span>42: Ladd McConkey | </span><strong>WR20</strong><span> | LAC</span><br><span>43: Tetairoa McMillan | </span><strong>WR21</strong><span> | CAR</span><br><span>44: Emeka Egbuka | </span><strong>WR22</strong><span> | TB</span><br><span>45: Christian Watson | </span><strong>WR23</strong><span> | GB</span><br><span>46: Parker Washington | </span><strong>WR24</strong><span> | JAC</span><br><span>47: Jameson Williams | </span><strong>WR25</strong><span> | DET</span><br><span>48: Davante Adams | </span><strong>WR26</strong><span> | LAR</span><br><span>49: DJ Moore | </span><strong>WR27</strong><span> | BUF</span><br><span>50: Terry McLaurin | </span><strong>WR28</strong><span> | WAS</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 6</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>51: Tyler Warren | </span><strong>TE4</strong><span> | IND</span><br><span>52: Cam Skattebo | </span><strong>RB19</strong><span> | NYG</span><br><span>53: Jadarian Price | </span><strong>RB20</strong><span> | SEA</span><br><span>54: David Montgomery | </span><strong>RB21</strong><span> | HOU</span><br><span>55: Quinshon Judkins | </span><strong>RB22</strong><span> | CLE</span><br><span>56: Bucky Irving | </span><strong>RB23</strong><span> | TB</span><br><span>57: Bhayshul Tuten | </span><strong>RB24</strong><span> | JAC</span><br><span>58: TreVeyon Henderson | </span><strong>RB25</strong><span> | NE</span><br><span>59: Rhamondre Stevenson | </span><strong>RB26</strong><span> | NE</span><br><span>60: MarShawn Lloyd | </span><strong>RB27</strong><span> | GB</span><br><span>61: Lamar Jackson | </span><strong>QB2</strong><span> | BAL</span><br><span>62: Drake Maye | </span><strong>QB3</strong><span> | NE</span><br><span>63: Tucker Kraft | </span><strong>TE5</strong><span> | GB</span><br><span>64: Sam LaPorta | </span><strong>TE6</strong><span> | DET</span><br><span>65: Jalen Hurts | </span><strong>QB4</strong><span> | PHI</span><br><span>66: Jayden Daniels | </span><strong>QB5</strong><span> | WAS</span><br><span>67: Joe Burrow | </span><strong>QB6</strong><span> | CIN</span><br><span>68: Trevor Lawrence | </span><strong>QB7</strong><span> | JAC</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 7</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>69: Jaylen Warren | </span><strong>RB28</strong><span> | PIT</span><br><span>70: Chris Godwin Jr. | </span><strong>WR29</strong><span> | TB</span><br><span>71: Mike Evans | </span><strong>WR30</strong><span> | SF</span><br><span>72: Rome Odunze | </span><strong>WR31</strong><span> | CHI</span><br><span>73: Marvin Harrison Jr. | </span><strong>WR32</strong><span> | ARI</span><br><span>74: Carnell Tate | </span><strong>WR33</strong><span> | TEN</span><br><span>75: De&#8217;Zhaun Stribling | </span><strong>WR34</strong><span> | SF</span><br><span>76: Stefon Diggs | </span><strong>WR35</strong><span> | WAS</span><br><span>77: Brian Thomas Jr. | </span><strong>WR36</strong><span> | JAC</span><br><span>78: Josh Downs | </span><strong>WR37</strong><span> | IND</span><br><span>79: Jayden Reed | </span><strong>WR38</strong><span> | GB</span><br><span>80: DK Metcalf | </span><strong>WR39</strong><span> | PIT</span><br><span>81: Caleb Williams | </span><strong>QB8</strong><span> | CHI</span><br><span>82: Justin Herbert | </span><strong>QB9</strong><span> | LAC</span><br><span>83: George Kittle | </span><strong>TE7</strong><span> | SF</span><br><span>84: Harold Fannin Jr. | </span><strong>TE8</strong><span> | CLE</span><br><span>85: Kyle Pitts Sr. | </span><strong>TE9</strong><span> | ATL</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 8</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>86: Jacory Croskey-Merritt | </span><strong>RB29</strong><span> | WAS</span><br><span>87: Jonathon Brooks | </span><strong>RB30</strong><span> | CAR</span><br><span>88: Rico Dowdle | </span><strong>RB31</strong><span> | PIT</span><br><span>89: Tony Pollard | </span><strong>RB32</strong><span> | TEN</span><br><span>90: J.K. Dobbins | </span><strong>RB33</strong><span> | DEN</span><br><span>91: Blake Corum | </span><strong>RB34</strong><span> | LAR</span><br><span>92: Jordan Mason | </span><strong>RB35</strong><span> | MIN</span><br><span>93: Chuba Hubbard | </span><strong>RB36</strong><span> | CAR</span><br><span>94: Kenny Gainwell | </span><strong>RB37</strong><span> | TB</span><br><span>95: RJ Harvey | </span><strong>RB38</strong><span> | DEN</span><br><span>96: Brock Purdy | </span><strong>QB10</strong><span> | SF</span><br><span>97: Dak Prescott | </span><strong>QB11</strong><span> | DAL</span><br><span>98: Dalton Kincaid | </span><strong>TE10</strong><span> | BUF</span><br><span>99: Makai Lemon | </span><strong>WR40</strong><span> | PHI</span><br><span>100: Wan&#8217;Dale Robinson | </span><strong>WR41</strong><span> | TEN</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 9</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>101: Michael Wilson | </span><strong>WR42</strong><span> | ARI</span><br><span>102: Quentin Johnston | </span><strong>WR43</strong><span> | LAC</span><br><span>103: Jordan Addison | </span><strong>WR44</strong><span> | MIN</span><br><span>104: Matthew Golden | </span><strong>WR45</strong><span> | GB</span><br><span>105: KC Concepcion | </span><strong>WR46</strong><span> | CLE</span><br><span>106: Alec Pierce | </span><strong>WR47</strong><span> | IND</span><br><span>107: Jordyn Tyson | </span><strong>WR48</strong><span> | NO</span><br><span>108: Courtland Sutton | </span><strong>WR49</strong><span> | DEN</span><br><span>109: Jalen Coker | </span><strong>WR50</strong><span> | CAR</span><br><span>110: Rashid Shaheed | </span><strong>WR51</strong><span> | SEA</span><br><span>111: Josh Jacobs | </span><strong>RB39</strong><span> | GB</span><br><span>112: Kyle Monangai | </span><strong>RB40</strong><span> | CHI</span><br><span>113: Rachaad White | </span><strong>RB41</strong><span> | WAS</span><br><span>114: Chris Rodriguez Jr. | </span><strong>RB42</strong><span> | JAC</span><br><span>115: Aaron Jones Sr. | </span><strong>RB43</strong><span> | MIN</span><br><span>116: Mike Washington Jr. | </span><strong>RB44</strong><span> | LV</span><br><span>117: Jonah Coleman | </span><strong>RB45</strong><span> | DEN</span><br><span>118: Michael Pittman Jr. | </span><strong>WR52</strong><span> | PIT</span><br><span>119: Denzel Boston | </span><strong>WR53</strong><span> | CLE</span><br><span>120: Jakobi Meyers | </span><strong>WR54</strong><span> | JAC</span><br><span>121: Adonai Mitchell | </span><strong>WR55</strong><span> | NYJ</span><br><span>122: Romeo Doubs | </span><strong>WR56</strong><span> | NE</span><br><span>123: Xavier Worthy | </span><strong>WR57</strong><span> | KC</span><br><span>124: Travis Kelce | </span><strong>TE11</strong><span> | KC</span><br><span>125: Isaiah Likely | </span><strong>TE12</strong><span> | NYG</span><br><span>126: Dallas Goedert | </span><strong>TE13</strong><span> | PHI</span><br><span>127: Kyler Murray | </span><strong>QB12</strong><span> | MIN</span><br><span>128: Jaxson Dart | </span><strong>QB13</strong><span> | NYG</span><br><span>129: Bo Nix | </span><strong>QB14</strong><span> | DEN</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 10</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>130: Tyler Allgeier | </span><strong>RB46</strong><span> | ARI</span><br><span>131: Keaton Mitchell | </span><strong>RB47</strong><span> | LAC</span><br><span>132: Woody Marks | </span><strong>RB48</strong><span> | HOU</span><br><span>133: Tyjae Spears | </span><strong>RB49</strong><span> | TEN</span><br><span>134: Tank Bigsby | </span><strong>RB50</strong><span> | PHI</span><br><span>135: Brian Robinson Jr. | </span><strong>RB51</strong><span> | ATL</span><br><span>136: Kaelon Black | </span><strong>RB52</strong><span> | SF</span><br><span>137: Ray Davis | </span><strong>RB53</strong><span> | BUF</span><br><span>138: Braelon Allen | </span><strong>RB54</strong><span> | NYJ</span><br><span>139: Emmett Johnson | </span><strong>RB55</strong><span> | KC</span><br><span>140: Zach Charbonnet | </span><strong>RB56</strong><span> | SEA</span><br><span>141: Jalen McMillan | </span><strong>WR58</strong><span> | TB</span><br><span>142: Khalil Shakir | </span><strong>WR59</strong><span> | BUF</span><br><span>143: Tre Tucker | </span><strong>WR60</strong><span> | LV</span><br><span>144: Keenan Allen | </span><strong>WR61</strong><span> | IND</span><br><span>145: Jared Goff | </span><strong>QB15</strong><span> | DET</span><br><span>146: Patrick Mahomes II | </span><strong>QB16</strong><span> | KC</span><br><span>147: Matthew Stafford | </span><strong>QB17</strong><span> | LAR</span><br><span>148: Jordan Love | </span><strong>QB18</strong><span> | GB</span><br><span>149: Demond Claiborne | </span><strong>RB57</strong><span> | MIN</span><br><span>150: Malik Davis | </span><strong>RB58</strong><span> | DAL</span><br><span>151: Nicholas Singleton | </span><strong>RB59</strong><span> | TEN</span><br><span>152: Dylan Sampson | </span><strong>RB60</strong><span> | CLE</span><br><span>153: Najee Harris | </span><strong>RB61</strong><span> | NYG</span><br><span>154: Kimani Vidal | </span><strong>RB62</strong><span> | LAC</span><br><span>155: Alvin Kamara | </span><strong>RB63</strong><span> | NO</span><br><span>156: Malik Willis | </span><strong>QB19</strong><span> | MIA</span><br><span>157: Tyler Shough | </span><strong>QB20</strong><span> | NO</span><br><span>158: Baker Mayfield | </span><strong>QB21</strong><span> | TB</span><br><span>159: Dontayvion Wicks | </span><strong>WR62</strong><span> | PHI</span><br><span>160: Pat Bryant | </span><strong>WR63</strong><span> | DEN</span><br><span>161: Tre Harris | </span><strong>WR64</strong><span> | LAC</span><br><span>162: Ryan Flournoy | </span><strong>WR65</strong><span> | DAL</span><br><span>163: Ja&#8217;Kobi Lane | </span><strong>WR66</strong><span> | BAL</span><br><span>164: Deebo Samuel Sr. | </span><strong>WR67</strong><span> | SF</span><br><span>165: Mark Andrews | </span><strong>TE14</strong><span> | BAL</span><br><span>166: Terrance Ferguson | </span><strong>TE15</strong><span> | LAR</span><br><span>167: Juwan Johnson | </span><strong>TE16</strong><span> | NO</span><br><span>168: Chig Okonkwo | </span><strong>TE17</strong><span> | WAS</span><br><span>169: Kenyon Sadiq | </span><strong>TE18</strong><span> | NYJ</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 11</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>170: Daniel Jones | </span><strong>QB22</strong><span> | NYG</span><br><span>171: Sam Darnold | </span><strong>QB23</strong><span> | SEA</span><br><span>172: CJ Stroud | </span><strong>QB24</strong><span> | HOU</span><br><span>173: Cam Ward | </span><strong>QB25</strong><span> | TEN</span><br><span>174: Bryce Young | </span><strong>QB26</strong><span> | CAR</span><br><span>175: Jalen Nailor | </span><strong>WR68</strong><span> | LV</span><br><span>176: Zachariah Branch | </span><strong>WR69</strong><span> | ATL</span><br><span>177: Omar Cooper Jr. | </span><strong>WR70</strong><span> | NYJ</span><br><span>178: Cyrus Allen | </span><strong>WR71</strong><span> | KC</span><br><span>179: Jaylin Noel | </span><strong>WR72</strong><span> | HOU</span><br><span>180: Malachi Fields | </span><strong>WR73</strong><span> | NYG</span><br><span>181: Brandon Aubrey | </span><strong>K1</strong><span> | DAL</span><br><span>182: Texans | </span><strong>DST1</strong><span> | HOU</span><br><span>183: Broncos | </span><strong>DST2</strong><span> | DEN</span><br><span>184: Seahawks | </span><strong>DST3</strong><span> | SEA</span><br><span>185: Rams | </span><strong>DST4</strong><span> | LAR</span><br><span>186: Dalton Schultz | </span><strong>TE19</strong><span> | HOU</span><br><span>187: Jake Ferguson | </span><strong>TE20</strong><span> | DAL</span><br><span>188: Greg Dulcich | </span><strong>TE21</strong><span> | MIA</span><br><span>189: Brenton Strange | </span><strong>TE22</strong><span> | JAC</span><br><span>190: Hunter Henry | </span><strong>TE23</strong><span> | NE</span><br><span>191: AJ Barner | </span><strong>TE24</strong><span> | SEA</span><br><span>192: Seth McGowan | </span><strong>RB64</strong><span> | IND</span><br><span>193: Samaje Perine | </span><strong>RB65</strong><span> | CIN</span><br><span>194: Isiah Pacheco | </span><strong>RB66</strong><span> | DET</span><br><span>195: Kaleb Johnson | </span><strong>RB67</strong><span> | PIT</span><br><span>196: Kayshon Boutte | </span><strong>WR74</strong><span> | HOU</span><br><span>197: Travis Hunter | </span><strong>WR75</strong><span> | JAC</span><br><span>198: Chris Bell | </span><strong>WR76</strong><span> | MIA</span><br><span>199: Malik Washington | </span><strong>WR77</strong><span> | MIA</span><br><span>200: Caleb Douglas | </span><strong>WR78</strong><span> | MIA</span><br><span>201: DeVaughn Vele | </span><strong>WR79</strong><span> | NO</span><br><span>202: Antonio Williams | </span><strong>WR80</strong><span> | WAS</span><br><span>203: Ted Hurst III | </span><strong>WR81</strong><span> | TB</span><br><span>204: Jerry Jeudy | </span><strong>WR82</strong><span> | CLE</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 12</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>205: Jordan James | </span><strong>RB68</strong><span> | SF</span><br><span>206: Chris Brooks | </span><strong>RB69</strong><span> | GB</span><br><span>207: Kendre Miller | </span><strong>RB70</strong><span> | NO</span><br><span>208: Kaytron Allen | </span><strong>RB71</strong><span> | WAS</span><br><span>209: Tyrone Tracy Jr. | </span><strong>RB72</strong><span> | NYG</span><br><span>210: George Holani | </span><strong>RB73</strong><span> | SEA</span><br><span>211: Sean Tucker | </span><strong>RB74</strong><span> | TB</span><br><span>212: Justice Hill | </span><strong>RB75</strong><span> | BAL</span><br><span>213: Jaylen Wright | </span><strong>RB76</strong><span> | MIA</span><br><span>214: Adam Randall | </span><strong>RB77</strong><span> | BAL</span><br><span>215: Jacoby Brissett | </span><strong>QB27</strong><span> | ARI</span><br><span>216: Fernando Mendoza | </span><strong>QB28</strong><span> | LV</span><br><span>217: Geno Smith | </span><strong>QB29</strong><span> | NYJ</span><br><span>218: James Conner | </span><strong>RB78</strong><span> | ARI</span><br><span>219: TJ Hockenson | </span><strong>TE25</strong><span> | MIN</span><br><span>220: DJ Giddens | </span><strong>RB79</strong><span> | IND</span><br><span>221: Isaiah Davis | </span><strong>RB80</strong><span> | NYJ</span><br><span>222: Tahj Brooks | </span><strong>RB81</strong><span> | CIN</span><br><span>223: Roschon Johnson | </span><strong>RB82</strong><span> | CHI</span><br><span>224: Pat Freiermuth | </span><strong>TE26</strong><span> | PIT</span><br><span>225: Ka&#8217;imi Fairbairn | </span><strong>K2</strong><span> | HOU</span><br><span>226: Eagles | </span><strong>DST5</strong><span> | PHI</span><br><span>227: Darnell Mooney | </span><strong>WR83</strong><span> | NYG</span><br><span>228: Jauan Jennings | </span><strong>WR84</strong><span> | MIN</span><br><span>229: Isaac TeSlaa | </span><strong>WR85</strong><span> | DET</span><br><span>230: Rashod Bateman | </span><strong>WR86</strong><span> | BAL</span><br><span>231: Germie Bernard | </span><strong>WR87</strong><span> | PIT</span><br><span>232: Jahan Dotson | </span><strong>WR88</strong><span> | ATL</span><br><span>233: Darren Waller | </span><strong>TE27</strong><span> | CAR</span><br><span>234: Cade Otton | </span><strong>TE28</strong><span> | TB</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 13</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>235: Cameron Dicker | </span><strong>K3</strong><span> | LAC</span><br><span>236: Cam Little | </span><strong>K4</strong><span> | JAC</span><br><span>237: Patriots | </span><strong>DST6</strong><span> | NE</span><br><span>238: Steelers | </span><strong>DST7</strong><span> | PIT</span><br><span>239: Jason Myers | </span><strong>K5</strong><span> | SEA</span><br><span>240: Harrison Mevis | </span><strong>K6</strong><span> | LAR</span><br><span>241: Eddy Pineiro | </span><strong>K7</strong><span> | SF</span><br><span>242: Tyler Loop | </span><strong>K8</strong><span> | BAL</span><br><span>243: Cairo Santos | </span><strong>K9</strong><span> | CHI</span><br><span>244: Jake Bates | </span><strong>K10</strong><span> | DET</span><br><span>245: Chase McLaughlin | </span><strong>K11</strong><span> | TB</span><br><span>246: Vikings | </span><strong>DST8</strong><span> | MIN</span><br><span>247: Jaguars | </span><strong>DST9</strong><span> | JAC</span><br><span>248: Chargers | </span><strong>DST10</strong><span> | LAC</span><br><span>249: Andy Borregales | </span><strong>K12</strong><span> | NE</span><br><span>250: Will Reichard | </span><strong>K13</strong><span> | MIN</span><br><span>251: Tyler Bass | </span><strong>K14</strong><span> | BUF</span><br><span>252: Evan McPherson | </span><strong>K15</strong><span> | CIN</span><br><span>253: Ravens | </span><strong>DST11</strong><span> | BAL</span><br><span>254: Packers | </span><strong>DST12</strong><span> | GB</span><br><span>255: Chiefs | </span><strong>DST13</strong><span> | KC</span><br><span>256: Bills | </span><strong>DST14</strong><span> | BUF</span><br><span>257: Bears | </span><strong>DST15</strong><span> | CHI</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><strong>Tier 14</strong></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><span>258: Bryce Lance | </span><strong>WR89</strong><span> | NO</span><br><span>259: Cooper Kupp | </span><strong>WR90</strong><span> | SEA</span><br><span>260: Jack Bech | </span><strong>WR91</strong><span> | LV</span><br><span>261: Josh Palmer | </span><strong>WR92</strong><span> | BUF</span><br><span>262: Demario Douglas | </span><strong>WR93</strong><span> | NE</span><br><span>263: Tyquan Thornton | </span><strong>WR94</strong><span> | KC</span><br><span>264: Malik Benson | </span><strong>WR95</strong><span> | LV</span><br><span>265: Calvin Ridley | </span><strong>WR96</strong><span> | TEN</span><br><span>266: Xavier Hutchinson | </span><strong>WR97</strong><span> | HOU</span><br><span>267: Tory Horton | </span><strong>WR98</strong><span> | SEA</span><br><span>268: Tank Dell | </span><strong>WR99</strong><span> | HOU</span><br><span>269: Darius Slayton | </span><strong>WR100</strong><span> | NYG</span><br><span>270: Skylar Bell | </span><strong>WR101</strong><span> | BUF</span><br><span>271: Keon Coleman | </span><strong>WR102</strong><span> | BUF</span><br><span>272: Brenen Thompson | </span><strong>WR103</strong><span> | LAC</span><br><span>273: Ashton Dulin | </span><strong>WR104</strong><span> | IND</span><br><span>274: Oronde Gadsden II | </span><strong>TE29</strong><span> | LAC</span><br><span>275: Gunnar Helm | </span><strong>TE30</strong><span> | TEN</span><br><span>276: Elijah Arroyo | </span><strong>TE31</strong><span> | SEA</span><br><span>277: Erick All Jr. | </span><strong>TE32</strong><span> | CIN</span><br><span>278: Colby Parkinson | </span><strong>TE33</strong><span> | LAR</span><br><span>279: Evan Engram | </span><strong>TE34</strong><span> | DEN</span><br><span>280: Aaron Rodgers | </span><strong>QB30</strong><span> | PIT</span><br><span>281: Michael Penix Jr. | </span><strong>QB31</strong><span> | ATL</span><br><span>282: Shedeur Sanders | </span><strong>QB32</strong><span> | CLE</span><br><span>283: Deshaun Watson | </span><strong>QB33</strong><span> | CLE</span><br><span>284: Carson Beck | </span><strong>QB34</strong><span> | ARI</span><br><span>285: Raheim Sanders | </span><strong>RB83</strong><span> | CLE</span><br><span>286: Devin Singletary | </span><strong>RB84</strong><span> | NYG</span><br><span>287: Emanuel Wilson | </span><strong>RB85</strong><span> | SEA</span><br><span>288: LeQuint Allen Jr. | </span><strong>RB86</strong><span> | JAC</span><br><span>289: Ollie Gordon II | </span><strong>RB87</strong><span> | MIA</span><br><span>290: Sione Vaki | </span><strong>RB88</strong><span> | DET</span><br><span>291: Trevor Etienne | </span><strong>RB89</strong><span> | CAR</span><br><span>292: Emari Demercado | </span><strong>RB90</strong><span> | KC</span><br><span>293: Brashard Smith | </span><strong>RB91</strong><span> | KC</span><br><span>294: Elic Ayomanor | </span><strong>WR105</strong><span> | TEN</span><br><span>295: Isaiah Bond | </span><strong>WR106</strong><span> | CLE</span><br><span>296: Colbie Young | </span><strong>WR107</strong><span> | CIN</span><br><span>297: Kyle Williams | </span><strong>WR108</strong><span> | NE</span><br><span>298: CJ Daniels | </span><strong>WR109</strong><span> | LAR</span><br><span>299: Tua Tagovailoa | </span><strong>QB35</strong><span> | ATL</span><br><span>300: Kirk Cousins | </span><strong>QB36</strong><span> | LV</span></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;"><em>Watch the film. Study the numbers. Find the edge.</em></p><p style="margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;margin-bottom: 0;"><strong>Back to the Lab. &#129514;</strong></p></div></div><table class="email-ufi-2-bottom" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top: 1px solid rgb(0,0,0,.1);border-bottom: 1px solid rgb(0,0,0,.1);min-width: 100%;"><tbody><tr height="16"><td height="16" style="font-size:0px;line-height:0;">&nbsp;</td></tr><tr><td><table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto;"><tbody><tr><td style="vertical-align:middle;"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-button-outline" href="https://substack.com/app-link/post?publication_id=10570180&post_id=214308078&utm_source=substack&isFreemail=false&submitLike=true&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwicmVhY3Rpb24iOiLinaQiLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MTc5MTIxMzc5MCwiaXNzIjoicHViLTEwNTcwMTgwIiwic3ViIjoicmVhY3Rpb24ifQ.pcIPKOfCWDiMhL29dVrwQMg5BuS8afWJx-GqxPx0F_U&utm_medium=email&utm_campaign=email-reaction&r=5h9jk1" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 12px;padding: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!PeVs!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideHeart%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width="18" height="18" style="margin-right: 8px;min-width: 18px;min-height: 18px;border: none;vertical-align: middle;max-width: 18px" alt=""><span class="email-button-text" style="vertical-align: middle;">Like</span></a></td></tr></tbody></table></td><td width="8" style="min-width:8px;"></td><td style="vertical-align:middle;"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-button-outline" href="https://substack.com/app-link/post?publication_id=10570180&post_id=214308078&utm_source=substack&utm_medium=email&isFreemail=false&comments=true&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjE3OTEyMTM3OTAsImlzcyI6InB1Yi0xMDU3MDE4MCIsInN1YiI6InBvc3QtcmVhY3Rpb24ifQ.VI2F_KKREtthzmR8k5mwTgjQZWEUwrmlpzZWl5lHK48&r=5h9jk1&utm_campaign=email-half-magic-comments&action=post-comment&utm_source=substack&utm_medium=email" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 12px;padding: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!x1tS!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideComments%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width="18" height="18" style="margin-right: 8px;min-width: 18px;min-height: 18px;border: none;vertical-align: middle;max-width: 18px" alt=""><span class="email-button-text" style="vertical-align: middle;">Comment</span></a></td></tr></tbody></table></td><td width="8" style="min-width:8px;"></td><td style="vertical-align:middle;"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><a class="email-button-outline" href="https://open.substack.com/pub/jingleslabs/p/the-lab-300-2026-half-ppr-rankings?utm_source=substack&utm_medium=email&utm_campaign=email-restack-comment&action=restack-comment&r=5h9jk1&token=eyJ1c2VyX2lkIjozMzEzMjk2MDEsInBvc3RfaWQiOjIxNDMwODA3OCwiaWF0IjoxNzg4NjIxNzkwLCJleHAiOjE3OTEyMTM3OTAsImlzcyI6InB1Yi0xMDU3MDE4MCIsInN1YiI6InBvc3QtcmVhY3Rpb24ifQ.VI2F_KKREtthzmR8k5mwTgjQZWEUwrmlpzZWl5lHK48&utm_source=substack&utm_medium=email" style="font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height: 12px;padding: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><img class="icon" src="https://substackcdn.com/image/fetch/$s_!ubXF!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2Fnotes__NoteRestackIcon%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2%26strokeLinecap%3Dround%26strokeLinejoin%3Dround" width="18" height="18" alt="" style="margin-right: 8px;min-width: 18px;min-height: 18px;max-width: 550px;border: none !important;vertical-align: middle;"><span class="email-button-text" style="vertical-align: middle;">Restack</span></a></td></tr></tbody></table></td></tr></tbody></table></td><td align="right"><table role="presentation" width="auto" border="0" cellspacing="0" cellpadding="0"><tbody><tr></tr></tbody></table></td></tr></tbody></table></td></tr><tr height="16"><td height="16" style="font-size:0px;line-height:0;">&nbsp;</td></tr></tbody></table><div class="footer footer-ZM59BM" style="color: rgb(119,119,119);text-align: center;font-size: 16px;line-height: 26px;padding: 24px 0;"><div style="font-size: 16px;line-height: 26px;padding-bottom: 24px"><p class="pencraft pc-reset color-secondary-ls1g8s size-12-mmZ61m reset-IxiVJZ small meta-B2bqa5" style="list-style: none;font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';padding-bottom: 0;font-size: 12px;line-height: 16px;margin: 0;color: rgb(119,119,119);text-decoration: unset;">&#169; 2026 <span>Jingles Labs</span><br>9040 Main St #120, Woodstock, GA 30188 <br><a href="https://substack.com/redirect/2/eyJlIjoiaHR0cHM6Ly93d3cuamluZ2xlc2xhYnMuY29tL2FjdGlvbi9kaXNhYmxlX2VtYWlsP3Rva2VuPWV5SjFjMlZ5WDJsa0lqb3pNekV6TWprMk1ERXNJbkJ2YzNSZmFXUWlPakl4TkRNd09EQTNPQ3dpYVdGMElqb3hOemc0TmpJeE56a3dMQ0psZUhBaU9qRTRNakF4TlRjM09UQXNJbWx6Y3lJNkluQjFZaTB4TURVM01ERTRNQ0lzSW5OMVlpSTZJbVJwYzJGaWJHVmZaVzFoYVd3aWZRLmNYUFNxV2Nab1RQTUM2RDNhY2FlUnhzbjVoaTBKRzJZdFRnejhXSWNxT0kiLCJwIjoyMTQzMDgwNzgsInMiOjEwNTcwMTgwLCJmIjpmYWxzZSwidSI6MzMxMzI5NjAxLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MjEwNDE5Nzc5MCwiaXNzIjoicHViLTAiLCJzdWIiOiJsaW5rLXJlZGlyZWN0In0.ZQ53Xby_wzbwis1n0D0OSpUMSz6rXy3PYVdxB0pCsp4?" style="color: #02fa5d;text-decoration: none;"><span style="color: rgb(119,119,119);text-decoration: underline;">Unsubscribe</span></a></p></div><p class="footerSection-EHR0jG small powered-by-substack" style="padding: 0 24px;font-size: 12px;line-height: 20px;margin: 0;color: rgb(119,119,119);font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';padding-bottom: 0;margin-top: 0;"><a href="https://substack.com/redirect/2/eyJlIjoiaHR0cHM6Ly9zdWJzdGFjay5jb20vc2lnbnVwP3V0bV9zb3VyY2U9c3Vic3RhY2smdXRtX21lZGl1bT1lbWFpbCZ1dG1fY29udGVudD1mb290ZXImdXRtX2NhbXBhaWduPWF1dG9maWxsZWQtZm9vdGVyJmZyZWVTaWdudXBFbWFpbD1qYWNraGFzdGluZ3MwMEBnbWFpbC5jb20mcj01aDlqazEiLCJwIjoyMTQzMDgwNzgsInMiOjEwNTcwMTgwLCJmIjpmYWxzZSwidSI6MzMxMzI5NjAxLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MjEwNDE5Nzc5MCwiaXNzIjoicHViLTAiLCJzdWIiOiJsaW5rLXJlZGlyZWN0In0.Z7YhfTShvCYHJQoE68D16_9sCL98XZNZKLKx58_MH5Y?" style="color: #02fa5d;text-decoration: none;display: inline-block;margin: 0 4px;"><img src="https://substackcdn.com/image/fetch/$s_!LkrL!,w_270,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fpublish-button%402x.png" srcset="https://substackcdn.com/image/fetch/$s_!wgfj!,w_135,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fpublish-button.png, https://substackcdn.com/image/fetch/$s_!LkrL!,w_270,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fpublish-button%402x.png 2x, https://substackcdn.com/image/fetch/$s_!KjtY!,w_405,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fpublish-button%403x.png 3x" width="135" alt="Start writing" height="40" style="max-width: 550px;border: none !important;vertical-align: middle;"></a></p></div></div></td><td></td></tr></tbody></table><img src="https://eotrx.substackcdn.com/o/840f0ec485cd73bd/p.gif?token=eyJtIjoiPDIwMjYwOTA1MTUyMzA0LjMuM2QzMDEwNTEzZjRhNjEyNUBtZzEuc3Vic3RhY2suY29tPiIsInUiOjMzMTMyOTYwMSwiciI6ImphY2toYXN0aW5nczAwQGdtYWlsLmNvbSIsImQiOiJtZzEuc3Vic3RhY2suY29tIiwicCI6MjE0MzA4MDc4LCJ0IjoibmV3c2xldHRlciIsImEiOiJvbmx5X3BhaWQiLCJzIjoxMDU3MDE4MCwiYyI6InBvc3QiLCJmIjpmYWxzZSwicG9zaXRpb24iOiJib3R0b20iLCJpYXQiOjE3ODg2MjE3OTAsImV4cCI6MTc5MTIxMzc5MCwiaXNzIjoicHViLTAiLCJzdWIiOiJlbyJ9.pepl5BYVgKTVEx5piFBDs-SaE09egAMOn0wTJqC9KOM" alt="" width="1" height="1" border="0" style="height:1px !important;width:1px !important;border-width:0 !important;margin-top:0 !important;margin-bottom:0 !important;margin-right:0 !important;margin-left:0 !important;padding-top:0 !important;padding-bottom:0 !important;padding-right:0 !important;padding-left:0 !important;"/><img width="1" height="1" alt="" src="https://email.mg1.substack.com/o/eJxMkEuu4yAQRVcThlYVH9sZsBZUhmqHxAbEp1vefcsvkze9Vzo6Op4677letuTWRbCwSL9sgi0u6zpLXJ4g-KR4uJ0TV-ocHPVfr0QjXtYs2iuDfiVv9KYDqVmCkTAjMq5Gi2glyBmeYNBIBXpSkwoKEAyqP5pmlOah4dxxamNrnfxn8vkUuXByvZL_xLS7Nkqp3BoHK25fRyNETp5tTsflCsXw3WOwErWCFZb1u_SrsE38rx3cO1dRxuZ8Ps-RYr8cJ9oODrbXwfd1RE895nSDEMwCuIKo9k3-86LWY9obwEPDfpf5EW1jC_mkmOw7pv3gdtDWRP9mHY3rjVIKlXzOgOKvlf8DAAD__8q8fAE"></body></html>

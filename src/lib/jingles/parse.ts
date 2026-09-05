@@ -93,8 +93,20 @@ export function decodeEntities(input: string): string {
 /** "1: Jahmyr Gibbs | RB1 | DET" */
 const ROW = /^(\d{1,3})\s*[:.]\s*(.+?)\s*\|\s*([A-Z]{1,4})(\d{1,3})\s*\|\s*([A-Z]{2,4})$/;
 
-/** "Tier 3: 2nd Round" */
-const TIER = /^Tier\s+\d+\s*[:.]\s*(.+)$/i;
+/**
+ * "Tier 3: 2nd Round" on the web, and bare "Tier 1" in the email.
+ *
+ * Substack's email build of the same post drops the label: the web version
+ * writes `<h4>Tier 1: Top 4</h4>` and the emailed one writes
+ * `<p><strong>Tier 1</strong></p>`. Requiring the colon meant every row read
+ * from an email came back with no tier at all, which is not a parse failure
+ * anything would have noticed: 300 rows, all correct, and the tier chips empty.
+ *
+ * The label is optional now, and a heading with none is called by its number.
+ * Anchored at both ends so a sentence beginning "Tier 1 is where I would..."
+ * is prose, not a heading.
+ */
+const TIER = /^Tier\s+(\d+)\s*(?:[:.]\s*(.+))?$/i;
 
 /**
  * Which scoring a rankings post is for.
@@ -149,7 +161,7 @@ export function parseRankings(html: string, title = ""): ParsedRankings {
   for (const line of lines) {
     const tierMatch = line.match(TIER);
     if (tierMatch) {
-      currentTier = tierMatch[1].trim();
+      currentTier = tierMatch[2]?.trim() || `Tier ${tierMatch[1]}`;
       if (!tiers.includes(currentTier)) tiers.push(currentTier);
       continue;
     }

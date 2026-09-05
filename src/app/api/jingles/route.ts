@@ -1,13 +1,11 @@
 import {
   CALLS_BY_SLEEPER_ID,
-  LAB_300,
   LAB_300_APPLIES_TO,
-  LAB_300_POSTED,
-  LAB_300_URL,
   LAB_300_VERSION,
   LAST_UPDATED,
-  lab300Tier,
 } from "@/lib/jingles/data";
+import { labForScoring } from "@/lib/jingles/active";
+import type { Scoring } from "@/lib/jingles/parse";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +38,18 @@ const norm = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const SCORINGS: Scoring[] = ["half_ppr", "full_ppr", "standard"];
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
+
+  // Whichever of his lists is asked for, defaulting to the one he publishes
+  // first and the one most of Jack's redraft leagues are. The list that comes
+  // back is the ingested one when there is one, and the shipped file when there
+  // is not, and the response says which.
+  const asked = (params.get("scoring") ?? "").trim().toLowerCase() as Scoring;
+  const scoring: Scoring = SCORINGS.includes(asked) ? asked : "half_ppr";
+  const lab = await labForScoring(scoring);
 
   const rawLimit = Number(params.get("limit"));
   const limit =
@@ -67,8 +75,8 @@ export async function GET(request: Request) {
     : [];
 
   const byPosition = wanted
-    ? LAB_300.filter((e) => e.position.toUpperCase() === wanted)
-    : LAB_300;
+    ? lab.list.filter((e) => e.position.toUpperCase() === wanted)
+    : lab.list;
 
   // A name search returns everyone asked for, in rank order, and ignores the
   // limit: asking for three players and being handed two because of a default
@@ -88,7 +96,7 @@ export async function GET(request: Request) {
       position: e.position,
       positionRank: e.positionRank,
       team: e.team,
-      tier: lab300Tier(e.sleeperId),
+      tier: lab.tierFor(e.sleeperId),
       call: call
         ? {
             verdict: call.verdict,
@@ -105,11 +113,17 @@ export async function GET(request: Request) {
     ok: true,
     appliesTo: LAB_300_APPLIES_TO,
     scopeNote:
-      "Half-PPR redraft rankings. They apply to redraft and guillotine leagues only, and are not a dynasty opinion: do not use them for dynasty values or dynasty trades.",
+      `${lab.scoring === "full_ppr" ? "Full-PPR" : lab.scoring === "standard" ? "Standard" : "Half-PPR"} redraft rankings. They apply to redraft and guillotine leagues only, and are not a dynasty opinion: do not use them for dynasty values or dynasty trades.`,
     updated: LAST_UPDATED,
-    labVersion: LAB_300_VERSION,
-    labPosted: LAB_300_POSTED,
-    labUrl: LAB_300_URL,
+    // Which list this actually is. "curated" means nothing has been ingested
+    // yet and this is the file that shipped, which is a real answer and is said
+    // out loud rather than passed off as the newest thing he posted.
+    source: lab.source,
+    scoring: lab.scoring,
+    labVersion: lab.source === "curated" ? LAB_300_VERSION : null,
+    labTitle: lab.title,
+    labPosted: lab.postedAt,
+    labUrl: lab.url,
     count: players.length,
     total: matching.length,
     // Say when a name found nothing, rather than returning an empty list that
